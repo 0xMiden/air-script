@@ -116,6 +116,15 @@ pub enum Token {
     /// Keyword to declare the function section in the AIR constraints module.
     Fn,
 
+    // BUSES KEYWORDS
+    // --------------------------------------------------------------------------------------------
+    /// Marks the beginning of buses section in the constraints file.
+    Buses,
+    /// Used to represent a multiset bus declaration.
+    Unit,
+    /// Used to represent a logup  bus declaration.
+    Mult,
+
     // BOUNDARY CONSTRAINT KEYWORDS
     // --------------------------------------------------------------------------------------------
     /// Marks the beginning of boundary constraints section in the constraints file.
@@ -187,6 +196,9 @@ impl Token {
             "ev" => Self::Ev,
             "fn" => Self::Fn,
             "felt" => Self::Felt,
+            "buses" => Self::Buses,
+            "unit" => Self::Unit,
+            "mult" => Self::Mult,
             "boundary_constraints" => Self::BoundaryConstraints,
             "integrity_constraints" => Self::IntegrityConstraints,
             "first" => Self::First,
@@ -260,6 +272,9 @@ impl fmt::Display for Token {
             Self::Ev => write!(f, "ev"),
             Self::Fn => write!(f, "fn"),
             Self::Felt => write!(f, "felt"),
+            Self::Buses => write!(f, "buses"),
+            Self::Unit => write!(f, "unit"),
+            Self::Mult => write!(f, "mult"),
             Self::BoundaryConstraints => write!(f, "boundary_constraints"),
             Self::First => write!(f, "first"),
             Self::Last => write!(f, "last"),

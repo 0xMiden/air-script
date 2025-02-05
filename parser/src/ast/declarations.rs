@@ -35,6 +35,8 @@ use super::*;
 pub enum Declaration {
     /// Import one or more items from the specified AirScript module to the current module
     Import(Span<Import>),
+    /// A Bus section declaration
+    Buses(Span<Vec<Bus>>),
     /// A constant value declaration
     Constant(Constant),
     /// An evaluator function definition
@@ -74,6 +76,39 @@ pub enum Declaration {
     /// There may only be one of these in the entire program, and it must
     /// appear in the root AirScript module, i.e. in a module declared with `def`
     IntegrityConstraints(Span<Vec<Statement>>),
+}
+
+/// Represents a bus declaration in an AirScript module.
+#[derive(Debug, Clone, Spanned)]
+pub struct Bus {
+    #[span]
+    pub span: SourceSpan,
+    pub name: Identifier,
+    pub bus_type: BusType,
+}
+impl Bus {
+    /// Creates a new bus declaration
+    pub const fn new(span: SourceSpan, name: Identifier, bus_type: BusType) -> Self {
+        Self {
+            span,
+            name,
+            bus_type,
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BusType {
+    /// A multiset bus
+    Unit,
+    /// A logup bus
+    Mult,
+}
+
+impl Eq for Bus {}
+impl PartialEq for Bus {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.bus_type == other.bus_type
+    }
 }
 
 /// Stores a constant's name and value. There are three types of constants:

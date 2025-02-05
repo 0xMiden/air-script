@@ -76,6 +76,7 @@ Declaration: Declaration = {
     RandomValues => Declaration::RandomValues(<>),
     EvaluatorFunction => Declaration::EvaluatorFunction(<>),
     Function => Declaration::Function(<>),
+    Buses => Declaration::Buses(<>),
     <l:@L> <trace:Trace> <r:@R> => Declaration::Trace(Span::new(span!(l, r), trace)),
     <PublicInputs> => Declaration::PublicInputs(<>),
     <BoundaryConstraints> => Declaration::BoundaryConstraints(<>),
@@ -178,6 +179,26 @@ PeriodicColumns: Span<Vec<PeriodicColumn>> = {
 PeriodicColumn: PeriodicColumn = {
     <l:@L> <name: Identifier> ":" <values: Vector<Num_u64>> "," <r:@R>
         => PeriodicColumn::new(span!(l, r), name, values),
+}
+
+
+// BUSES
+// ================================================================================================
+
+// Buses are not required, and there is no limit to the number that can be provided.
+Buses: Span<Vec<Bus>> = {
+    <l:@L> "buses" "{" <bus:Bus*> "}" <r:@R>
+        => Span::new(span!(l, r), bus)
+}
+
+Bus: Bus = {
+    <l:@L> <bus_type: BusType> <name: Identifier> "," <r:@R>
+        => Bus::new(span!(l, r), name, bus_type),
+}
+
+BusType: BusType = {
+    "unit" => BusType::Unit,
+    "mult" => BusType::Mult,
 }
 
 // RANDOM VALUES
@@ -646,6 +667,9 @@ extern {
         "public_inputs" => Token::PublicInputs,
         "periodic_columns" => Token::PeriodicColumns,
         "random_values" => Token::RandomValues,
+        "buses" => Token::Buses,
+        "unit" => Token::Unit,
+        "mult" => Token::Mult,
         "boundary_constraints" => Token::BoundaryConstraints,
         "first" => Token::First,
         "last" => Token::Last,

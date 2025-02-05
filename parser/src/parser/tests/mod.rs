@@ -627,6 +627,7 @@ macro_rules! import {
 
 mod arithmetic_ops;
 mod boundary_constraints;
+mod buses;
 mod calls;
 mod constant_propagation;
 mod constants;

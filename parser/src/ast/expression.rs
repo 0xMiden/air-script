@@ -90,9 +90,11 @@ impl From<ResolvableIdentifier> for Identifier {
 
 /// Represents an identifier qualified with its namespace.
 ///
-/// Identifiers in AirScript are separated into two namespaces: one for functions,
-/// and one for bindings. This is because functions cannot be bound, and bindings
-/// cannot be called, so we can always disambiguate identifiers based on its usage.
+/// Identifiers in AirScript are separated into three namespaces: one for functions,
+/// one for buses and one for bindings. This is because functions cannot be bound,
+/// added to / remove from, buses cannot be bound or called, and bindings
+/// cannot be called added to / remove from.
+/// So we can always disambiguate identifiers based on its usage.
 ///
 /// It is still probably best practice to avoid having name conflicts between functions
 /// and bindings, but that is a matter of style rather than one of necessity.
@@ -100,18 +102,19 @@ impl From<ResolvableIdentifier> for Identifier {
 pub enum NamespacedIdentifier {
     Function(#[span] Identifier),
     Binding(#[span] Identifier),
+    Bus(#[span] Identifier),
 }
 impl NamespacedIdentifier {
     pub fn id(&self) -> Identifier {
         match self {
-            Self::Function(ident) | Self::Binding(ident) => *ident,
+            Self::Function(ident) | Self::Binding(ident) | Self::Bus(ident) => *ident,
         }
     }
 }
 impl AsRef<Identifier> for NamespacedIdentifier {
     fn as_ref(&self) -> &Identifier {
         match self {
-            Self::Function(ref ident) | Self::Binding(ref ident) => ident,
+            Self::Function(ref ident) | Self::Binding(ref ident) | Self::Bus(ref ident) => ident,
         }
     }
 }
