@@ -324,6 +324,7 @@ impl<'a> Inlining<'a> {
                 Expr::Let(let_expr) => Ok(vec![Statement::Let(*let_expr)]),
                 expr => Ok(vec![Statement::Expr(expr)]),
             },
+            Statement::BusEnforce(_) => todo!(),
         }
     }
 
@@ -400,7 +401,8 @@ impl<'a> Inlining<'a> {
                     Statement::Expr(expr) => expr,
                     Statement::Enforce(_)
                     | Statement::EnforceIf(_, _)
-                    | Statement::EnforceAll(_) => unreachable!(),
+                    | Statement::EnforceAll(_)
+                    | Statement::BusEnforce(_) => unreachable!(),
                 }
             }
             // The operands of a binary expression can contain function calls, so we must ensure
@@ -543,7 +545,8 @@ impl<'a> Inlining<'a> {
                     Statement::Let(expr) => Ok(Expr::Let(Box::new(expr))),
                     Statement::Enforce(_)
                     | Statement::EnforceIf(_, _)
-                    | Statement::EnforceAll(_) => unreachable!(),
+                    | Statement::EnforceAll(_)
+                    | Statement::BusEnforce(_) => unreachable!(),
                 }
             }
             Expr::SymbolAccess(ref access) => {
@@ -668,7 +671,8 @@ impl<'a> Inlining<'a> {
                         }
                         Statement::Enforce(_)
                         | Statement::EnforceIf(_, _)
-                        | Statement::EnforceAll(_) => unreachable!(),
+                        | Statement::EnforceAll(_)
+                        | Statement::BusEnforce(_) => unreachable!(),
                     }
                 }
             }
@@ -724,11 +728,13 @@ impl<'a> Inlining<'a> {
                         }
                         Statement::Enforce(_)
                         | Statement::EnforceIf(_, _)
-                        | Statement::EnforceAll(_) => unreachable!(),
+                        | Statement::EnforceAll(_)
+                        | Statement::BusEnforce(_) => unreachable!(),
                     }
                 }
                 Ok(())
             }
+            ScalarExpr::BusOperation(_) => todo!(),
         }
     }
 
@@ -1300,7 +1306,10 @@ impl<'a> Inlining<'a> {
         match function.body.pop().unwrap() {
             Statement::Expr(expr) => Ok(expr),
             Statement::Let(expr) => Ok(Expr::Let(Box::new(expr))),
-            Statement::Enforce(_) | Statement::EnforceIf(_, _) | Statement::EnforceAll(_) => {
+            Statement::Enforce(_)
+            | Statement::EnforceIf(_, _)
+            | Statement::EnforceAll(_)
+            | Statement::BusEnforce(_) => {
                 panic!("unexpected constraint in function body")
             }
         }
@@ -1645,7 +1654,10 @@ fn eval_let_binding_ty(
     let binding_ty = match let_expr.body.last().unwrap() {
         Statement::Let(ref inner_let) => eval_let_binding_ty(inner_let, bindings, imported)?,
         Statement::Expr(ref expr) => eval_expr_binding_type(expr, bindings, imported)?,
-        Statement::Enforce(_) | Statement::EnforceIf(_, _) | Statement::EnforceAll(_) => {
+        Statement::Enforce(_)
+        | Statement::EnforceIf(_, _)
+        | Statement::EnforceAll(_)
+        | Statement::BusEnforce(_) => {
             unreachable!()
         }
     };
@@ -1803,6 +1815,7 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
             // the case that we encounter a let here, as they can only be introduced in scalar
             // expression position as a result of inlining/expansion
             ScalarExpr::Let(_) => unreachable!(),
+            ScalarExpr::BusOperation(_) => todo!(),
         }
     }
 }
@@ -1844,6 +1857,7 @@ impl VisitMut<SemanticAnalysisError> for ApplyConstraintSelector<'_> {
             }
             Statement::EnforceAll(_) => unreachable!(),
             Statement::Expr(_) => ControlFlow::Continue(()),
+            Statement::BusEnforce(_) => todo!(),
         }
     }
 }

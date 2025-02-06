@@ -275,12 +275,14 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                         }
                         Statement::Enforce(_)
                         | Statement::EnforceIf(_, _)
-                        | Statement::EnforceAll(_) => unreachable!(),
+                        | Statement::EnforceAll(_)
+                        | Statement::BusEnforce(_) => unreachable!(),
                     },
                     Err(err) => return ControlFlow::Break(err),
                 }
                 ControlFlow::Continue(())
             }
+            ScalarExpr::BusOperation(_) => todo!(),
         }
     }
 
@@ -591,7 +593,8 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                         }
                         Statement::Enforce(_)
                         | Statement::EnforceIf(_, _)
-                        | Statement::EnforceAll(_) => unreachable!(),
+                        | Statement::EnforceAll(_)
+                        | Statement::BusEnforce(_) => unreachable!(),
                     },
                     Err(err) => return ControlFlow::Break(err),
                 }
@@ -642,6 +645,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 }
                 // This statement type is only present in the AST after inlining
                 Statement::EnforceIf(_, _) => unreachable!(),
+                Statement::BusEnforce(_) => todo!(),
             }
 
             // If we have a non-empty buffer, then we are collapsing a let into the current block,

@@ -297,7 +297,8 @@ impl AirBuilder<'_> {
                 }
                 ast::Statement::Enforce(_)
                 | ast::Statement::EnforceIf(_, _)
-                | ast::Statement::EnforceAll(_) => {
+                | ast::Statement::EnforceAll(_)
+                | ast::Statement::BusEnforce(_) => {
                     unreachable!()
                 }
             }
@@ -447,7 +448,9 @@ impl AirBuilder<'_> {
                     panic!("expected scalar expression to produce scalar value, got: {invalid:?}")
                 }
             },
-            ast::ScalarExpr::Call(_) | ast::ScalarExpr::BoundedSymbolAccess(_) => unreachable!(),
+            ast::ScalarExpr::Call(_)
+            | ast::ScalarExpr::BoundedSymbolAccess(_)
+            | ast::ScalarExpr::BusOperation(_) => unreachable!(),
         }
     }
 

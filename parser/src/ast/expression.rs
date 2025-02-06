@@ -441,6 +441,7 @@ impl TryFrom<ScalarExpr> for Expr {
                 Err(InvalidExprError::BoundedSymbolAccess(expr.span()))
             }
             ScalarExpr::Let(expr) => Ok(Self::Let(expr)),
+            ScalarExpr::BusOperation(_) => todo!(),
         }
     }
 }
@@ -489,6 +490,8 @@ pub enum ScalarExpr {
     /// binary expressions or function calls to a block of statements, and only when the result
     /// of evaluating the `let` produces a valid scalar expression.
     Let(Box<Let>),
+    /// A bus operation
+    BusOperation(BusOperation),
 }
 impl ScalarExpr {
     /// Returns true if this is a constant value
@@ -523,6 +526,7 @@ impl ScalarExpr {
             },
             Self::Call(ref expr) => Ok(expr.ty),
             Self::Let(ref expr) => Ok(expr.ty()),
+            Self::BusOperation(_) => todo!(),
         }
     }
 }
@@ -579,6 +583,7 @@ impl fmt::Debug for ScalarExpr {
             Self::Binary(ref expr) => f.debug_tuple("Binary").field(expr).finish(),
             Self::Call(ref expr) => f.debug_tuple("Call").field(expr).finish(),
             Self::Let(ref expr) => write!(f, "{:#?}", expr),
+            Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
         }
     }
 }
@@ -598,6 +603,7 @@ impl fmt::Display for ScalarExpr {
                 };
                 write!(f, "{display}")
             }
+            Self::BusOperation(ref expr) => write!(f, "{}", expr),
         }
     }
 }
@@ -1253,6 +1259,53 @@ impl fmt::Display for ListComprehension {
         } else {
             Ok(())
         }
+    }
+}
+
+#[derive(Clone, Spanned)]
+pub struct BusOperation {
+    #[span]
+    pub span: SourceSpan,
+    pub bus: ResolvableIdentifier,
+    pub op: BusOperator,
+    pub args: Vec<Expr>,
+}
+
+impl BusOperation {
+    pub fn new(span: SourceSpan, bus: Identifier, op: BusOperator, args: Vec<Expr>) -> Self {
+        Self {
+            span,
+            bus: ResolvableIdentifier::Unresolved(NamespacedIdentifier::Bus(bus)),
+            op,
+            args,
+        }
+    }
+}
+
+impl Eq for BusOperation {}
+impl PartialEq for BusOperation {
+    fn eq(&self, other: &Self) -> bool {
+        self.bus == other.bus && self.args == other.args && self.op == other.op
+    }
+}
+impl fmt::Debug for BusOperation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("BusOperation")
+            .field("bus", &self.bus)
+            .field("op", &self.op)
+            .field("args", &self.args)
+            .finish()
+    }
+}
+impl fmt::Display for BusOperation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}{}{}",
+            self.bus,
+            self.op,
+            DisplayTuple(self.args.as_slice())
+        )
     }
 }
 

@@ -104,6 +104,22 @@ pub enum BusType {
     Mult,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BusOperator {
+    /// Add a tuple to the bus
+    Add,
+    /// Remove a tuple from the bus
+    Rem,
+}
+impl std::fmt::Display for BusOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Add => write!(f, "add"),
+            Self::Rem => write!(f, "rem"),
+        }
+    }
+}
+
 impl Eq for Bus {}
 impl PartialEq for Bus {
     fn eq(&self, other: &Self) -> bool {

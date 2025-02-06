@@ -84,6 +84,8 @@ pub enum Token {
     DeclIdentRef(Symbol),
     /// A function identifier
     FunctionIdent(Symbol),
+    /// A bus identifier
+    BusIdent(Symbol),
     /// Integers should only contain numeric characters.
     Num(u64),
 
@@ -122,8 +124,14 @@ pub enum Token {
     Buses,
     /// Used to represent a multiset bus declaration.
     Unit,
-    /// Used to represent a logup  bus declaration.
+    /// Used to represent a logup bus declaration.
     Mult,
+    /// Used to represent an empty bus
+    Null,
+    /// Used to represent the addition of a given tuple to a bus
+    Add,
+    /// Used to represent the removal of a given tuple to a bus
+    Rem,
 
     // BOUNDARY CONSTRAINT KEYWORDS
     // --------------------------------------------------------------------------------------------
@@ -199,6 +207,9 @@ impl Token {
             "buses" => Self::Buses,
             "unit" => Self::Unit,
             "mult" => Self::Mult,
+            "null" => Self::Null,
+            "add" => Self::Add,
+            "rem" => Self::Rem,
             "boundary_constraints" => Self::BoundaryConstraints,
             "integrity_constraints" => Self::IntegrityConstraints,
             "first" => Self::First,
@@ -257,6 +268,7 @@ impl fmt::Display for Token {
             Self::Ident(ref id) => write!(f, "{}", id),
             Self::DeclIdentRef(ref id) => write!(f, "{}", id),
             Self::FunctionIdent(ref id) => write!(f, "{}", id),
+            Self::BusIdent(ref id) => write!(f, "{}", id),
             Self::Num(ref i) => write!(f, "{}", i),
             Self::Def => write!(f, "def"),
             Self::Mod => write!(f, "mod"),
@@ -275,6 +287,9 @@ impl fmt::Display for Token {
             Self::Buses => write!(f, "buses"),
             Self::Unit => write!(f, "unit"),
             Self::Mult => write!(f, "mult"),
+            Self::Null => write!(f, "null"),
+            Self::Add => write!(f, "add"),
+            Self::Rem => write!(f, "rem"),
             Self::BoundaryConstraints => write!(f, "boundary_constraints"),
             Self::First => write!(f, "first"),
             Self::Last => write!(f, "last"),

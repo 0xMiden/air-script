@@ -373,6 +373,7 @@ impl<'a> MirBuilder<'a> {
             ast::Statement::Enforce(enf) => self.translate_enforce(enf),
             ast::Statement::EnforceIf(enf, cond) => self.translate_enforce_if(enf, cond),
             ast::Statement::EnforceAll(list_comp) => self.translate_enforce_all(list_comp),
+            ast::Statement::BusEnforce(_) => todo!(),
         }
     }
     fn translate_let(&mut self, let_stmt: &'a ast::Let) -> Result<Link<Op>, CompileError> {
@@ -807,6 +808,7 @@ impl<'a> MirBuilder<'a> {
             ast::ScalarExpr::Binary(b) => self.translate_binary_op(b),
             ast::ScalarExpr::Call(c) => self.translate_call(c),
             ast::ScalarExpr::Let(l) => self.translate_let(l),
+            ast::ScalarExpr::BusOperation(_) => todo!(),
         }
     }
 

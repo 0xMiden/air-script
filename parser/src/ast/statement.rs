@@ -60,6 +60,8 @@ pub enum Statement {
     /// Just like `Enforce`, except the constraint is contained in the body of a list comprehension,
     /// and must be enforced on every value produced by that comprehension.
     EnforceAll(ListComprehension),
+    /// Declares a bus related constraint
+    BusEnforce(ListComprehension),
 }
 impl Statement {
     /// Checks this statement to see if it contains any constraints
@@ -69,7 +71,10 @@ impl Statement {
     /// one or more constraints in its body.
     pub fn has_constraints(&self) -> bool {
         match self {
-            Self::Enforce(_) | Self::EnforceIf(_, _) | Self::EnforceAll(_) => true,
+            Self::Enforce(_)
+            | Self::EnforceIf(_, _)
+            | Self::EnforceAll(_)
+            | Self::BusEnforce(_) => true,
             Self::Let(Let { body, .. }) => body.iter().any(|s| s.has_constraints()),
             Self::Expr(_) => false,
         }
@@ -161,9 +166,10 @@ impl Let {
                     last = let_expr.body.last();
                 }
                 Statement::Expr(ref expr) => return expr.ty(),
-                Statement::Enforce(_) | Statement::EnforceIf(_, _) | Statement::EnforceAll(_) => {
-                    break
-                }
+                Statement::Enforce(_)
+                | Statement::EnforceIf(_, _)
+                | Statement::EnforceAll(_)
+                | Statement::BusEnforce(_) => break,
             }
         }
 

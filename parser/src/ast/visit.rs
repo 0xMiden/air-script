@@ -586,6 +586,7 @@ where
         }
         ast::Statement::EnforceAll(ref mut expr) => visitor.visit_mut_enforce_all(expr),
         ast::Statement::Expr(ref mut expr) => visitor.visit_mut_expr(expr),
+        ast::Statement::BusEnforce(ref mut _expr) => todo!(),
     }
 }
 
@@ -647,6 +648,7 @@ where
         ast::ScalarExpr::Binary(ref mut expr) => visitor.visit_mut_binary_expr(expr),
         ast::ScalarExpr::Call(ref mut expr) => visitor.visit_mut_call(expr),
         ast::ScalarExpr::Let(ref mut expr) => visitor.visit_mut_let(expr),
+        ast::ScalarExpr::BusOperation(ref mut _expr) => todo!(),
     }
 }
 

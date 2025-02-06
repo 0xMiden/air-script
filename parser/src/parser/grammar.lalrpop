@@ -361,6 +361,7 @@ ConstraintStatements: Vec<Statement> = {
 ConstraintStatement: Vec<Statement> = {
     "enf" "match" "{" <MatchArm+> "}" ";" => <>,
     "enf" <ConstraintExpr> ";" => vec![<>],
+    <BusConstraintExpr> ";" => vec![<>],
 }
 
 ReturnStatement: Expr = {
@@ -426,14 +427,59 @@ ConstraintExpr: Statement = {
     }
 }
 
+// 1. `p.add(a, b) when s`
+// 2. `q.add(a, b) for m`
+BusConstraintExpr: Statement = {
+    <l:@L> <expr: ScalarBusConstraintExpr> <selector: WithSelector> <r:@R> => {
+        let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, Some(selector)))
+    },
+    <l:@L> <expr: ScalarBusConstraintExpr> <multiplicity: WithMultiplicity> <r:@R> => {
+        let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, Some(multiplicity)))
+    }
+}
+
+// 1. `p.first = null`
+// 2. `q.first = ???` To define
+BoundaryBusConstraintExpr: Statement = {
+    <l:@L> <expr: ScalarBusConstraintExpr> <r:@R> => {
+                let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, None))
+    }
+}
+
 ScalarConstraintExpr: ScalarExpr = {
     FunctionCall,
     <l:@L> <lhs: ScalarExpr> "=" <rhs: ScalarExpr> <r:@R>
         => ScalarExpr::Binary(BinaryExpr::new(span!(l, r), BinaryOp::Eq, lhs, rhs)),
 }
 
+ScalarBusConstraintExpr: ScalarExpr = {
+    <l:@L> <bus: BusIdentifier> "." <bus_operation: BusOperator> "(" <args: Comma<Expr>> ")" <r:@R> => {
+        ScalarExpr::BusOperation(BusOperation::new(span!(l, r), bus, bus_operation, args))
+    }
+}
+
+BusOperator: BusOperator = {
+    "add" => BusOperator::Add,
+    "rem" => BusOperator::Rem
+}
+
 WithSelector: ScalarExpr = {
     "when" <ScalarExpr>,
+}
+WithMultiplicity: ScalarExpr = {
+    "for" <ScalarExpr>,
 }
 
 Expr: Expr = {
@@ -634,6 +680,10 @@ FunctionIdentifier: Identifier = {
     <l:@L> <name:function_identifier> <r:@R> => Identifier::new(span!(l, r), name)
 }
 
+BusIdentifier: Identifier = {
+    <l:@L> <name:bus_identifier> <r:@R> => Identifier::new(span!(l, r), name)
+}
+
 Int: Span<u64> = {
    <l:@L> <i:Num_u64> <r:@R> => Span::new(span!(l, r), i),
 }
@@ -653,6 +703,7 @@ extern {
         identifier => Token::Ident(<Symbol>),
         decl_ident_ref => Token::DeclIdentRef(<Symbol>),
         function_identifier => Token::FunctionIdent(<Symbol>),
+        bus_identifier => Token::BusIdent(<Symbol>),
         int => Token::Num(<u64>),
         "def" => Token::Def,
         "mod" => Token::Mod,
@@ -670,6 +721,9 @@ extern {
         "buses" => Token::Buses,
         "unit" => Token::Unit,
         "mult" => Token::Mult,
+        "null" => Token::Null,
+        "add" => Token::Add,
+        "rem" => Token::Rem,
         "boundary_constraints" => Token::BoundaryConstraints,
         "first" => Token::First,
         "last" => Token::Last,
