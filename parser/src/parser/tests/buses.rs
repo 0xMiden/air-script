@@ -36,3 +36,60 @@ fn empty_buses() {
     let expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     ParseTest::new().expect_module_ast(source, expected);
 }
+
+#[test]
+fn boundary_constraints_buses() {
+    let _source = "
+    mod test
+
+    buses {
+        unit p,
+        mult q,
+    }
+    
+    boundary_constraints {
+        p.first = null;
+        q.last = null;
+    }";
+
+    /*let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
+    expected.buses.insert(
+        ident!(p),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Unit),
+    );
+    expected.buses.insert(
+        ident!(q),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
+    );
+    ParseTest::new().expect_module_ast(source, expected);*/
+}
+
+#[test]
+fn integrity_constraints_buses() {
+    let _source = "
+    mod test
+
+    buses {
+        unit p,
+        mult q,
+    }
+    
+    integrity_constraints {
+        p.add(1) when 1;
+        p.rem(1) when 1;
+        q.add(1, 2) when 1;
+        q.add(1, 2) when 1;
+        q.rem(1, 2) for 2;
+    }";
+
+    /*let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
+    expected.buses.insert(
+        ident!(p),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Unit),
+    );
+    expected.buses.insert(
+        ident!(q),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
+    );
+    ParseTest::new().expect_module_ast(source, expected);*/
+}

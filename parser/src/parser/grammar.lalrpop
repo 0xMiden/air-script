@@ -465,8 +465,8 @@ ScalarConstraintExpr: ScalarExpr = {
 }
 
 ScalarBusConstraintExpr: ScalarExpr = {
-    <l:@L> <bus: BusIdentifier> "." <bus_operation: BusOperator> "(" <args: Comma<Expr>> ")" <r:@R> => {
-        ScalarExpr::BusOperation(BusOperation::new(span!(l, r), bus, bus_operation, args))
+    <l:@L> <bus: BusIdentifier> "." <bus_operator: BusOperator> "(" <args: Comma<Expr>> ")" <r:@R> => {
+        ScalarExpr::BusOperation(BusOperation::new(span!(l, r), bus, bus_operator, args))
     }
 }
 
