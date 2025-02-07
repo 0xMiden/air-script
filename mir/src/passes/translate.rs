@@ -399,6 +399,7 @@ impl<'a> MirBuilder<'a> {
             ast::Expr::Call(c) => self.translate_call(c),
             ast::Expr::ListComprehension(lc) => self.translate_list_comprehension(lc),
             ast::Expr::Let(l) => self.translate_let(l),
+            ast::Expr::BusOperation(_) => todo!(),
         }
     }
 

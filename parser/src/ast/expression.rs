@@ -304,6 +304,8 @@ pub enum Expr {
     /// NOTE: The AirScript syntax only permits `let` in statement position, so this variant
     /// is only present in the AST as the result of an explicit transformation.
     Let(Box<Let>),
+    ///
+    BusOperation(BusOperation),
 }
 impl Expr {
     /// Returns true if this expression is constant
@@ -338,6 +340,7 @@ impl Expr {
             Self::Call(ref call) => call.ty,
             Self::ListComprehension(ref lc) => lc.ty,
             Self::Let(ref let_expr) => let_expr.ty(),
+            Self::BusOperation(_) => todo!(),
         }
     }
 }
@@ -355,6 +358,7 @@ impl fmt::Debug for Expr {
                 f.debug_tuple("ListComprehension").field(expr).finish()
             }
             Self::Let(ref let_expr) => write!(f, "{let_expr:#?}"),
+            Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
         }
     }
 }
@@ -386,6 +390,7 @@ impl fmt::Display for Expr {
                 };
                 write!(f, "{display}")
             }
+            Self::BusOperation(ref expr) => write!(f, "{}", expr),
         }
     }
 }

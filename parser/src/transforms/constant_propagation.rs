@@ -600,6 +600,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 }
                 ControlFlow::Continue(())
             }
+            Expr::BusOperation(ref _expr) => todo!()
         }
     }
 

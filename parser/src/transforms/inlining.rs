@@ -359,6 +359,7 @@ impl<'a> Inlining<'a> {
                 Expr::try_from(block.pop().unwrap()).map_err(SemanticAnalysisError::InvalidExpr)
             }
             expr @ (Expr::Const(_) | Expr::Range(_) | Expr::SymbolAccess(_)) => Ok(expr),
+            Expr::BusOperation(_) => todo!(),
         }
     }
 
@@ -676,6 +677,7 @@ impl<'a> Inlining<'a> {
                     }
                 }
             }
+            Expr::BusOperation(ref _expr) => todo!()
         }
         Ok(())
     }
@@ -1005,7 +1007,7 @@ impl<'a> Inlining<'a> {
                 // Binary expressions are scalar, so cannot be used as iterables, and we don't
                 // (currently) support nested comprehensions, so it is never possible to observe
                 // these expression types here. Calls should have been lifted prior to expansion.
-                Expr::Call(_) | Expr::Binary(_) | Expr::ListComprehension(_) | Expr::Let(_) => {
+                Expr::Call(_) | Expr::Binary(_) | Expr::ListComprehension(_) | Expr::Let(_) | Expr::BusOperation(_) => {
                     unreachable!()
                 }
             };
@@ -1623,6 +1625,7 @@ fn eval_expr_binding_type(
             eval_expr_binding_type(&lc.iterables[0], bindings, imported)
         }
         Expr::Let(ref let_expr) => eval_let_binding_ty(let_expr, bindings, imported),
+        Expr::BusOperation(_) => todo!()
     }
 }
 
@@ -1757,7 +1760,7 @@ impl RewriteIterableBindingsVisitor<'_> {
             // These types of expressions will never be observed in this context, as they are
             // not valid iterable expressions (except calls, but those are lifted prior to rewrite
             // so that their use in this context is always a symbol access).
-            Some(Expr::Call(_) | Expr::Binary(_) | Expr::ListComprehension(_) | Expr::Let(_)) => {
+            Some(Expr::Call(_) | Expr::Binary(_) | Expr::ListComprehension(_) | Expr::Let(_) | Expr::BusOperation(_)) => {
                 unreachable!()
             }
             None => None,

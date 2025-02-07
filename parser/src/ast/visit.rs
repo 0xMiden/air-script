@@ -632,6 +632,7 @@ where
         ast::Expr::Call(ref mut expr) => visitor.visit_mut_call(expr),
         ast::Expr::ListComprehension(ref mut expr) => visitor.visit_mut_list_comprehension(expr),
         ast::Expr::Let(ref mut expr) => visitor.visit_mut_let(expr),
+        ast::Expr::BusOperation(ref mut _expr) => todo!(),
     }
 }
 
