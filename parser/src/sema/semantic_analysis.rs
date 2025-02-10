@@ -1439,6 +1439,14 @@ impl SemanticAnalysis<'_> {
                     }
                 }
             }
+            ScalarExpr::BusOperation(ref mut expr) => {
+                // TODO: Validate bus operations in boundary constraints, e.g. p.first = null
+                // Will probably be done above in the Binary case
+                self.invalid_constraint(expr.span(), "expected an equality expression here")
+                    .with_note("Bus operations are only permitted in integrity constraints")
+                    .emit();
+                ControlFlow::Break(SemanticAnalysisError::Invalid)
+            }
             ScalarExpr::Call(ref expr) => {
                 self.invalid_constraint(expr.span(), "expected an equality expression here")
                     .with_note(
@@ -1468,7 +1476,7 @@ impl SemanticAnalysis<'_> {
         // However, we do need to validate two things:
         //
         // 1. That the constraint produces a scalar value
-        // 2. That the expression is either an equality, or a call to an evaluator function
+        // 2. That the expression is either an equality, a call to an evaluator function, or a bus operation
         //
         match expr {
             ScalarExpr::Binary(ref mut expr) if expr.op == BinaryOp::Eq => {
@@ -1525,9 +1533,57 @@ impl SemanticAnalysis<'_> {
                     ResolvableIdentifier::Unresolved(_) => ControlFlow::Continue(()),
                 }
             }
+            ScalarExpr::BusOperation(ref mut expr) => {
+                // Visit the call normally, so we can resolve the callee identifier
+                self.visit_mut_bus_operation(expr)?;
+
+                // Check that the call references an evaluator
+                //
+                // If unresolved, we've already raised a diagnostic for the invalid call
+                match expr.bus {
+                    ResolvableIdentifier::Resolved(bus) => {
+                        match bus.id() {
+                            NamespacedIdentifier::Bus(_) => ControlFlow::Continue(()),
+                            /*id @ NamespacedIdentifier::Bus(_) => {
+                                match self.locals.get_key_value(&id) {
+                                    // Binding is to a local bus
+                                    //Some((_, BindingType::Bus)) => ControlFlow::Continue(()),
+                                    Some((local_name, _)) => {
+                                        self.invalid_constraint(id.span(), "bus operations in constraints must be to bus")
+                                            .with_secondary_label(local_name.span(), "this function is not an evaluator")
+                                            .emit();
+                                        ControlFlow::Break(SemanticAnalysisError::Invalid)
+                                        ControlFlow::Continue(())
+                                    }
+                                    None => {
+                                        // If the bus was resolved, check it is of a bus
+                                        let (import_id, module_id) = self.imported.get_key_value(&id).unwrap();
+                                        let module = self.library.get(module_id).unwrap();
+                                        if !module.buses.contains_key(&id.id()) {
+                                            self.invalid_constraint(id.span(), "bus operations in constraints must be to a bus")
+                                                .with_secondary_label(import_id.span(), "the identifier imported here is not a bus")
+                                                .emit();
+                                            return ControlFlow::Break(SemanticAnalysisError::Invalid);
+                                        }
+                                        ControlFlow::Continue(())
+                                    }
+                                }
+                            }*/
+                            id => panic!("invalid bus identifier, expected bus, got binding: {:#?}", id),
+                        }
+                    }
+                    ResolvableIdentifier::Local(id) => {
+                        self.invalid_callee(id.span(), "local variables", "A local binding with this name is in scope, but no such bus is declared in this module. Are you missing an import?")
+                    }
+                    ResolvableIdentifier::Global(id) => {
+                        self.invalid_callee(id.span(), "global declarations", "A global declaration with this name is in scope, but no such such is declared in this module. Are you missing an import?")
+                    }
+                    ResolvableIdentifier::Unresolved(_) => ControlFlow::Continue(()),
+                }
+            }
             expr => {
-                self.invalid_constraint(expr.span(), "expected either an equality expression, or a call to an evaluator here")
-                    .with_note("Integrity constraints must be expressed as an equality, e.g. `a = 0`, or a call, e.g. `evaluator(a)`")
+                self.invalid_constraint(expr.span(), "expected either an equality expression, a call to an evaluator, or a bus operation here")
+                    .with_note("Integrity constraints must be expressed as an equality, e.g. `a = 0`, a call, e.g. `evaluator(a)`, or a bus operation, e.g. `p.add(a) when 1`")
                     .emit();
                 ControlFlow::Break(SemanticAnalysisError::Invalid)
             }
@@ -1686,7 +1742,10 @@ impl SemanticAnalysis<'_> {
                     .emit();
                 Err(InvalidAccessError::InvalidBinding)
             }
-            Expr::BusOperation(ref _expr) => todo!(),
+            // TODO BUS: Is it the correct binding type? Or do we want to throw an error?
+            // It seems that bus operations should be handled like Binary equality (enf a = 1)
+            // But it seems weird to assign a type to such operations
+            Expr::BusOperation(ref _expr) => Ok(BindingType::Local(Type::Felt)),
             Expr::Null(_) => Ok(BindingType::Local(Type::Felt)),
         }
     }
