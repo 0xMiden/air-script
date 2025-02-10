@@ -198,8 +198,8 @@ fn invalid_matrix_literal_with_leading_vector_binding() {
         enf clk' = d[0][0];
     }";
 
-    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithoutMIR);
-    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithMIR);
+    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', '\"null\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', '\"null\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithMIR);
 }
 
 #[test]

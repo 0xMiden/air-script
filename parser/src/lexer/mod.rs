@@ -85,7 +85,7 @@ pub enum Token {
     /// A function identifier
     FunctionIdent(Symbol),
     /// A bus identifier
-    BusIdent(Symbol),
+    //BusIdent(Symbol),
     /// Integers should only contain numeric characters.
     Num(u64),
 
@@ -254,11 +254,11 @@ impl PartialEq for Token {
                     return i == i2;
                 }
             }
-            Self::BusIdent(i) => {
+            /*Self::BusIdent(i) => {
                 if let Self::BusIdent(i2) = other {
                     return i == i2;
                 }
-            }
+            }*/
             _ => return mem::discriminant(self) == mem::discriminant(other),
         }
         false
@@ -273,7 +273,7 @@ impl fmt::Display for Token {
             Self::Ident(ref id) => write!(f, "{}", id),
             Self::DeclIdentRef(ref id) => write!(f, "{}", id),
             Self::FunctionIdent(ref id) => write!(f, "{}", id),
-            Self::BusIdent(ref id) => write!(f, "{}", id),
+            //Self::BusIdent(ref id) => write!(f, "{}", id),
             Self::Num(ref i) => write!(f, "{}", i),
             Self::Def => write!(f, "def"),
             Self::Mod => write!(f, "mod"),
@@ -613,7 +613,7 @@ where
         let next = self.read();
         match Token::from_keyword_or_ident(self.slice()) {
             Token::Ident(id) if next == '(' => Token::FunctionIdent(id),
-            Token::Ident(id) if next == '.' => Token::BusIdent(id),
+            //Token::Ident(id) if next == '.' => Token::BusIdent(id),
             token => token,
         }
     }
@@ -627,9 +627,11 @@ where
 
         if self.read() == '(' {
             Token::FunctionIdent(Symbol::intern(self.slice()))
-        } else if self.read() == '.' {
+        }
+        /*else if self.read() == '.' {
             Token::BusIdent(Symbol::intern(self.slice()))
-        } else {
+        }*/
+        else {
             Token::Ident(Symbol::intern(self.slice()))
         }
     }
