@@ -381,6 +381,15 @@ macro_rules! int {
     };
 }
 
+macro_rules! null {
+    () => {
+        ScalarExpr::Null(miden_diagnostics::Span::new(
+            miden_diagnostics::SourceSpan::UNKNOWN,
+            (),
+        ))
+    };
+}
+
 macro_rules! call {
     ($callee:ident ($($param:expr),+)) => {
         ScalarExpr::Call(Call::new(miden_diagnostics::SourceSpan::UNKNOWN, ident!($callee), vec![$($param),+]))

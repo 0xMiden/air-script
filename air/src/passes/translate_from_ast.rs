@@ -432,7 +432,7 @@ impl AirBuilder<'_> {
             ast::Expr::Let(ref let_expr) => self.eval_let_expr(let_expr),
             // These node types should not exist at this point
             ast::Expr::Call(_) | ast::Expr::ListComprehension(_) => unreachable!(),
-            ast::Expr::BusOperation(_) => {
+            ast::Expr::BusOperation(_) | ast::Expr::Null(_) => {
                 unimplemented!("buses are not implemented for this Pipeline")
             }
         }
@@ -453,7 +453,8 @@ impl AirBuilder<'_> {
             },
             ast::ScalarExpr::Call(_)
             | ast::ScalarExpr::BoundedSymbolAccess(_)
-            | ast::ScalarExpr::BusOperation(_) => unreachable!(),
+            | ast::ScalarExpr::BusOperation(_)
+            | ast::ScalarExpr::Null(_) => unreachable!(),
         }
     }
 

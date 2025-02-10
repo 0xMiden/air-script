@@ -399,7 +399,7 @@ impl<'a> MirBuilder<'a> {
             ast::Expr::Call(c) => self.translate_call(c),
             ast::Expr::ListComprehension(lc) => self.translate_list_comprehension(lc),
             ast::Expr::Let(l) => self.translate_let(l),
-            ast::Expr::BusOperation(_) => todo!(),
+            ast::Expr::BusOperation(_) | ast::Expr::Null(_) => todo!(),
         }
     }
 
@@ -809,7 +809,7 @@ impl<'a> MirBuilder<'a> {
             ast::ScalarExpr::Binary(b) => self.translate_binary_op(b),
             ast::ScalarExpr::Call(c) => self.translate_call(c),
             ast::ScalarExpr::Let(l) => self.translate_let(l),
-            ast::ScalarExpr::BusOperation(_) => todo!(),
+            ast::ScalarExpr::BusOperation(_) | ast::ScalarExpr::Null(_) => todo!(),
         }
     }
 

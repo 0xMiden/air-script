@@ -639,6 +639,7 @@ where
         ast::Expr::ListComprehension(ref mut expr) => visitor.visit_mut_list_comprehension(expr),
         ast::Expr::Let(ref mut expr) => visitor.visit_mut_let(expr),
         ast::Expr::BusOperation(ref mut expr) => visitor.visit_mut_bus_operation(expr),
+        ast::Expr::Null(_) => ControlFlow::Continue(()),
     }
 }
 
@@ -647,7 +648,7 @@ where
     V: ?Sized + VisitMut<T>,
 {
     match expr {
-        ast::ScalarExpr::Const(_) => ControlFlow::Continue(()),
+        ast::ScalarExpr::Const(_) | ast::ScalarExpr::Null(_) => ControlFlow::Continue(()),
         ast::ScalarExpr::SymbolAccess(ref mut expr) => visitor.visit_mut_symbol_access(expr),
         ast::ScalarExpr::BoundedSymbolAccess(ref mut expr) => {
             visitor.visit_mut_bounded_symbol_access(expr)

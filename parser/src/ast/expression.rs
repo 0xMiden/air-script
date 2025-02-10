@@ -306,6 +306,8 @@ pub enum Expr {
     Let(Box<Let>),
     /// A bus operation (`p.add(...)` or `p.rem(...)`)
     BusOperation(BusOperation),
+    /// An empty bus
+    Null(Span<()>),
 }
 impl Expr {
     /// Returns true if this expression is constant
@@ -340,7 +342,7 @@ impl Expr {
             Self::Call(ref call) => call.ty,
             Self::ListComprehension(ref lc) => lc.ty,
             Self::Let(ref let_expr) => let_expr.ty(),
-            Self::BusOperation(_) => todo!(),
+            Self::BusOperation(_) | Self::Null(_) => todo!(),
         }
     }
 }
@@ -359,6 +361,7 @@ impl fmt::Debug for Expr {
             }
             Self::Let(ref let_expr) => write!(f, "{let_expr:#?}"),
             Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
+            Self::Null(ref expr) => f.debug_tuple("Null").field(expr).finish(),
         }
     }
 }
@@ -391,6 +394,7 @@ impl fmt::Display for Expr {
                 write!(f, "{display}")
             }
             Self::BusOperation(ref expr) => write!(f, "{}", expr),
+            Self::Null(ref _expr) => write!(f, "null"),
         }
     }
 }
@@ -410,6 +414,12 @@ impl From<Call> for Expr {
     #[inline]
     fn from(expr: Call) -> Self {
         Self::Call(expr)
+    }
+}
+impl From<BusOperation> for Expr {
+    #[inline]
+    fn from(expr: BusOperation) -> Self {
+        Self::BusOperation(expr)
     }
 }
 impl From<ListComprehension> for Expr {
@@ -446,7 +456,8 @@ impl TryFrom<ScalarExpr> for Expr {
                 Err(InvalidExprError::BoundedSymbolAccess(expr.span()))
             }
             ScalarExpr::Let(expr) => Ok(Self::Let(expr)),
-            ScalarExpr::BusOperation(_) => todo!(),
+            ScalarExpr::BusOperation(expr) => Ok(Self::BusOperation(expr)),
+            ScalarExpr::Null(spanned) => Ok(Self::Null(spanned)),
         }
     }
 }
@@ -497,6 +508,8 @@ pub enum ScalarExpr {
     Let(Box<Let>),
     /// A bus operation
     BusOperation(BusOperation),
+    /// An empty bus
+    Null(Span<()>),
 }
 impl ScalarExpr {
     /// Returns true if this is a constant value
@@ -531,7 +544,7 @@ impl ScalarExpr {
             },
             Self::Call(ref expr) => Ok(expr.ty),
             Self::Let(ref expr) => Ok(expr.ty()),
-            Self::BusOperation(_) => todo!(),
+            Self::BusOperation(_) | ScalarExpr::Null(_) => todo!(),
         }
     }
 }
@@ -589,6 +602,7 @@ impl fmt::Debug for ScalarExpr {
             Self::Call(ref expr) => f.debug_tuple("Call").field(expr).finish(),
             Self::Let(ref expr) => write!(f, "{:#?}", expr),
             Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
+            Self::Null(ref expr) => f.debug_tuple("Null").field(expr).finish(),
         }
     }
 }
@@ -609,6 +623,7 @@ impl fmt::Display for ScalarExpr {
                 write!(f, "{display}")
             }
             Self::BusOperation(ref expr) => write!(f, "{}", expr),
+            Self::Null(ref _value) => write!(f, "null"),
         }
     }
 }

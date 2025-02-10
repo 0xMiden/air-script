@@ -517,6 +517,7 @@ ScalarExprBase: ScalarExpr = {
     #[precedence(level="0")]
     SymbolAccess,
     <Int> => ScalarExpr::Const(<>),
+    <l:@L> "null" <r:@R> => ScalarExpr::Null(Span::new(span!(l, r), ())),
     "(" <ScalarExpr> ")",
 
     #[precedence(level="1")]
