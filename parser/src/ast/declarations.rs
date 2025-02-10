@@ -96,9 +96,10 @@ impl Bus {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Hash, Debug, Clone, PartialEq, Eq)]
 pub enum BusType {
     /// A multiset bus
+    #[default]
     Unit,
     /// A logup bus
     Mult,
