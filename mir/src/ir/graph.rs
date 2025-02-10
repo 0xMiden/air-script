@@ -1,5 +1,5 @@
 use crate::{
-    ir::{Evaluator, Function, Link, Op, Root},
+    ir::{Bus, Evaluator, Function, Link, Op, Root},
     CompileError,
 };
 use std::{
@@ -19,6 +19,7 @@ pub struct Graph {
     evaluators: BTreeMap<QualifiedIdentifier, Link<Root>>,
     pub boundary_constraints_roots: Link<Vec<Link<Op>>>,
     pub integrity_constraints_roots: Link<Vec<Link<Op>>>,
+    pub buses: Vec<Bus>,
 }
 
 impl Graph {

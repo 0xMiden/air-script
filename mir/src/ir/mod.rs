@@ -1,3 +1,4 @@
+mod bus;
 mod graph;
 mod link;
 mod mir;
@@ -6,6 +7,7 @@ mod nodes;
 mod owner;
 pub extern crate derive_ir;
 
+pub use bus::Bus;
 pub use derive_ir::Builder;
 pub use graph::Graph;
 pub use link::{BackLink, Link};
@@ -13,7 +15,6 @@ pub use mir::Mir;
 pub use node::Node;
 pub use nodes::*;
 pub use owner::Owner;
-
 /// A trait for nodes that can have children
 /// This is used with the Child trait to allow for easy traversal and manipulation of the graph
 pub trait Parent {
