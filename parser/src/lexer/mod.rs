@@ -254,6 +254,11 @@ impl PartialEq for Token {
                     return i == i2;
                 }
             }
+            Self::BusIdent(i) => {
+                if let Self::BusIdent(i2) = other {
+                    return i == i2;
+                }
+            }
             _ => return mem::discriminant(self) == mem::discriminant(other),
         }
         false
@@ -608,6 +613,7 @@ where
         let next = self.read();
         match Token::from_keyword_or_ident(self.slice()) {
             Token::Ident(id) if next == '(' => Token::FunctionIdent(id),
+            Token::Ident(id) if next == '.' => Token::BusIdent(id),
             token => token,
         }
     }
@@ -621,6 +627,8 @@ where
 
         if self.read() == '(' {
             Token::FunctionIdent(Symbol::intern(self.slice()))
+        } else if self.read() == '.' {
+            Token::BusIdent(Symbol::intern(self.slice()))
         } else {
             Token::Ident(Symbol::intern(self.slice()))
         }

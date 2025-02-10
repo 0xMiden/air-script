@@ -450,7 +450,7 @@ BusConstraintExpr: Statement = {
 // 2. `q.first = ???` To define
 BoundaryBusConstraintExpr: Statement = {
     <l:@L> <expr: ScalarBusConstraintExpr> <r:@R> => {
-                let generated_name = format!("%{}", *next_var);
+        let generated_name = format!("%{}", *next_var);
         *next_var += 1;
         let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
         let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
@@ -572,6 +572,7 @@ SymbolAccessBaseSpanned: Span<(Identifier, AccessType)> = {
 
 SymbolAccessBase: (Identifier, AccessType) = {
     <ident: Identifier> => (ident, AccessType::Default),
+    <bus_ident: BusIdentifier> => (bus_ident, AccessType::Default),
     <ident: Identifier> "[" <range: Range> "]" => (ident, AccessType::Slice(range)),
     <ident: Identifier> <idx: Index> =>  (ident, AccessType::Index(idx)),
     <ident: Identifier> <row: Index> <col: Index> => (ident, AccessType::Matrix(row, col)),
