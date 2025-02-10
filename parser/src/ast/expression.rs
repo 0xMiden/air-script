@@ -90,31 +90,29 @@ impl From<ResolvableIdentifier> for Identifier {
 
 /// Represents an identifier qualified with its namespace.
 ///
-/// Identifiers in AirScript are separated into three namespaces: one for functions,
-/// one for buses and one for bindings. This is because functions cannot be bound,
-/// added to / remove from, buses cannot be bound or called, and bindings
-/// cannot be called added to / remove from.
+/// Identifiers in AirScript are separated into two namespaces: one for functions,
+/// and one for buses and bindings. This is because functions cannot be bound, added to or remove from,
+/// buses cannot be called, and bindings cannot be called either
 /// So we can always disambiguate identifiers based on its usage.
 ///
-/// It is still probably best practice to avoid having name conflicts between functions
-/// and bindings, but that is a matter of style rather than one of necessity.
+/// It is still probably best practice to avoid having name conflicts between functions,
+/// buses and bindings, but that is a matter of style rather than one of necessity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Spanned)]
 pub enum NamespacedIdentifier {
     Function(#[span] Identifier),
     Binding(#[span] Identifier),
-    Bus(#[span] Identifier),
 }
 impl NamespacedIdentifier {
     pub fn id(&self) -> Identifier {
         match self {
-            Self::Function(ident) | Self::Binding(ident) | Self::Bus(ident) => *ident,
+            Self::Function(ident) | Self::Binding(ident) => *ident,
         }
     }
 }
 impl AsRef<Identifier> for NamespacedIdentifier {
     fn as_ref(&self) -> &Identifier {
         match self {
-            Self::Function(ref ident) | Self::Binding(ref ident) | Self::Bus(ref ident) => ident,
+            Self::Function(ref ident) | Self::Binding(ref ident) => ident,
         }
     }
 }
@@ -1295,7 +1293,7 @@ impl BusOperation {
     pub fn new(span: SourceSpan, bus: Identifier, op: BusOperator, args: Vec<Expr>) -> Self {
         Self {
             span,
-            bus: ResolvableIdentifier::Unresolved(NamespacedIdentifier::Bus(bus)),
+            bus: ResolvableIdentifier::Unresolved(NamespacedIdentifier::Binding(bus)),
             op,
             args,
         }

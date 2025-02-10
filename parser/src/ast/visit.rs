@@ -125,6 +125,9 @@ pub trait VisitMut<T> {
     fn visit_mut_function(&mut self, expr: &mut ast::Function) -> ControlFlow<T> {
         visit_mut_function(self, expr)
     }
+    fn visit_mut_bus(&mut self, expr: &mut ast::Bus) -> ControlFlow<T> {
+        visit_mut_bus(self, expr)
+    }
     fn visit_mut_periodic_column(&mut self, expr: &mut ast::PeriodicColumn) -> ControlFlow<T> {
         visit_mut_periodic_column(self, expr)
     }
@@ -182,6 +185,9 @@ pub trait VisitMut<T> {
         self.visit_mut_scalar_expr(selector)
     }
     fn visit_mut_enforce_all(&mut self, expr: &mut ast::ListComprehension) -> ControlFlow<T> {
+        self.visit_mut_list_comprehension(expr)
+    }
+    fn visit_mut_bus_enforce(&mut self, expr: &mut ast::ListComprehension) -> ControlFlow<T> {
         self.visit_mut_list_comprehension(expr)
     }
     fn visit_mut_integrity_constraints(
@@ -271,6 +277,9 @@ where
     fn visit_mut_function(&mut self, expr: &mut ast::Function) -> ControlFlow<T> {
         (**self).visit_mut_function(expr)
     }
+    fn visit_mut_bus(&mut self, expr: &mut ast::Bus) -> ControlFlow<T> {
+        (**self).visit_mut_bus(expr)
+    }
     fn visit_mut_periodic_column(&mut self, expr: &mut ast::PeriodicColumn) -> ControlFlow<T> {
         (**self).visit_mut_periodic_column(expr)
     }
@@ -334,6 +343,9 @@ where
     }
     fn visit_mut_enforce_all(&mut self, expr: &mut ast::ListComprehension) -> ControlFlow<T> {
         (**self).visit_mut_enforce_all(expr)
+    }
+    fn visit_mut_bus_enforce(&mut self, expr: &mut ast::ListComprehension) -> ControlFlow<T> {
+        (**self).visit_mut_bus_enforce(expr)
     }
     fn visit_mut_expr(&mut self, expr: &mut ast::Expr) -> ControlFlow<T> {
         (**self).visit_mut_expr(expr)
@@ -409,6 +421,9 @@ where
     }
     for function in module.functions.values_mut() {
         visitor.visit_mut_function(function)?;
+    }
+    for bus in module.buses.values_mut() {
+        visitor.visit_mut_bus(bus)?;
     }
     for column in module.periodic_columns.values_mut() {
         visitor.visit_mut_periodic_column(column)?;
@@ -499,6 +514,13 @@ where
         visitor.visit_mut_typed_identifier(param)?;
     }
     visitor.visit_mut_statement_block(&mut expr.body)
+}
+
+pub fn visit_mut_bus<V, T>(visitor: &mut V, expr: &mut ast::Bus) -> ControlFlow<T>
+where
+    V: ?Sized + VisitMut<T>,
+{
+    visitor.visit_mut_identifier(&mut expr.name)
 }
 
 pub fn visit_mut_evaluator_trace_segment<V, T>(
@@ -592,7 +614,7 @@ where
         }
         ast::Statement::EnforceAll(ref mut expr) => visitor.visit_mut_enforce_all(expr),
         ast::Statement::Expr(ref mut expr) => visitor.visit_mut_expr(expr),
-        ast::Statement::BusEnforce(ref mut _expr) => todo!(),
+        ast::Statement::BusEnforce(ref mut expr) => visitor.visit_mut_bus_enforce(expr),
     }
 }
 

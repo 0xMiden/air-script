@@ -73,6 +73,8 @@ pub struct Program {
     pub evaluators: BTreeMap<QualifiedIdentifier, EvaluatorFunction>,
     /// The set of used pure functions referenced in this program.
     pub functions: BTreeMap<QualifiedIdentifier, Function>,
+    /// The set of used buses referenced in this program.
+    pub buses: BTreeMap<QualifiedIdentifier, Bus>,
     /// The set of used periodic columns referenced in this program.
     pub periodic_columns: BTreeMap<QualifiedIdentifier, PeriodicColumn>,
     /// The set of public inputs defined in the root module
@@ -118,6 +120,7 @@ impl Program {
             constants: Default::default(),
             evaluators: Default::default(),
             functions: Default::default(),
+            buses: Default::default(),
             periodic_columns: Default::default(),
             public_inputs: Default::default(),
             random_values: None,

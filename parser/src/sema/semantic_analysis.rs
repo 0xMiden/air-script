@@ -280,6 +280,20 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
             );
         }
 
+        // Next, we add all buses to the set of local bindings.
+        // Buses are in their own namespace, but may conflict with imported items
+        for (bus_name, bus) in module.buses.iter() {
+            let namespaced_name = NamespacedIdentifier::Binding(*bus_name);
+            if let Some((prev, _)) = self.imported.get_key_value(&namespaced_name) {
+                self.declaration_import_conflict(namespaced_name.span(), prev.span())?;
+            }
+            assert_eq!(
+                self.locals
+                    .insert(namespaced_name, BindingType::Bus(bus.bus_type.clone())),
+                None
+            );
+        }
+
         // Next, we add any periodic columns to the set of local bindings.
         //
         // These _can_ conflict with globally defined names, but are guaranteed not to conflict
@@ -316,6 +330,10 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
 
         for function in module.functions.values_mut() {
             self.visit_mut_function(function)?;
+        }
+
+        for bus in module.buses.values_mut() {
+            self.visit_mut_bus(bus)?;
         }
 
         if let Some(boundary_constraints) = module.boundary_constraints.as_mut() {
@@ -436,6 +454,10 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
         ControlFlow::Continue(())
     }
 
+    fn visit_mut_bus(&mut self, _bus: &mut Bus) -> ControlFlow<SemanticAnalysisError> {
+        ControlFlow::Continue(())
+    }
+
     fn visit_mut_boundary_constraints(
         &mut self,
         body: &mut Vec<Statement>,
@@ -496,6 +518,17 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
     /// must be checked using `visit_mut_enforce`, rather than `visit_mut_scalar_expr`. We do this by setting a flag in the
     /// state that is checked in `visit_mut_list_comprehension` to enable checks that are specific to constraints.
     fn visit_mut_enforce_all(
+        &mut self,
+        expr: &mut ListComprehension,
+    ) -> ControlFlow<SemanticAnalysisError> {
+        self.in_constraint_comprehension = true;
+        let result = self.visit_mut_list_comprehension(expr);
+        self.in_constraint_comprehension = false;
+
+        result
+    }
+
+    fn visit_mut_bus_enforce(
         &mut self,
         expr: &mut ListComprehension,
     ) -> ControlFlow<SemanticAnalysisError> {
@@ -978,6 +1011,7 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
             ResolvableIdentifier::Unresolved(namespaced_id) => {
                 // If locally defined, resolve it to the current module
                 let namespaced_id = *namespaced_id;
+
                 if let Some(binding_ty) = self.locals.get(&namespaced_id) {
                     match binding_ty {
                         // This identifier is a local variable, alias to a declaration, or a function parameter
@@ -992,7 +1026,8 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
                         // These binding types are module-local declarations
                         BindingType::Constant(_)
                         | BindingType::Function(_)
-                        | BindingType::PeriodicColumn(_) => {
+                        | BindingType::PeriodicColumn(_)
+                        | BindingType::Bus(_) => {
                             *expr = ResolvableIdentifier::Resolved(QualifiedIdentifier::new(
                                 current_module,
                                 namespaced_id,
@@ -1038,18 +1073,11 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
                     NamespacedIdentifier::Binding(_) => {
                         self.diagnostics
                             .diagnostic(Severity::Error)
-                            .with_message("reference to undefined variable")
+                            .with_message("reference to undefined variable / bus")
                             .with_primary_label(
                                 namespaced_id.span(),
-                                "this variable is not defined",
+                                "this variable / bus is not defined",
                             )
-                            .emit();
-                    }
-                    NamespacedIdentifier::Bus(_) => {
-                        self.diagnostics
-                            .diagnostic(Severity::Error)
-                            .with_message("reference to undefined bus")
-                            .with_primary_label(namespaced_id.span(), "this bus is not defined")
                             .emit();
                     }
                 }
@@ -1341,7 +1369,7 @@ impl SemanticAnalysis<'_> {
                         // Visit the expression operands
                         self.visit_mut_symbol_access(&mut access.column)?;
 
-                        // Ensure the referenced symbol was a trace column, and that it produces a scalar value
+                        // Ensure the referenced symbol was a trace column, and that it produces a scalar value, or a bus
                         let (found, segment) =
                             match self.resolvable_binding_type(&access.column.name) {
                                 Ok(ty) => match ty.item.access(access.column.access_type.clone()) {
@@ -1359,6 +1387,10 @@ impl SemanticAnalysis<'_> {
                                                 constraint_span,
                                             );
                                         }
+                                    }
+                                    Ok(BindingType::Bus(_)) => {
+                                        // Buses are valid in boundary constraints
+                                        (ty, 0)
                                     }
                                     Ok(aty) => {
                                         let expected = BindingType::TraceColumn(TraceBinding::new(
@@ -1543,17 +1575,15 @@ impl SemanticAnalysis<'_> {
                 match expr.bus {
                     ResolvableIdentifier::Resolved(bus) => {
                         match bus.id() {
-                            NamespacedIdentifier::Bus(_) => ControlFlow::Continue(()),
-                            /*id @ NamespacedIdentifier::Bus(_) => {
+                            id @ NamespacedIdentifier::Binding(_) => {
                                 match self.locals.get_key_value(&id) {
                                     // Binding is to a local bus
-                                    //Some((_, BindingType::Bus)) => ControlFlow::Continue(()),
+                                    Some((_, BindingType::Bus(_))) => ControlFlow::Continue(()),
                                     Some((local_name, _)) => {
                                         self.invalid_constraint(id.span(), "bus operations in constraints must be to bus")
                                             .with_secondary_label(local_name.span(), "this function is not an evaluator")
                                             .emit();
                                         ControlFlow::Break(SemanticAnalysisError::Invalid)
-                                        ControlFlow::Continue(())
                                     }
                                     None => {
                                         // If the bus was resolved, check it is of a bus
@@ -1568,7 +1598,7 @@ impl SemanticAnalysis<'_> {
                                         ControlFlow::Continue(())
                                     }
                                 }
-                            }*/
+                            }
                             id => panic!("invalid bus identifier, expected bus, got binding: {:#?}", id),
                         }
                     }

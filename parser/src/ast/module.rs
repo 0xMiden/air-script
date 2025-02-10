@@ -429,7 +429,7 @@ impl Module {
         names: &mut HashSet<NamespacedIdentifier>,
         bus: Bus,
     ) -> Result<(), SemanticAnalysisError> {
-        if let Some(prev) = names.replace(NamespacedIdentifier::Bus(bus.name)) {
+        if let Some(prev) = names.replace(NamespacedIdentifier::Binding(bus.name)) {
             conflicting_declaration(diagnostics, "bus", prev.span(), bus.name.span());
             return Err(SemanticAnalysisError::NameConflict(bus.name.span()));
         }
