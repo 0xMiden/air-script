@@ -51,6 +51,98 @@ fn integrity_constraints() {
 }
 
 #[test]
+fn integrity_constraints_with_buses() {
+    let source = "
+    def test
+
+    trace_columns {
+        main: [clk],
+    }
+
+    buses {
+        unit p,
+        mult q,
+    }
+
+    public_inputs {
+        inputs: [2],
+    }
+
+    boundary_constraints {
+        enf p.first = null;
+        enf q.last = null;
+    }
+
+    integrity_constraints {
+        p.add(1) when 1;
+        p.rem(1) when 1;
+        q.add(1, 2) when 1;
+        q.add(1, 2) when 1;
+        q.rem(1, 2) for 2;
+    }";
+
+    let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1)]));
+    expected.public_inputs.insert(
+        ident!(inputs),
+        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+    );
+    expected.boundary_constraints = Some(Span::new(
+        SourceSpan::UNKNOWN,
+        vec![
+            enforce!(eq!(bounded_access!(p, Boundary::First), null!())),
+            enforce!(eq!(bounded_access!(q, Boundary::Last), null!())),
+        ],
+    ));
+    expected.buses.insert(
+        ident!(p),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Unit),
+    );
+    expected.buses.insert(
+        ident!(q),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
+    );
+
+    let mut bus_enforces = Vec::new();
+
+    // p.add(1) when 1;
+    bus_enforces.push(bus_enforce!(lc!(
+        (("%0", range!(0..1))) => 
+        bus_add!(p, vec![expr!(int!(1))]),
+        when int!(1))));
+
+    //p.rem(1) when 1;
+    bus_enforces.push(bus_enforce!(lc!(
+        (("%1", range!(0..1))) => 
+        bus_rem!(p, vec![expr!(int!(1))]),
+        when int!(1))));
+
+    //q.add(1, 2) when 1;
+    bus_enforces.push(bus_enforce!(lc!(
+        (("%2", range!(0..1))) => 
+        bus_add!(q, vec![expr!(int!(1)), expr!(int!(2))]),
+        when int!(1))));
+
+    //q.add(1, 2) when 1;
+    bus_enforces.push(bus_enforce!(lc!(
+        (("%3", range!(0..1))) => 
+        bus_add!(q, vec![expr!(int!(1)), expr!(int!(2))]),
+        when int!(1))));
+
+    //q.rem(1, 2) for 2;
+    bus_enforces.push(bus_enforce!(lc!(
+        (("%4", range!(0..1))) => 
+        bus_rem!(q, vec![expr!(int!(1)), expr!(int!(2))]),
+        for int!(2))));
+
+    expected.integrity_constraints = Some(Span::new(SourceSpan::UNKNOWN, bus_enforces));
+
+    ParseTest::new().expect_module_ast(source, expected);
+}
+
+#[test]
 fn err_integrity_constraints_invalid() {
     let source = "
     def test
