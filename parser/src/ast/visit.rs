@@ -208,6 +208,9 @@ pub trait VisitMut<T> {
     fn visit_mut_call(&mut self, expr: &mut ast::Call) -> ControlFlow<T> {
         visit_mut_call(self, expr)
     }
+    fn visit_mut_bus_operation(&mut self, expr: &mut ast::BusOperation) -> ControlFlow<T> {
+        visit_mut_bus_operation(self, expr)
+    }
     fn visit_mut_range_bound(&mut self, expr: &mut ast::RangeBound) -> ControlFlow<T> {
         visit_mut_range_bound(self, expr)
     }
@@ -349,6 +352,9 @@ where
     }
     fn visit_mut_call(&mut self, expr: &mut ast::Call) -> ControlFlow<T> {
         (**self).visit_mut_call(expr)
+    }
+    fn visit_mut_bus_operation(&mut self, expr: &mut ast::BusOperation) -> ControlFlow<T> {
+        (**self).visit_mut_bus_operation(expr)
     }
     fn visit_mut_range_bound(&mut self, expr: &mut ast::RangeBound) -> ControlFlow<T> {
         (**self).visit_mut_range_bound(expr)
@@ -632,7 +638,7 @@ where
         ast::Expr::Call(ref mut expr) => visitor.visit_mut_call(expr),
         ast::Expr::ListComprehension(ref mut expr) => visitor.visit_mut_list_comprehension(expr),
         ast::Expr::Let(ref mut expr) => visitor.visit_mut_let(expr),
-        ast::Expr::BusOperation(ref mut _expr) => todo!(),
+        ast::Expr::BusOperation(ref mut expr) => visitor.visit_mut_bus_operation(expr),
     }
 }
 
@@ -649,7 +655,7 @@ where
         ast::ScalarExpr::Binary(ref mut expr) => visitor.visit_mut_binary_expr(expr),
         ast::ScalarExpr::Call(ref mut expr) => visitor.visit_mut_call(expr),
         ast::ScalarExpr::Let(ref mut expr) => visitor.visit_mut_let(expr),
-        ast::ScalarExpr::BusOperation(ref mut _expr) => todo!(),
+        ast::ScalarExpr::BusOperation(ref mut expr) => visitor.visit_mut_bus_operation(expr),
     }
 }
 
@@ -685,6 +691,20 @@ where
     V: ?Sized + VisitMut<T>,
 {
     visitor.visit_mut_resolvable_identifier(&mut expr.callee)?;
+    for arg in expr.args.iter_mut() {
+        visitor.visit_mut_expr(arg)?;
+    }
+    ControlFlow::Continue(())
+}
+
+pub fn visit_mut_bus_operation<V, T>(
+    visitor: &mut V,
+    expr: &mut ast::BusOperation,
+) -> ControlFlow<T>
+where
+    V: ?Sized + VisitMut<T>,
+{
+    visitor.visit_mut_resolvable_identifier(&mut expr.bus)?;
     for arg in expr.args.iter_mut() {
         visitor.visit_mut_expr(arg)?;
     }
