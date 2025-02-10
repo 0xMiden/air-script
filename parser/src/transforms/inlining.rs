@@ -324,7 +324,9 @@ impl<'a> Inlining<'a> {
                 Expr::Let(let_expr) => Ok(vec![Statement::Let(*let_expr)]),
                 expr => Ok(vec![Statement::Expr(expr)]),
             },
-            Statement::BusEnforce(_) => todo!(),
+            Statement::BusEnforce(_) => {
+                unimplemented!("buses are not implemented for this Pipeline")
+            }
         }
     }
 
@@ -359,7 +361,7 @@ impl<'a> Inlining<'a> {
                 Expr::try_from(block.pop().unwrap()).map_err(SemanticAnalysisError::InvalidExpr)
             }
             expr @ (Expr::Const(_) | Expr::Range(_) | Expr::SymbolAccess(_)) => Ok(expr),
-            Expr::BusOperation(_) => todo!(),
+            Expr::BusOperation(_) => unimplemented!("buses are not implemented for this Pipeline"),
         }
     }
 
@@ -677,7 +679,9 @@ impl<'a> Inlining<'a> {
                     }
                 }
             }
-            Expr::BusOperation(ref _expr) => todo!()
+            Expr::BusOperation(ref _expr) => {
+                unimplemented!("buses are not implemented for this Pipeline")
+            }
         }
         Ok(())
     }
@@ -736,7 +740,9 @@ impl<'a> Inlining<'a> {
                 }
                 Ok(())
             }
-            ScalarExpr::BusOperation(_) => todo!(),
+            ScalarExpr::BusOperation(_) => {
+                unimplemented!("buses are not implemented for this Pipeline")
+            }
         }
     }
 
@@ -1007,7 +1013,11 @@ impl<'a> Inlining<'a> {
                 // Binary expressions are scalar, so cannot be used as iterables, and we don't
                 // (currently) support nested comprehensions, so it is never possible to observe
                 // these expression types here. Calls should have been lifted prior to expansion.
-                Expr::Call(_) | Expr::Binary(_) | Expr::ListComprehension(_) | Expr::Let(_) | Expr::BusOperation(_) => {
+                Expr::Call(_)
+                | Expr::Binary(_)
+                | Expr::ListComprehension(_)
+                | Expr::Let(_)
+                | Expr::BusOperation(_) => {
                     unreachable!()
                 }
             };
@@ -1625,7 +1635,7 @@ fn eval_expr_binding_type(
             eval_expr_binding_type(&lc.iterables[0], bindings, imported)
         }
         Expr::Let(ref let_expr) => eval_let_binding_ty(let_expr, bindings, imported),
-        Expr::BusOperation(_) => todo!()
+        Expr::BusOperation(_) => unimplemented!("buses are not implemented for this Pipeline"),
     }
 }
 
@@ -1760,7 +1770,13 @@ impl RewriteIterableBindingsVisitor<'_> {
             // These types of expressions will never be observed in this context, as they are
             // not valid iterable expressions (except calls, but those are lifted prior to rewrite
             // so that their use in this context is always a symbol access).
-            Some(Expr::Call(_) | Expr::Binary(_) | Expr::ListComprehension(_) | Expr::Let(_) | Expr::BusOperation(_)) => {
+            Some(
+                Expr::Call(_)
+                | Expr::Binary(_)
+                | Expr::ListComprehension(_)
+                | Expr::Let(_)
+                | Expr::BusOperation(_),
+            ) => {
                 unreachable!()
             }
             None => None,
@@ -1818,7 +1834,9 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
             // the case that we encounter a let here, as they can only be introduced in scalar
             // expression position as a result of inlining/expansion
             ScalarExpr::Let(_) => unreachable!(),
-            ScalarExpr::BusOperation(_) => todo!(),
+            ScalarExpr::BusOperation(_) => {
+                unimplemented!("buses are not implemented for this Pipeline")
+            }
         }
     }
 }
@@ -1860,7 +1878,9 @@ impl VisitMut<SemanticAnalysisError> for ApplyConstraintSelector<'_> {
             }
             Statement::EnforceAll(_) => unreachable!(),
             Statement::Expr(_) => ControlFlow::Continue(()),
-            Statement::BusEnforce(_) => todo!(),
+            Statement::BusEnforce(_) => {
+                unimplemented!("buses are not implemented for this Pipeline")
+            }
         }
     }
 }

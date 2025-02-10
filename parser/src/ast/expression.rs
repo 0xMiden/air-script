@@ -304,7 +304,7 @@ pub enum Expr {
     /// NOTE: The AirScript syntax only permits `let` in statement position, so this variant
     /// is only present in the AST as the result of an explicit transformation.
     Let(Box<Let>),
-    ///
+    /// A bus operation (`p.add(...)` or `p.rem(...)`)
     BusOperation(BusOperation),
 }
 impl Expr {
