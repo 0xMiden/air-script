@@ -231,7 +231,7 @@ fn invalid_variable_access_before_declaration() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(source, "this variable is not defined");
+    expect_diagnostic(source, "this variable / bus is not defined");
 }
 
 #[test]
@@ -277,7 +277,7 @@ fn invalid_reference_to_variable_defined_in_other_section() {
         enf clk' = clk + a;
     }";
 
-    expect_diagnostic(source, "this variable is not defined");
+    expect_diagnostic(source, "this variable / bus is not defined");
 }
 
 #[test]

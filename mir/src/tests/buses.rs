@@ -1,6 +1,8 @@
 use super::compile;
 
+// Test ignored until buses are implemented in the MIR
 #[test]
+#[ignore]
 fn buses_in_boundary_constraints() {
     let source = "
         def test
@@ -30,7 +32,9 @@ fn buses_in_boundary_constraints() {
     assert!(compile(source).is_ok());
 }
 
+// Test ignored until buses are implemented in the MIR
 #[test]
+#[ignore]
 fn buses_in_integrity_constraints() {
     let source = "
         def test

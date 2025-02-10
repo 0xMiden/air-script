@@ -64,7 +64,7 @@ fn err_bc_column_undeclared() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(source, "this variable is not defined");
+    expect_diagnostic(source, "this variable / bus is not defined");
 }
 
 #[test]
@@ -84,7 +84,7 @@ fn err_ic_column_undeclared() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(source, "this variable is not defined");
+    expect_diagnostic(source, "this variable / bus is not defined");
 }
 
 #[test]
