@@ -59,6 +59,7 @@ pub trait Visitor {
             Node::Vector(v) => self.visit_vector(graph, v.clone().into()),
             Node::Matrix(m) => self.visit_matrix(graph, m.clone().into()),
             Node::Accessor(a) => self.visit_accessor(graph, a.clone().into()),
+            Node::BusOp(b) => self.visit_bus_op(graph, b.clone().into()),
             Node::Parameter(p) => self.visit_parameter(graph, p.clone().into()),
             Node::Value(v) => self.visit_value(graph, v.clone().into()),
             Node::None(_) => Ok(()),
@@ -138,6 +139,10 @@ pub trait Visitor {
         _graph: &mut Graph,
         _accessor: Link<Op>,
     ) -> Result<(), CompileError> {
+        Ok(())
+    }
+    /// Visit a BusOp node
+    fn visit_bus_op(&mut self, _graph: &mut Graph, _bus_op: Link<Op>) -> Result<(), CompileError> {
         Ok(())
     }
     /// Visit a Parameter node

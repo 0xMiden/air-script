@@ -1,6 +1,6 @@
 use crate::ir::{
-    get_inner, get_inner_mut, Accessor, Add, BackLink, Boundary, Call, Child, Enf, Exp, Fold, For,
-    If, Link, Matrix, Mul, Node, Owner, Parameter, Parent, Sub, Value, Vector,
+    get_inner, get_inner_mut, Accessor, Add, BackLink, Boundary, BusOp, Call, Child, Enf, Exp,
+    Fold, For, If, Link, Matrix, Mul, Node, Owner, Parameter, Parent, Sub, Value, Vector,
 };
 use miden_diagnostics::{SourceSpan, Spanned};
 
@@ -27,6 +27,7 @@ pub enum Op {
     Vector(Vector),
     Matrix(Matrix),
     Accessor(Accessor),
+    BusOp(BusOp),
     Parameter(Parameter),
     Value(Value),
     None(SourceSpan),
@@ -55,6 +56,7 @@ impl Parent for Op {
             Op::Vector(v) => v.children(),
             Op::Matrix(m) => m.children(),
             Op::Accessor(a) => a.children(),
+            Op::BusOp(b) => b.children(),
             Op::Parameter(_) => Link::default(),
             Op::Value(_) => Link::default(),
             Op::None(_) => Link::default(),
@@ -79,6 +81,7 @@ impl Child for Op {
             Op::Vector(v) => v.get_parents(),
             Op::Matrix(m) => m.get_parents(),
             Op::Accessor(a) => a.get_parents(),
+            Op::BusOp(b) => b.get_parents(),
             Op::Parameter(p) => p.get_parents(),
             Op::Value(v) => v.get_parents(),
             Op::None(_) => Default::default(),
@@ -99,6 +102,7 @@ impl Child for Op {
             Op::Vector(v) => v.add_parent(parent),
             Op::Matrix(m) => m.add_parent(parent),
             Op::Accessor(a) => a.add_parent(parent),
+            Op::BusOp(b) => b.add_parent(parent),
             Op::Parameter(p) => p.add_parent(parent),
             Op::Value(v) => v.add_parent(parent),
             Op::None(_) => {}
@@ -119,6 +123,7 @@ impl Child for Op {
             Op::Vector(v) => v.remove_parent(parent),
             Op::Matrix(m) => m.remove_parent(parent),
             Op::Accessor(a) => a.remove_parent(parent),
+            Op::BusOp(b) => b.remove_parent(parent),
             Op::Parameter(p) => p.remove_parent(parent),
             Op::Value(v) => v.remove_parent(parent),
             Op::None(_) => {}
@@ -144,6 +149,7 @@ impl Link<Op> {
             Op::Vector(v) => format!("Op::Vector@{}({:#?})", self.get_ptr(), v),
             Op::Matrix(m) => format!("Op::Matrix@{}({:#?})", self.get_ptr(), m),
             Op::Accessor(a) => format!("Op::Accessor@{}({:#?})", self.get_ptr(), a),
+            Op::BusOp(b) => format!("Op::BusOp@{}({:#?})", self.get_ptr(), b),
             Op::Parameter(p) => format!("Op::Parameter@{}({:#?})", self.get_ptr(), p),
             Op::Value(v) => format!("Op::Value@{}({:#?})", self.get_ptr(), v),
             Op::None(_) => "Op::None".to_string(),
@@ -212,6 +218,9 @@ impl Link<Op> {
             Op::Accessor(ref mut accessor) => {
                 accessor._node = Some(node.clone());
             }
+            Op::BusOp(ref mut bus_op) => {
+                bus_op._node = Some(node.clone());
+            }
             Op::Parameter(ref mut parameter) => {
                 parameter._node = Some(node.clone());
             }
@@ -262,6 +271,9 @@ impl Link<Op> {
             }
             Op::Accessor(ref mut accessor) => {
                 accessor._owner = Some(owner.clone());
+            }
+            Op::BusOp(ref mut bus_op) => {
+                bus_op._owner = Some(owner.clone());
             }
             Op::Parameter(ref mut _parameter) => {}
             Op::Value(ref mut _value) => {}
@@ -376,6 +388,14 @@ impl Link<Op> {
             Op::Accessor(ref mut accessor) => {
                 let node: Link<Node> = Node::Accessor(back).into();
                 accessor._node = Some(node.clone());
+                node
+            }
+            Op::BusOp(BusOp {
+                _node: Some(link), ..
+            }) => link.clone(),
+            Op::BusOp(ref mut bus_op) => {
+                let node: Link<Node> = Node::BusOp(back).into();
+                bus_op._node = Some(node.clone());
                 node
             }
             Op::Parameter(Parameter {
@@ -505,6 +525,14 @@ impl Link<Op> {
                 let owner: Link<Owner> = Owner::Accessor(back).into();
                 accessor._owner = Some(owner.clone());
                 accessor._owner.clone()
+            }
+            Op::BusOp(BusOp {
+                _owner: Some(link), ..
+            }) => Some(link.clone()),
+            Op::BusOp(ref mut bus_op) => {
+                let owner: Link<Owner> = Owner::BusOp(back).into();
+                bus_op._owner = Some(owner.clone());
+                bus_op._owner.clone()
             }
             Op::Parameter(_) => None,
             Op::Value(_) => None,
@@ -716,6 +744,22 @@ impl Link<Op> {
     pub fn as_accessor_mut(&self) -> Option<RefMut<Accessor>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Accessor(inner) => Some(inner),
+            _ => None,
+        })
+    }
+    /// Try getting the current [Op]'s inner [BusOp].
+    /// Returns None if the current [Op] is not a [BusOp] or the Rc count is zero
+    pub fn as_bus_op(&self) -> Option<Ref<BusOp>> {
+        get_inner(self.borrow(), |op| match op {
+            Op::BusOp(inner) => Some(inner),
+            _ => None,
+        })
+    }
+    /// Try getting the current [Op]'s inner [BusOp], borrowing mutably.
+    /// Returns None if the current [Op] is not a [BusOp] or the Rc count is zero
+    pub fn as_bus_op_mut(&self) -> Option<RefMut<BusOp>> {
+        get_inner_mut(self.borrow_mut(), |op| match op {
+            Op::BusOp(inner) => Some(inner),
             _ => None,
         })
     }

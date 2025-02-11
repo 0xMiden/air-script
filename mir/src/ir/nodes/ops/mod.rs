@@ -1,6 +1,7 @@
 mod accessor;
 mod add;
 mod boundary;
+mod bus_op;
 mod call;
 mod enf;
 mod exp;
@@ -17,6 +18,7 @@ mod vector;
 pub use accessor::Accessor;
 pub use add::Add;
 pub use boundary::Boundary;
+pub use bus_op::BusOp;
 pub use call::Call;
 pub use enf::Enf;
 pub use exp::Exp;

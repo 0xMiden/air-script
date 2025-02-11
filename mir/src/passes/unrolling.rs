@@ -892,6 +892,7 @@ impl Visitor for UnrollingFirstPass<'_> {
             Node::Accessor(a) => {
                 to_link_and(a.clone(), graph, |g, el| self.visit_accessor_bis(g, el))
             }
+            Node::BusOp(_b) => todo!(),
             Node::Parameter(p) => {
                 to_link_and(p.clone(), graph, |g, el| self.visit_parameter_bis(g, el))
             }
