@@ -7,7 +7,7 @@ use std::{
     collections::BTreeMap,
 };
 
-use air_parser::ast::QualifiedIdentifier;
+use air_parser::ast::{Identifier, QualifiedIdentifier};
 
 /// The constraints graph for the Mir.
 ///
@@ -19,7 +19,7 @@ pub struct Graph {
     evaluators: BTreeMap<QualifiedIdentifier, Link<Root>>,
     pub boundary_constraints_roots: Link<Vec<Link<Op>>>,
     pub integrity_constraints_roots: Link<Vec<Link<Op>>>,
-    pub buses: Vec<Bus>,
+    pub buses: BTreeMap<Identifier, Link<Bus>>,
 }
 
 impl Graph {
@@ -151,5 +151,30 @@ impl Graph {
         self.boundary_constraints_roots
             .borrow_mut()
             .retain(|n| *n != root);
+    }
+
+    /// Inserts a bus into the graph,
+    /// returning an error if the bus already exists (declaration conflict).
+    pub fn insert_bus(&mut self, ident: Identifier, bus: Link<Bus>) -> Result<(), CompileError> {
+        self.buses
+            .insert(ident, bus)
+            .map_or(Ok(()), |_| Err(CompileError::Failed))
+    }
+
+    /// Queries a given bus
+    /// returning a reference to the bus if it exists.
+    pub fn get_bus(&self, ident: &Identifier) -> Option<Ref<Bus>> {
+        self.buses.get(ident).map(|n| n.borrow())
+    }
+
+    /// Queries a given bus
+    /// returning a mutable reference to the bus if it exists.
+    pub fn get_bus_mut(&mut self, ident: &Identifier) -> Option<RefMut<Bus>> {
+        self.buses.get_mut(ident).map(|n| n.borrow_mut())
+    }
+
+    /// Queries all bus nodes
+    pub fn get_bus_nodes(&self) -> Vec<Link<Bus>> {
+        self.buses.values().cloned().collect()
     }
 }
