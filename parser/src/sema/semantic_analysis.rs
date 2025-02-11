@@ -880,7 +880,7 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
             .with_message("invalid expression")
             .with_primary_label(
                 expr.span(),
-                "references to column boundaries are not permitted here",
+                "references to column / buses boundaries are not permitted here",
             )
             .emit();
         ControlFlow::Break(SemanticAnalysisError::Invalid)
@@ -1451,6 +1451,41 @@ impl SemanticAnalysis<'_> {
                             }
                         }
 
+                        match (found.item, expr.rhs.as_ref()) {
+                            (BindingType::Bus(_), ScalarExpr::Null(_)) => {
+                                // Buses boundaries can be constrained to null, nothing to do
+                            }
+                            (BindingType::Bus(_), _) => {
+                                // Buses cannot be constrained otherwise
+                                // TODO: Update when handling other buses constraints
+                                self.has_type_errors = true;
+                                self.invalid_constraint(expr.lhs.span(), "this constrains a bus")
+                                    .with_secondary_label(
+                                        expr.rhs.span(),
+                                        "but this expression is only valid to constrain columns",
+                                    )
+                                    .with_note(
+                                        "Only the null value is valid for constraining buses",
+                                    )
+                                    .emit();
+                            }
+                            (_, ScalarExpr::Null(_)) => {
+                                // Only buses can be constrained to null
+                                self.has_type_errors = true;
+                                self.invalid_constraint(
+                                    expr.lhs.span(),
+                                    "this constrains a column",
+                                )
+                                .with_secondary_label(
+                                    expr.rhs.span(),
+                                    "but this expression is only valid to constrain buses",
+                                )
+                                .with_note("The null value is only valid for defining empty buses")
+                                .emit();
+                            }
+                            _ => {}
+                        }
+
                         // If we observed a random value and this constraint is
                         // against the main trace segment, raise a validation error
                         if segment == 0 && self.saw_random_values {
@@ -1464,7 +1499,7 @@ impl SemanticAnalysis<'_> {
                         ControlFlow::Continue(())
                     }
                     other => {
-                        self.invalid_constraint(other.span(), "expected this to be a reference to a trace column boundary, e.g. `a.first`")
+                        self.invalid_constraint(other.span(), "expected this to be a reference to a trace column or bus boundary, e.g. `a.first`")
                             .with_note("The given constraint is not a boundary constraint, and only boundary constraints are valid here.")
                             .emit();
                         ControlFlow::Break(SemanticAnalysisError::Invalid)
@@ -1472,8 +1507,6 @@ impl SemanticAnalysis<'_> {
                 }
             }
             ScalarExpr::BusOperation(ref mut expr) => {
-                // TODO: Validate bus operations in boundary constraints, e.g. p.first = null
-                // Will probably be done above in the Binary case
                 self.invalid_constraint(expr.span(), "expected an equality expression here")
                     .with_note("Bus operations are only permitted in integrity constraints")
                     .emit();

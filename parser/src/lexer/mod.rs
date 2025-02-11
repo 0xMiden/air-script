@@ -84,8 +84,6 @@ pub enum Token {
     DeclIdentRef(Symbol),
     /// A function identifier
     FunctionIdent(Symbol),
-    /// A bus identifier
-    //BusIdent(Symbol),
     /// Integers should only contain numeric characters.
     Num(u64),
 
@@ -254,11 +252,6 @@ impl PartialEq for Token {
                     return i == i2;
                 }
             }
-            /*Self::BusIdent(i) => {
-                if let Self::BusIdent(i2) = other {
-                    return i == i2;
-                }
-            }*/
             _ => return mem::discriminant(self) == mem::discriminant(other),
         }
         false
@@ -273,7 +266,6 @@ impl fmt::Display for Token {
             Self::Ident(ref id) => write!(f, "{}", id),
             Self::DeclIdentRef(ref id) => write!(f, "{}", id),
             Self::FunctionIdent(ref id) => write!(f, "{}", id),
-            //Self::BusIdent(ref id) => write!(f, "{}", id),
             Self::Num(ref i) => write!(f, "{}", i),
             Self::Def => write!(f, "def"),
             Self::Mod => write!(f, "mod"),
@@ -627,11 +619,7 @@ where
 
         if self.read() == '(' {
             Token::FunctionIdent(Symbol::intern(self.slice()))
-        }
-        /*else if self.read() == '.' {
-            Token::BusIdent(Symbol::intern(self.slice()))
-        }*/
-        else {
+        } else {
             Token::Ident(Symbol::intern(self.slice()))
         }
     }

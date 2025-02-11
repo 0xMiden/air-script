@@ -1,4 +1,4 @@
-use super::compile;
+use super::{compile, expect_diagnostic};
 
 // Test ignored until buses are implemented in the MIR
 #[test]
@@ -66,4 +66,64 @@ fn buses_in_integrity_constraints() {
     }";
 
     assert!(compile(source).is_ok());
+}
+
+// Tests that should return errors
+#[test]
+fn err_buses_boundaries_to_const() {
+    let source = "
+        def test
+
+    trace_columns {
+        main: [a],
+    }
+
+    buses {
+        unit p,
+        mult q,
+    }
+
+    public_inputs {
+        inputs: [2],
+    }
+
+    boundary_constraints {
+        enf p.first = 0;
+        enf q.last = null;
+    }
+
+    integrity_constraints {
+        enf a = 0;
+    }";
+
+    expect_diagnostic(source, "error: invalid constraint");
+}
+
+#[test]
+fn err_trace_columns_constrained_with_null() {
+    let source = "
+        def test
+
+    trace_columns {
+        main: [a],
+    }
+
+    buses {
+        unit p,
+        mult q,
+    }
+
+    public_inputs {
+        inputs: [2],
+    }
+
+    boundary_constraints {
+        enf a.last = null;
+    }
+
+    integrity_constraints {
+        enf a = 0;
+    }";
+
+    expect_diagnostic(source, "error: invalid constraint");
 }

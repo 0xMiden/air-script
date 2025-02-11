@@ -572,7 +572,6 @@ SymbolAccessBaseSpanned: Span<(Identifier, AccessType)> = {
 
 SymbolAccessBase: (Identifier, AccessType) = {
     <ident: Identifier> => (ident, AccessType::Default),
-    //<bus_ident: BusIdentifier> => (bus_ident, AccessType::Default),
     <ident: Identifier> "[" <range: Range> "]" => (ident, AccessType::Slice(range)),
     <ident: Identifier> <idx: Index> =>  (ident, AccessType::Index(idx)),
     <ident: Identifier> <row: Index> <col: Index> => (ident, AccessType::Matrix(row, col)),
@@ -682,10 +681,6 @@ FunctionIdentifier: Identifier = {
     <l:@L> <name:function_identifier> <r:@R> => Identifier::new(span!(l, r), name)
 }
 
-//BusIdentifier: Identifier = {
-//    <l:@L> <name:bus_identifier> <r:@R> => Identifier::new(span!(l, r), name)
-//}
-
 Int: Span<u64> = {
    <l:@L> <i:Num_u64> <r:@R> => Span::new(span!(l, r), i),
 }
@@ -705,7 +700,6 @@ extern {
         identifier => Token::Ident(<Symbol>),
         decl_ident_ref => Token::DeclIdentRef(<Symbol>),
         function_identifier => Token::FunctionIdent(<Symbol>),
-        //bus_identifier => Token::BusIdent(<Symbol>),
         int => Token::Num(<u64>),
         "def" => Token::Def,
         "mod" => Token::Mod,
