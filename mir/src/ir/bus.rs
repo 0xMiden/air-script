@@ -64,3 +64,14 @@ pub struct Bus {
     #[span]
     span: SourceSpan,
 }
+
+impl Bus {
+    pub fn create(bus_type: ast::BusType, span: SourceSpan) -> Link<Bus> {
+        Bus {
+            bus_type,
+            span,
+            ..Default::default()
+        }
+        .into()
+    }
+}

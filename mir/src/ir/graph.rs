@@ -19,7 +19,7 @@ pub struct Graph {
     evaluators: BTreeMap<QualifiedIdentifier, Link<Root>>,
     pub boundary_constraints_roots: Link<Vec<Link<Op>>>,
     pub integrity_constraints_roots: Link<Vec<Link<Op>>>,
-    pub buses: BTreeMap<Identifier, Link<Bus>>,
+    pub buses: BTreeMap<QualifiedIdentifier, Link<Bus>>,
 }
 
 impl Graph {
@@ -155,7 +155,11 @@ impl Graph {
 
     /// Inserts a bus into the graph,
     /// returning an error if the bus already exists (declaration conflict).
-    pub fn insert_bus(&mut self, ident: Identifier, bus: Link<Bus>) -> Result<(), CompileError> {
+    pub fn insert_bus(
+        &mut self,
+        ident: QualifiedIdentifier,
+        bus: Link<Bus>,
+    ) -> Result<(), CompileError> {
         self.buses
             .insert(ident, bus)
             .map_or(Ok(()), |_| Err(CompileError::Failed))
@@ -163,13 +167,13 @@ impl Graph {
 
     /// Queries a given bus
     /// returning a reference to the bus if it exists.
-    pub fn get_bus(&self, ident: &Identifier) -> Option<Ref<Bus>> {
+    pub fn get_bus(&self, ident: &QualifiedIdentifier) -> Option<Ref<Bus>> {
         self.buses.get(ident).map(|n| n.borrow())
     }
 
     /// Queries a given bus
     /// returning a mutable reference to the bus if it exists.
-    pub fn get_bus_mut(&mut self, ident: &Identifier) -> Option<RefMut<Bus>> {
+    pub fn get_bus_mut(&mut self, ident: &QualifiedIdentifier) -> Option<RefMut<Bus>> {
         self.buses.get_mut(ident).map(|n| n.borrow_mut())
     }
 

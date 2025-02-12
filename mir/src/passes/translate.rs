@@ -6,12 +6,12 @@ use air_parser::{ast, symbols, LexicalScope};
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 
-use crate::ir::{Accessor, Add, Boundary, Enf, Evaluator, Exp, Matrix, Mul, Owner, Root, Sub};
 use crate::{
     ir::{
-        Builder, Call, ConstantValue, Fold, FoldOperator, For, Function, Link, Mir, MirType,
-        MirValue, Op, Parameter, PublicInputAccess, SpannedMirValue, TraceAccess,
-        TraceAccessBinding, Value, Vector,
+        Accessor, Add, Boundary, Builder, Bus, Call, ConstantValue, Enf, Evaluator, Exp, Fold,
+        FoldOperator, For, Function, Link, Matrix, Mir, MirType, MirValue, Mul, Op, Owner,
+        Parameter, PublicInputAccess, Root, SpannedMirValue, Sub, TraceAccess, TraceAccessBinding,
+        Value, Vector,
     },
     passes::duplicate_node,
     CompileError,
@@ -84,11 +84,19 @@ impl<'a> MirBuilder<'a> {
         let trace_columns = &self.program.trace_columns;
         let boundary_constraints = &self.program.boundary_constraints;
         let integrity_constraints = &self.program.integrity_constraints;
+        let buses = &self.program.buses;
 
         self.mir.trace_columns.clone_from(trace_columns);
         self.mir.num_random_values = random_values.as_ref().map(|rv| rv.size as u16).unwrap_or(0);
         self.mir.periodic_columns = self.program.periodic_columns.clone();
         self.mir.public_inputs = self.program.public_inputs.clone();
+        for (qual_ident, ast_bus) in buses.iter() {
+            let bus = self.translate_bus_definition(ast_bus)?;
+            eprintln!("bus: {:#?}", bus);
+            self.mir
+                .constraint_graph_mut()
+                .insert_bus(*qual_ident, bus)?;
+        }
 
         for (ident, function) in &self.program.functions {
             self.translate_function_signature(ident, function)?;
@@ -112,6 +120,10 @@ impl<'a> MirBuilder<'a> {
             self.translate_statement(integrity_constraint)?;
         }
         Ok(())
+    }
+
+    fn translate_bus_definition(&mut self, bus: &'a ast::Bus) -> Result<Link<Bus>, CompileError> {
+        Ok(Bus::create(bus.bus_type.clone(), bus.span()))
     }
 
     fn translate_evaluator_signature(
@@ -373,7 +385,7 @@ impl<'a> MirBuilder<'a> {
             ast::Statement::Enforce(enf) => self.translate_enforce(enf),
             ast::Statement::EnforceIf(enf, cond) => self.translate_enforce_if(enf, cond),
             ast::Statement::EnforceAll(list_comp) => self.translate_enforce_all(list_comp),
-            ast::Statement::BusEnforce(_) => todo!(),
+            ast::Statement::BusEnforce(list_comp) => self.translate_bus_enforce(list_comp),
         }
     }
     fn translate_let(&mut self, let_stmt: &'a ast::Let) -> Result<Link<Op>, CompileError> {
@@ -466,6 +478,14 @@ impl<'a> MirBuilder<'a> {
         let node = self.insert_enforce(enf_node);
         self.bindings.exit();
         node
+    }
+
+    fn translate_bus_enforce(
+        &mut self,
+        list_comp: &'a ast::ListComprehension,
+    ) -> Result<Link<Op>, CompileError> {
+        eprintln!("bus enforce: {:#?}", list_comp);
+        todo!()
     }
 
     fn insert_enforce(&mut self, node: Link<Op>) -> Result<Link<Op>, CompileError> {
@@ -566,13 +586,31 @@ impl<'a> MirBuilder<'a> {
                         })
                         .build();
                     Ok(node)
+                } else if let Some(bus) = self.mir.constraint_graph().get_bus(&qual_ident) {
+                    eprintln!("bus: {:#?}", bus);
+                    todo!()
+                    //Ok(bus.clone())
                 } else {
                     // This is a qualified reference that should have been eliminated
                     // during inlining or constant propagation, but somehow slipped through.
-                    unreachable!(
-                        "expected reference to periodic column, got `{:?}` instead",
-                        qual_ident
-                    );
+                    self.diagnostics
+                        .diagnostic(Severity::Error)
+                        //", got `{:#?}` of {:#?} instead.",
+                        .with_message("expected reference to periodic column")
+                        .with_primary_label(
+                            qual_ident.span(),
+                            format!(
+                                "expected reference to periodic column, got `{:#?}`",
+                                qual_ident
+                            ),
+                        )
+                        .with_secondary_label(
+                            access.span(),
+                            format!("in this access expression `{:#?}`", access),
+                        )
+                        .emit();
+                    //unreachable!("expected reference to periodic column in `{:#?}`", access);
+                    Err(CompileError::Failed)
                 }
             }
             // This must be one of public inputs, random values, or trace columns

@@ -52,6 +52,18 @@ pub fn translate(source: &str) -> Result<Mir, ()> {
     }
 }
 
+pub fn parse(source: &str) -> Result<air_parser::ast::Program, ()> {
+    let compiler = Compiler::default();
+    match compiler.parse(source) {
+        Ok(ast) => Ok(ast),
+        Err(err) => {
+            compiler.diagnostics.emit(err);
+            compiler.emitter.print_captured_to_stderr();
+            Err(())
+        }
+    }
+}
+
 #[track_caller]
 pub fn expect_diagnostic(source: &str, expected: &str) {
     let compiler = Compiler::default();
@@ -126,6 +138,10 @@ impl Compiler {
                         .chain(crate::passes::AstToMir::new(&self.diagnostics));
                 pipeline.run(ast)
             })
+    }
+    pub fn parse(&self, source: &str) -> Result<air_parser::ast::Program, CompileError> {
+        air_parser::parse(&self.diagnostics, self.codemap.clone(), source)
+            .map_err(CompileError::Parse)
     }
 }
 

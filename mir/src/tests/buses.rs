@@ -1,8 +1,8 @@
+use crate::tests::{parse, translate};
+
 use super::{compile, expect_diagnostic};
 
-// Test ignored until buses are implemented in the MIR
 #[test]
-#[ignore]
 fn buses_in_boundary_constraints() {
     let source = "
         def test
@@ -28,13 +28,12 @@ fn buses_in_boundary_constraints() {
     integrity_constraints {
         enf a = 0;
     }";
-
+    let ast = parse(source);
+    eprintln!("{:#?}", ast);
     assert!(compile(source).is_ok());
 }
 
-// Test ignored until buses are implemented in the MIR
 #[test]
-#[ignore]
 fn buses_in_integrity_constraints() {
     let source = "
         def test
