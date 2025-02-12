@@ -237,6 +237,15 @@ impl Program {
             if let Some(ic) = root_module.integrity_constraints.as_ref() {
                 program.integrity_constraints = ic.to_vec();
             }
+            // Make sure we move the buses into the program
+            if !root_module.buses.is_empty() {
+                program.buses = BTreeMap::from_iter(root_module.buses.iter().map(|(k, v)| {
+                    (
+                        QualifiedIdentifier::new(root, NamespacedIdentifier::Binding(*k)),
+                        v.clone(),
+                    )
+                }));
+            }
             for evaluator in root_module.evaluators.values() {
                 root_nodes.push_back(QualifiedIdentifier::new(
                     root,
