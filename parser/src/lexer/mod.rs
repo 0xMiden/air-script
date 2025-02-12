@@ -103,14 +103,10 @@ pub enum Token {
     TraceColumns,
     /// Used to declare main trace columns.
     Main,
-    /// Used to declare aux trace columns.
-    Aux,
     /// Keyword to declare the public inputs declaration section for the AIR.
     PublicInputs,
     /// Keyword to declare the periodic columns declaration section for the AIR.
     PeriodicColumns,
-    /// Keyword to declare random values section in the AIR constraints module.
-    RandomValues,
     /// Keyword to declare the evaluator function section in the AIR constraints module.
     Ev,
     /// Keyword to declare the function section in the AIR constraints module.
@@ -196,10 +192,8 @@ impl Token {
             "const" => Self::Const,
             "trace_columns" => Self::TraceColumns,
             "main" => Self::Main,
-            "aux" => Self::Aux,
             "public_inputs" => Self::PublicInputs,
             "periodic_columns" => Self::PeriodicColumns,
-            "random_values" => Self::RandomValues,
             "ev" => Self::Ev,
             "fn" => Self::Fn,
             "felt" => Self::Felt,
@@ -276,10 +270,8 @@ impl fmt::Display for Token {
             Self::Const => write!(f, "const"),
             Self::TraceColumns => write!(f, "trace_columns"),
             Self::Main => write!(f, "main"),
-            Self::Aux => write!(f, "aux"),
             Self::PublicInputs => write!(f, "public_inputs"),
             Self::PeriodicColumns => write!(f, "periodic_columns"),
-            Self::RandomValues => write!(f, "random_values"),
             Self::Ev => write!(f, "ev"),
             Self::Fn => write!(f, "fn"),
             Self::Felt => write!(f, "felt"),

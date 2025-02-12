@@ -37,8 +37,8 @@ fn boundary_constraints_buses() {
     }
     
     boundary_constraints {
-        p.first = null;
-        q.last = null;
+        enf p.first = null;
+        enf q.last = null;
     }";
 
     /*let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
