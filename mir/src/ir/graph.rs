@@ -7,7 +7,7 @@ use std::{
     collections::BTreeMap,
 };
 
-use air_parser::ast::{Identifier, QualifiedIdentifier};
+use air_parser::ast::QualifiedIdentifier;
 
 /// The constraints graph for the Mir.
 ///
@@ -165,6 +165,11 @@ impl Graph {
             .map_or(Ok(()), |_| Err(CompileError::Failed))
     }
 
+    /// Queries a given bus
+    /// returning a [Link<Bus>] if it exists.
+    pub fn get_bus_link(&self, ident: &QualifiedIdentifier) -> Option<Link<Bus>> {
+        self.buses.get(ident).cloned()
+    }
     /// Queries a given bus
     /// returning a reference to the bus if it exists.
     pub fn get_bus(&self, ident: &QualifiedIdentifier) -> Option<Ref<Bus>> {

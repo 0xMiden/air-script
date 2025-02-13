@@ -1,5 +1,5 @@
 use core::panic;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use air_parser::ast::AccessType;
 use air_parser::{ast, symbols, LexicalScope};
@@ -8,10 +8,10 @@ use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned}
 
 use crate::{
     ir::{
-        Accessor, Add, Boundary, Builder, Bus, Call, ConstantValue, Enf, Evaluator, Exp, Fold,
-        FoldOperator, For, Function, Link, Matrix, Mir, MirType, MirValue, Mul, Op, Owner,
-        Parameter, PublicInputAccess, Root, SpannedMirValue, Sub, TraceAccess, TraceAccessBinding,
-        Value, Vector,
+        Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, Call, ConstantValue, Enf,
+        Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir, MirType, MirValue,
+        Mul, Op, Owner, Parameter, PublicInputAccess, Root, SpannedMirValue, Sub, TraceAccess,
+        TraceAccessBinding, Value, Vector,
     },
     passes::duplicate_node,
     CompileError,
@@ -92,7 +92,6 @@ impl<'a> MirBuilder<'a> {
         self.mir.public_inputs = self.program.public_inputs.clone();
         for (qual_ident, ast_bus) in buses.iter() {
             let bus = self.translate_bus_definition(ast_bus)?;
-            eprintln!("bus: {:#?}", bus);
             self.mir
                 .constraint_graph_mut()
                 .insert_bus(*qual_ident, bus)?;
@@ -484,8 +483,70 @@ impl<'a> MirBuilder<'a> {
         &mut self,
         list_comp: &'a ast::ListComprehension,
     ) -> Result<Link<Op>, CompileError> {
-        eprintln!("bus enforce: {:#?}", list_comp);
-        todo!()
+        let bus_op = self.translate_scalar_expr(&list_comp.body)?;
+        if list_comp.iterables.len() != 1 {
+            self.diagnostics
+                .diagnostic(Severity::Error)
+                .with_message("expected a single iterable in bus enforce")
+                .with_primary_label(
+                    list_comp.span(),
+                    format!(
+                        "expected a single iterable in bus enforce, got this instead: \n{:#?}",
+                        list_comp.iterables
+                    ),
+                )
+                .emit();
+            return Err(CompileError::Failed);
+        }
+        // Note: safe to unwrap because we checked the length above
+        let ast_sel = list_comp.iterables.first().unwrap();
+        let sel: Link<Op> = match ast_sel {
+            ast::Expr::Range(ast::RangeExpr { start, end, .. }) => {
+                let start = match start {
+                    ast::RangeBound::Const(Span { item: val, .. }) => val,
+                    _ => unimplemented!(),
+                };
+                let end = match end {
+                    ast::RangeBound::Const(Span { item: val, .. }) => val,
+                    _ => unimplemented!(),
+                };
+                if *start + 1 != *end {
+                    eprintln!("start: {:#?}", start);
+                    eprintln!("end: {:#?}", end);
+                    self.diagnostics
+                        .diagnostic(Severity::Error)
+                        .with_message("Bus comprehensions can only target a single latch")
+                        .with_primary_label(
+                            list_comp.span(),
+                            format!(
+                                "expected a range with a single value, got this instead: \n{:#?}",
+                                list_comp.iterables
+                            ),
+                        )
+                        .emit();
+                    return Err(CompileError::Failed);
+                };
+                Value::builder()
+                    .value(SpannedMirValue {
+                        span: ast_sel.span(),
+                        value: MirValue::Constant(ConstantValue::Felt(*start as u64)),
+                    })
+                    .build()
+            }
+            _ => unimplemented!(),
+        };
+        bus_op
+            .as_bus_op_mut()
+            .unwrap()
+            ._latch
+            .borrow_mut()
+            .clone_from(&sel.borrow());
+        let bus_op_clone = bus_op.clone();
+        let bus_ref = bus_op_clone.as_bus_op_mut().unwrap();
+        let mut bus = bus_ref.bus.borrow_mut();
+        bus.latches.push(sel.clone());
+        bus.columns.push(bus_op.clone());
+        Ok(bus_op)
     }
 
     fn insert_enforce(&mut self, node: Link<Op>) -> Result<Link<Op>, CompileError> {
@@ -586,10 +647,14 @@ impl<'a> MirBuilder<'a> {
                         })
                         .build();
                     Ok(node)
-                } else if let Some(bus) = self.mir.constraint_graph().get_bus(&qual_ident) {
-                    eprintln!("bus: {:#?}", bus);
-                    todo!()
-                    //Ok(bus.clone())
+                } else if let Some(bus) = self.mir.constraint_graph().get_bus_link(&qual_ident) {
+                    let node = Value::builder()
+                        .value(SpannedMirValue {
+                            span: access.span(),
+                            value: MirValue::BusAccess(bus.clone()),
+                        })
+                        .build();
+                    Ok(node)
                 } else {
                     // This is a qualified reference that should have been eliminated
                     // during inlining or constant propagation, but somehow slipped through.
@@ -847,7 +912,11 @@ impl<'a> MirBuilder<'a> {
             ast::ScalarExpr::Binary(b) => self.translate_binary_op(b),
             ast::ScalarExpr::Call(c) => self.translate_call(c),
             ast::ScalarExpr::Let(l) => self.translate_let(l),
-            ast::ScalarExpr::BusOperation(_) | ast::ScalarExpr::Null(_) => todo!(),
+            ast::ScalarExpr::Null(_) => Ok(Value::create(SpannedMirValue {
+                span: scalar_expr.span(),
+                value: MirValue::Null,
+            })),
+            ast::ScalarExpr::BusOperation(bo) => self.translate_bus_operation(bo),
         }
     }
 
@@ -875,6 +944,52 @@ impl<'a> MirBuilder<'a> {
             .expr(access_node)
             .build();
         Ok(node)
+    }
+
+    fn translate_bus_operation(
+        &mut self,
+        ast_bus_op: &'a ast::BusOperation,
+    ) -> Result<Link<Op>, CompileError> {
+        let Some(bus_ident) = ast_bus_op.bus.resolved() else {
+            self.diagnostics
+                .diagnostic(Severity::Error)
+                .with_message(format!(
+                    "expected a resolved bus identifier, got `{:#?}`",
+                    ast_bus_op.bus
+                ))
+                .with_primary_label(
+                    ast_bus_op.bus.span(),
+                    "expected a resolved bus identifier here",
+                )
+                .emit();
+            return Err(CompileError::Failed);
+        };
+        let Some(bus) = self.mir.constraint_graph().get_bus_link(&bus_ident) else {
+            self.diagnostics
+                .diagnostic(Severity::Error)
+                .with_message(format!(
+                    "expected a known bus identifier here, got `{:#?}`",
+                    ast_bus_op.bus
+                ))
+                .with_primary_label(ast_bus_op.bus.span(), "Unknown bus identifier")
+                .emit();
+            return Err(CompileError::Failed);
+        };
+        let bus_op_kind = match ast_bus_op.op {
+            ast::BusOperator::Add => BusOpKind::Add,
+            ast::BusOperator::Rem => BusOpKind::Rem,
+        };
+
+        let mut bus_op = BusOp::builder()
+            .span(ast_bus_op.span())
+            .bus(bus)
+            .kind(bus_op_kind);
+        for arg in ast_bus_op.args.iter() {
+            let arg_node = self.translate_expr(arg)?;
+            bus_op = bus_op.args(arg_node);
+        }
+        let bus_op = bus_op.build();
+        Ok(bus_op)
     }
 
     fn translate_const(

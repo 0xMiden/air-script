@@ -1,7 +1,7 @@
 use air_parser::ast::{self, Identifier, QualifiedIdentifier, TraceColumnIndex, TraceSegmentId};
 use miden_diagnostics::{SourceSpan, Spanned};
 
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner};
+use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner};
 
 /// A MIR operation to represent a known value, [Value]
 /// Wraps a [SpannedMirValue] to represent a known value in the [MIR]
@@ -59,6 +59,9 @@ pub enum MirValue {
     TraceAccessBinding(TraceAccessBinding),
     /// A binding to a range of random values
     RandomValueBinding(RandomValueBinding),
+    /// A binding to a [Bus].
+    BusAccess(Link<Bus>),
+    Null,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

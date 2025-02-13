@@ -2,7 +2,7 @@ use air_parser::ast;
 
 use miden_diagnostics::{SourceSpan, Spanned};
 
-use crate::ir::{Builder, Link, Node, Op, Owner, Parent, Root};
+use crate::ir::{Link, Op};
 
 /// A Mir struct to represent a Bus definition
 /// we have 2 cases:
@@ -58,9 +58,9 @@ pub struct Bus {
     pub bus_type: ast::BusType,
     /// values stored in the bus
     /// colums are joined with randomness (αi) in the bus constraint equation
-    columns: Vec<Link<Op>>,
+    pub columns: Vec<Link<Op>>,
     /// selectors denoting when a value is present
-    latches: Vec<Link<Op>>,
+    pub latches: Vec<Link<Op>>,
     #[span]
     span: SourceSpan,
 }

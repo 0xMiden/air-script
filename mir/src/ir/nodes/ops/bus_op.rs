@@ -16,6 +16,7 @@ pub struct BusOp {
     pub bus: Link<Bus>,
     pub kind: BusOpKind,
     pub args: Vec<Link<Op>>,
+    pub _latch: Link<Op>,
     pub _node: Option<Link<Node>>,
     pub _owner: Option<Link<Owner>>,
     #[span]

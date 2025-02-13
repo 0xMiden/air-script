@@ -1,4 +1,4 @@
-use crate::tests::{compile, translate};
+use crate::tests::translate;
 
 #[cfg(test)]
 mod tests {
