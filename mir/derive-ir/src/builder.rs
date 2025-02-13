@@ -429,6 +429,7 @@ fn make_builder_struct<'a>(
     let builder_struct_name = format_ident!("{}Builder", name);
     let struct_fields = fields.iter().map(|(_, _, field, _, _, _)| field);
     let builder_struct = quote! {
+        #[derive(Debug)]
         pub struct #builder_struct_name<State> {
             _builder_state: std::marker::PhantomData<State>,
             #(#struct_fields),*
@@ -446,8 +447,14 @@ fn make_builder_aliases<'a>(
     no_name: &'a syn::Ident,
 ) -> (syn::Ident, syn::Ident, proc_macro2::TokenStream) {
     let (yes, no) = (
-        quote! { pub struct #yes_name; },
-        quote! { pub struct #no_name; },
+        quote! {
+            #[derive(Debug)]
+            pub struct #yes_name;
+        },
+        quote! {
+            #[derive(Debug)]
+            pub struct #no_name;
+        },
     );
     let builder_struct_name = format_ident!("{}Builder", name);
     let mut alias_names = vec![];
@@ -620,6 +627,7 @@ mod tests {
             }
         };
         let expected = quote! {
+            #[derive(Debug)]
             pub struct FooBuilder<State> {
                 _builder_state: std::marker::PhantomData<State>,
                 parent: BackLink<Owner>,
@@ -629,7 +637,9 @@ mod tests {
                 d: Option<Link<Op>>,
                 count: Option<i32>
             }
+            #[derive(Debug)]
             pub struct #y;
+            #[derive(Debug)]
             pub struct #n;
             type FooBuilderState0 = FooBuilder<(#y, #n, #y, #y, #n, #n)>;
             type FooBuilderState1 = FooBuilder<(#y, #y, #y, #y, #n, #n)>;
