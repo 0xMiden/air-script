@@ -1,5 +1,5 @@
 use core::panic;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use air_parser::ast::AccessType;
 use air_parser::{ast, symbols, LexicalScope};
