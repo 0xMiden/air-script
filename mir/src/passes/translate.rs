@@ -499,8 +499,9 @@ impl<'a> MirBuilder<'a> {
             return Err(CompileError::Failed);
         }
         // Note: safe to unwrap because we checked the length above
-        let ast_sel = list_comp.iterables.first().unwrap();
-        let sel: Link<Op> = match ast_sel {
+        let ast_iterables = list_comp.iterables.first().unwrap();
+        // sanity check
+        match ast_iterables {
             ast::Expr::Range(ast::RangeExpr { start, end, .. }) => {
                 let start = match start {
                     ast::RangeBound::Const(Span { item: val, .. }) => val,
@@ -510,7 +511,7 @@ impl<'a> MirBuilder<'a> {
                     ast::RangeBound::Const(Span { item: val, .. }) => val,
                     _ => unimplemented!(),
                 };
-                if *start + 1 != *end {
+                if *start != 0 || *end != 1 {
                     eprintln!("start: {:#?}", start);
                     eprintln!("end: {:#?}", end);
                     self.diagnostics
@@ -526,14 +527,12 @@ impl<'a> MirBuilder<'a> {
                         .emit();
                     return Err(CompileError::Failed);
                 };
-                Value::builder()
-                    .value(SpannedMirValue {
-                        span: ast_sel.span(),
-                        value: MirValue::Constant(ConstantValue::Felt(*start as u64)),
-                    })
-                    .build()
             }
             _ => unimplemented!(),
+        };
+        let sel = match list_comp.selector.as_ref() {
+            Some(selector) => self.translate_scalar_expr(selector)?,
+            None => todo!(), // Should we always have a selector?
         };
         bus_op
             .as_bus_op_mut()

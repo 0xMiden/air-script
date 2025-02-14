@@ -52,6 +52,7 @@ pub fn translate(source: &str) -> Result<Mir, ()> {
     }
 }
 
+#[allow(dead_code)]
 pub fn parse(source: &str) -> Result<air_parser::ast::Program, ()> {
     let compiler = Compiler::default();
     match compiler.parse(source) {
@@ -139,6 +140,7 @@ impl Compiler {
                 pipeline.run(ast)
             })
     }
+    #[allow(dead_code)]
     pub fn parse(&self, source: &str) -> Result<air_parser::ast::Program, CompileError> {
         air_parser::parse(&self.diagnostics, self.codemap.clone(), source)
             .map_err(CompileError::Parse)
