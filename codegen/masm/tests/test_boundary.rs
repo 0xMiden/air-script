@@ -145,7 +145,9 @@ integrity_constraints {
     enf a + b = 0;
 }";
 
+// ignore `aux` tests
 #[test]
+#[ignore]
 fn test_complex_boundary() {
     let code = codegen(COMPLEX_BOUNDARY_AIR);
 

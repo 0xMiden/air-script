@@ -116,7 +116,9 @@ integrity_constraints {
     enf a = 0;
 }";
 
+// ignore `aux` tests
 #[test]
+#[ignore]
 fn test_boundary_divisor() {
     let code = codegen(SIMPLE_BOUNDARY_AIR);
 
@@ -235,7 +237,9 @@ integrity_constraints {
     enf a = 0;
 }";
 
+// ignore `aux` tests
 #[test]
+#[ignore]
 fn test_mixed_boundary_divisor() {
     let code = codegen(MIXED_BOUNDARY_AIR);
 

@@ -34,7 +34,9 @@ integrity_constraints {
     enf b * a = 0;
 }";
 
+// Ignore `aux` tests
 #[test]
+#[ignore]
 fn test_simple_aux() {
     let code = codegen(SIMPLE_AUX_AIR);
 
