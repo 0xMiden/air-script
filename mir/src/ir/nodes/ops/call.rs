@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Root};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Root, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 /// A MIR operation to represent a call to a given function, a `Root` that represents either a `Function` or an `Evaluator`
@@ -14,10 +14,10 @@ pub struct Call {
     pub function: Link<Root>,
     /// Parent::children only contains the arguments
     pub arguments: Link<Vec<Link<Op>>>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl Call {

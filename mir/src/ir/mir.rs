@@ -17,7 +17,7 @@ use super::Graph;
 /// It is equivalent to an [air_parser::ast::Program], except that it has been
 /// translated into an algebraic graph representation, on which further analysis,
 /// optimization, and code generation are performed.
-#[derive(Debug, Spanned)]
+#[derive(Debug, Spanned, PartialEq, Eq)]
 pub struct Mir {
     /// The name of the [air_parser::ast::Program] from which this MIR was derived
     #[span]

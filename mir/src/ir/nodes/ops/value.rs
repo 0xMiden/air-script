@@ -1,7 +1,7 @@
 use air_parser::ast::{self, Identifier, QualifiedIdentifier, TraceColumnIndex, TraceSegmentId};
 use miden_diagnostics::{SourceSpan, Spanned};
 
-use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner};
+use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner, Singleton};
 
 /// A MIR operation to represent a known value, [Value]
 /// Wraps a [SpannedMirValue] to represent a known value in the [MIR]
@@ -11,7 +11,7 @@ pub struct Value {
     pub parents: Vec<BackLink<Owner>>,
     #[span]
     pub value: SpannedMirValue,
-    pub _node: Option<Link<Node>>,
+    pub _node: Singleton<Node>,
 }
 
 impl Value {
@@ -21,6 +21,18 @@ impl Value {
             ..Default::default()
         })
         .into()
+    }
+}
+
+impl From<i64> for Value {
+    fn from(value: i64) -> Self {
+        Self {
+            value: SpannedMirValue {
+                value: MirValue::Constant(ConstantValue::Felt(value as u64)),
+                span: Default::default(),
+            },
+            ..Default::default()
+        }
     }
 }
 

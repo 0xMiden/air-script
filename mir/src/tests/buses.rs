@@ -1,3 +1,13 @@
+use crate::{
+    ir::{
+        assert_bus_eq, Add, Builder, Bus, BusOp, BusOpKind, Fold, FoldOperator, Link, Mir, Op,
+        Vector,
+    },
+    tests::translate,
+};
+use air_parser::ast;
+use miden_diagnostics::SourceSpan;
+
 use super::{compile, expect_diagnostic};
 
 #[test]
@@ -61,6 +71,88 @@ fn buses_in_integrity_constraints() {
     }";
 
     assert!(compile(source).is_ok());
+}
+
+#[test]
+fn buses_args_expr_in_integrity_expr() {
+    let source = "
+    def test
+
+    trace_columns {
+        main: [a],
+    }
+
+    public_inputs {
+        inputs: [2],
+    }
+
+    buses {
+        unit p,
+    }
+
+    boundary_constraints {
+        enf p.first = null;
+    }
+
+    integrity_constraints {
+        let vec = [x for x in 0..3];
+        let b = 41;
+        let x = sum(vec) + b;
+        p.add(x) when 1;
+        p.rem(x) when 0;
+    }";
+    assert!(compile(source).is_ok());
+    let mut result_mir = translate(source).unwrap();
+    let bus = Bus::create(ast::BusType::Unit, SourceSpan::default());
+    let vec_op = Vector::builder()
+        .size(3)
+        .elements(From::from(0))
+        .elements(From::from(1))
+        .elements(From::from(2))
+        .span(SourceSpan::default())
+        .build();
+    let b: Link<Op> = From::from(41);
+    let vec_sum = Fold::builder()
+        .iterator(vec_op)
+        .operator(FoldOperator::Add)
+        .initial_value(From::from(0))
+        .span(SourceSpan::default())
+        .build();
+    let x: Link<Op> = Add::builder()
+        .lhs(vec_sum)
+        .rhs(b.clone())
+        .span(SourceSpan::default())
+        .build();
+    let p_add: Link<Op> = BusOp::builder()
+        .bus(bus.clone())
+        .kind(BusOpKind::Add)
+        .args(x.clone())
+        .span(SourceSpan::default())
+        .build();
+    let sel: Link<Op> = From::from(1);
+    let p_add_ref = p_add.as_bus_op_mut().unwrap();
+    p_add_ref._latch.update(&sel);
+    drop(p_add_ref);
+    bus.borrow_mut().columns.push(p_add.clone());
+    bus.borrow_mut().latches.push(sel.clone());
+    let p_rem: Link<Op> = BusOp::builder()
+        .bus(bus.clone())
+        .kind(BusOpKind::Rem)
+        .args(x.clone())
+        .span(SourceSpan::default())
+        .build();
+    let sel: Link<Op> = From::from(0);
+    let p_rem_ref = p_rem.as_bus_op_mut().unwrap();
+    p_rem_ref._latch.update(&sel);
+    drop(p_rem_ref);
+    bus.borrow_mut().columns.push(p_rem.clone());
+    bus.borrow_mut().latches.push(sel.clone());
+    let bus_ident = result_mir.constraint_graph().buses.keys().next().unwrap();
+    let mut expected_mir = Mir::new(result_mir.name);
+    let _ = expected_mir
+        .constraint_graph_mut()
+        .insert_bus(*bus_ident, bus.clone().clone());
+    assert_bus_eq(&mut expected_mir, &mut result_mir);
 }
 
 // Tests that should return errors

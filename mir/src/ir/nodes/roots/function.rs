@@ -1,4 +1,4 @@
-use crate::ir::{Builder, Link, Node, Op, Owner, Parent, Root};
+use crate::ir::{Builder, Link, Node, Op, Owner, Parent, Root, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 /// A MIR Root to represent a Function definition
@@ -11,10 +11,10 @@ pub struct Function {
     pub return_type: Link<Op>,
     // Operations contained in the function
     pub body: Link<Vec<Link<Op>>>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl Function {

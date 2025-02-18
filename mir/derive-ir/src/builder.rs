@@ -623,6 +623,7 @@ mod tests {
                 cs: Vec<Link<Op>>,
                 d: Link<Op>,
                 count: i32,
+                _singleton: Singleton,
                 _hidden: i32,
             }
         };
@@ -923,6 +924,7 @@ mod tests {
                             cs: self.cs.clone(),
                             d: self.d.clone().unwrap(),
                             count: self.count.clone().unwrap(),
+                            _singleton: Default::default(),
                             _hidden: Default::default()
                         }
                     ).into()

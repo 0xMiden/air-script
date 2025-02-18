@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 /// A MIR operation to represent the addition of two MIR ops, `lhs` and `rhs`
@@ -9,10 +9,10 @@ pub struct Add {
     pub parents: Vec<BackLink<Owner>>,
     pub lhs: Link<Op>,
     pub rhs: Link<Op>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl Add {

@@ -7,6 +7,7 @@ pub use bus_op_expand::BusOpExpand;
 pub use inlining::Inlining;
 pub use translate::AstToMir;
 pub use unrolling::Unrolling;
+pub use visitor::Visitor;
 // Note: ConstantPropagation and ValueNumbering are not implemented yet in the MIR
 //mod constant_propagation;
 //mod value_numbering;

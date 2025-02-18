@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 use std::hash::Hash;
 
@@ -9,23 +9,32 @@ pub enum BusOpKind {
     Rem,
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Spanned, Builder)]
+#[derive(Default, Clone, PartialEq, Eq, Debug, Spanned, Builder)]
 #[enum_wrapper(Op)]
 pub struct BusOp {
     pub parents: Vec<BackLink<Owner>>,
-    pub bus: Link<Bus>,
+    pub bus: BackLink<Bus>,
     pub kind: BusOpKind,
     pub args: Vec<Link<Op>>,
     pub _latch: Link<Op>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
+}
+
+impl Hash for BusOp {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.bus.hash(state);
+        self.kind.hash(state);
+        self.args.hash(state);
+        self._latch.hash(state);
+    }
 }
 
 impl BusOp {
     pub fn create(
-        bus: Link<Bus>,
+        bus: BackLink<Bus>,
         kind: BusOpKind,
         args: Vec<Link<Op>>,
         span: SourceSpan,
@@ -44,7 +53,9 @@ impl BusOp {
 impl Parent for BusOp {
     type Child = Op;
     fn children(&self) -> Link<Vec<Link<Self::Child>>> {
-        Link::new(self.args.clone())
+        let mut children = self.args.clone();
+        children.push(self._latch.clone());
+        children.into()
     }
 }
 

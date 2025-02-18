@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 /// A MIR operation to represent conditional constraints
@@ -15,10 +15,10 @@ pub struct If {
     pub condition: Link<Op>,
     pub then_branch: Link<Op>,
     pub else_branch: Link<Op>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl If {

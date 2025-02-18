@@ -197,3 +197,55 @@ where
         }
     }
 }
+
+/// A wrapper around a [Link<T>] to block recursive implementations of [PartialEq] and [Hash].
+#[derive(Clone)]
+pub struct Singleton<T>(pub Option<Link<T>>);
+
+impl<T> Singleton<T> {
+    pub fn new(value: Link<T>) -> Self {
+        Self(Some(value))
+    }
+    pub fn none() -> Self {
+        Self(None)
+    }
+    pub fn to_link(&self) -> Option<Link<T>> {
+        self.0.clone()
+    }
+}
+
+impl<T: Debug> Debug for Singleton<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl<T: PartialEq> PartialEq for Singleton<T> {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl<T: Eq> Eq for Singleton<T> {}
+
+impl<T: Hash> Hash for Singleton<T> {
+    fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {}
+}
+
+impl<T> Default for Singleton<T> {
+    fn default() -> Self {
+        Self::none()
+    }
+}
+
+impl<T> From<T> for Singleton<T> {
+    fn from(value: T) -> Self {
+        Self::from(Link::from(value))
+    }
+}
+
+impl<T> From<Link<T>> for Singleton<T> {
+    fn from(value: Link<T>) -> Self {
+        Self(Some(value))
+    }
+}

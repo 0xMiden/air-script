@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 /// A MIR operation to represent folding a given Vector operator according to a given operator and initial value
@@ -15,10 +15,10 @@ pub struct Fold {
     pub iterator: Link<Op>,
     pub operator: FoldOperator,
     pub initial_value: Link<Op>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash)]

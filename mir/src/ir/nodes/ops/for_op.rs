@@ -1,6 +1,6 @@
 use miden_diagnostics::{SourceSpan, Spanned};
 
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 
 /// A MIR operation to represent list comprehensions.
 ///
@@ -17,10 +17,10 @@ pub struct For {
     pub iterators: Link<Vec<Link<Op>>>,
     pub expr: Link<Op>,
     pub selector: Link<Op>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl For {

@@ -1,7 +1,6 @@
-use crate::ir::{BackLink, Child, Op};
+use crate::ir::{BackLink, Child, Link, Op, Owner, Parent, Root};
 use miden_diagnostics::{SourceSpan, Spanned};
 
-use super::{Link, Owner, Parent, Root};
 use std::ops::Deref;
 
 /// All the nodes that can be in the MIR Graph
@@ -74,6 +73,7 @@ impl PartialEq for Node {
 impl std::hash::Hash for Node {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         // We first convert the [BackLink] to an [Option<Link>] and hash those
+        eprintln!("hashing node: {:#?}", self);
         match self {
             Node::Function(f) => f.to_link().hash(state),
             Node::Evaluator(e) => e.to_link().hash(state),

@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use air_parser::ast::Boundary as BoundaryKind;
 use miden_diagnostics::{SourceSpan, Spanned};
 use std::hash::Hash;
@@ -7,29 +7,16 @@ use std::hash::Hash;
 ///
 /// Note: Boundary ops are only valid to describe boundary constraints, not integrity constraints
 ///
-#[derive(Clone, PartialEq, Eq, Debug, Builder, Spanned)]
+#[derive(Clone, PartialEq, Default, Eq, Debug, Builder, Spanned)]
 #[enum_wrapper(Op)]
 pub struct Boundary {
     pub parents: Vec<BackLink<Owner>>,
     pub kind: BoundaryKind,
     pub expr: Link<Op>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
-}
-
-impl Default for Boundary {
-    fn default() -> Self {
-        Self {
-            parents: Vec::default(),
-            kind: BoundaryKind::First,
-            expr: Link::default(),
-            _node: None,
-            _owner: None,
-            span: SourceSpan::default(),
-        }
-    }
+    pub span: SourceSpan,
 }
 
 impl Hash for Boundary {

@@ -52,7 +52,7 @@ use crate::ir::{Link, Op};
 /// with:
 ///     a, b, c, e, f, g being [Link<Op>] in the graph
 ///     d, s being [Link<Op>], s is boolean, d is a number.
-#[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Spanned)]
+#[derive(Default, Clone, PartialEq, Eq, Debug, Spanned)]
 pub struct Bus {
     /// Type of bus
     pub bus_type: ast::BusType,
@@ -63,6 +63,14 @@ pub struct Bus {
     pub latches: Vec<Link<Op>>,
     #[span]
     span: SourceSpan,
+}
+
+impl std::hash::Hash for Bus {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.bus_type.hash(state);
+        self.columns.hash(state);
+        self.latches.hash(state);
+    }
 }
 
 impl Bus {

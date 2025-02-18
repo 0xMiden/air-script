@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 /// A MIR operation to represent a vector of MIR ops of a given size
@@ -9,10 +9,10 @@ pub struct Vector {
     pub parents: Vec<BackLink<Owner>>,
     pub size: usize,
     pub elements: Link<Vec<Link<Op>>>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl Vector {

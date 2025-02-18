@@ -7,6 +7,7 @@ use miden_diagnostics::{SourceSpan, Spanned};
 
 use crate::ir::{
     get_inner, get_inner_mut, BackLink, Evaluator, Function, Link, Node, Op, Owner, Parent,
+    Singleton,
 };
 
 /// The root nodes of the MIR Graph
@@ -58,19 +59,21 @@ impl Link<Root> {
         let back: BackLink<Root> = self.clone().into();
         match self.borrow_mut().deref_mut() {
             Root::Function(Function {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Root::Function(ref mut f) => {
                 let node: Link<Node> = Node::Function(back).into();
-                f._node = Some(node.clone());
+                f._node = Singleton::from(node.clone());
                 node
             }
             Root::Evaluator(Evaluator {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Root::Evaluator(ref mut e) => {
                 let node: Link<Node> = Node::Evaluator(back).into();
-                e._node = Some(node.clone());
+                e._node = Singleton::from(node.clone());
                 node
             }
             Root::None(span) => Node::None(*span).into(),
@@ -82,19 +85,21 @@ impl Link<Root> {
         let back: BackLink<Root> = self.clone().into();
         match self.borrow_mut().deref_mut() {
             Root::Function(Function {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Root::Function(ref mut f) => {
                 let owner: Link<Owner> = Owner::Function(back).into();
-                f._owner = Some(owner.clone());
+                f._owner = Singleton::from(owner.clone());
                 owner
             }
             Root::Evaluator(Evaluator {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Root::Evaluator(ref mut e) => {
                 let owner: Link<Owner> = Owner::Evaluator(back).into();
-                e._owner = Some(owner.clone());
+                e._owner = Singleton::from(owner.clone());
                 owner
             }
             Root::None(span) => Owner::None(*span).into(),

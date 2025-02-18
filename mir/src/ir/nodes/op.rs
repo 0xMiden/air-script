@@ -1,6 +1,7 @@
 use crate::ir::{
-    get_inner, get_inner_mut, Accessor, Add, BackLink, Boundary, BusOp, Call, Child, Enf, Exp,
-    Fold, For, If, Link, Matrix, Mul, Node, Owner, Parameter, Parent, Sub, Value, Vector,
+    get_inner, get_inner_mut, Accessor, Add, BackLink, Boundary, BusOp, Call, Child, ConstantValue,
+    Enf, Exp, Fold, For, If, Link, Matrix, MirValue, Mul, Node, Owner, Parameter, Parent,
+    Singleton, SpannedMirValue, Sub, Value, Vector,
 };
 use miden_diagnostics::{SourceSpan, Spanned};
 
@@ -180,52 +181,52 @@ impl Link<Op> {
     fn update_inner_node(&self, node: &Link<Node>) {
         match self.clone().borrow_mut().deref_mut() {
             Op::Enf(ref mut enf) => {
-                enf._node = Some(node.clone());
+                enf._node = Singleton::from(node.clone());
             }
             Op::Boundary(ref mut boundary) => {
-                boundary._node = Some(node.clone());
+                boundary._node = Singleton::from(node.clone());
             }
             Op::Add(ref mut add) => {
-                add._node = Some(node.clone());
+                add._node = Singleton::from(node.clone());
             }
             Op::Sub(ref mut sub) => {
-                sub._node = Some(node.clone());
+                sub._node = Singleton::from(node.clone());
             }
             Op::Mul(ref mut mul) => {
-                mul._node = Some(node.clone());
+                mul._node = Singleton::from(node.clone());
             }
             Op::Exp(ref mut exp) => {
-                exp._node = Some(node.clone());
+                exp._node = Singleton::from(node.clone());
             }
             Op::If(ref mut if_op) => {
-                if_op._node = Some(node.clone());
+                if_op._node = Singleton::from(node.clone());
             }
             Op::For(ref mut for_op) => {
-                for_op._node = Some(node.clone());
+                for_op._node = Singleton::from(node.clone());
             }
             Op::Call(ref mut call) => {
-                call._node = Some(node.clone());
+                call._node = Singleton::from(node.clone());
             }
             Op::Fold(ref mut fold) => {
-                fold._node = Some(node.clone());
+                fold._node = Singleton::from(node.clone());
             }
             Op::Vector(ref mut vector) => {
-                vector._node = Some(node.clone());
+                vector._node = Singleton::from(node.clone());
             }
             Op::Matrix(ref mut matrix) => {
-                matrix._node = Some(node.clone());
+                matrix._node = Singleton::from(node.clone());
             }
             Op::Accessor(ref mut accessor) => {
-                accessor._node = Some(node.clone());
+                accessor._node = Singleton::from(node.clone());
             }
             Op::BusOp(ref mut bus_op) => {
-                bus_op._node = Some(node.clone());
+                bus_op._node = Singleton::from(node.clone());
             }
             Op::Parameter(ref mut parameter) => {
-                parameter._node = Some(node.clone());
+                parameter._node = Singleton::from(node.clone());
             }
             Op::Value(ref mut value) => {
-                value._node = Some(node.clone());
+                value._node = Singleton::from(node.clone());
             }
             Op::None(_) => {}
         }
@@ -234,46 +235,46 @@ impl Link<Op> {
     fn update_inner_owner(&self, owner: &Link<Owner>) {
         match self.clone().borrow_mut().deref_mut() {
             Op::Enf(ref mut enf) => {
-                enf._owner = Some(owner.clone());
+                enf._owner = Singleton::from(owner.clone());
             }
             Op::Boundary(ref mut boundary) => {
-                boundary._owner = Some(owner.clone());
+                boundary._owner = Singleton::from(owner.clone());
             }
             Op::Add(ref mut add) => {
-                add._owner = Some(owner.clone());
+                add._owner = Singleton::from(owner.clone());
             }
             Op::Sub(ref mut sub) => {
-                sub._owner = Some(owner.clone());
+                sub._owner = Singleton::from(owner.clone());
             }
             Op::Mul(ref mut mul) => {
-                mul._owner = Some(owner.clone());
+                mul._owner = Singleton::from(owner.clone());
             }
             Op::Exp(ref mut exp) => {
-                exp._owner = Some(owner.clone());
+                exp._owner = Singleton::from(owner.clone());
             }
             Op::If(ref mut if_op) => {
-                if_op._owner = Some(owner.clone());
+                if_op._owner = Singleton::from(owner.clone());
             }
             Op::For(ref mut for_op) => {
-                for_op._owner = Some(owner.clone());
+                for_op._owner = Singleton::from(owner.clone());
             }
             Op::Call(ref mut call) => {
-                call._owner = Some(owner.clone());
+                call._owner = Singleton::from(owner.clone());
             }
             Op::Fold(ref mut fold) => {
-                fold._owner = Some(owner.clone());
+                fold._owner = Singleton::from(owner.clone());
             }
             Op::Vector(ref mut vector) => {
-                vector._owner = Some(owner.clone());
+                vector._owner = Singleton::from(owner.clone());
             }
             Op::Matrix(ref mut matrix) => {
-                matrix._owner = Some(owner.clone());
+                matrix._owner = Singleton::from(owner.clone());
             }
             Op::Accessor(ref mut accessor) => {
-                accessor._owner = Some(owner.clone());
+                accessor._owner = Singleton::from(owner.clone());
             }
             Op::BusOp(ref mut bus_op) => {
-                bus_op._owner = Some(owner.clone());
+                bus_op._owner = Singleton::from(owner.clone());
             }
             Op::Parameter(ref mut _parameter) => {}
             Op::Value(ref mut _value) => {}
@@ -287,131 +288,147 @@ impl Link<Op> {
         let back: BackLink<Op> = self.clone().into();
         match self.clone().borrow_mut().deref_mut() {
             Op::Enf(Enf {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Enf(ref mut enf) => {
                 let node: Link<Node> = Node::Enf(back).into();
-                enf._node = Some(node.clone());
+                enf._node = Singleton::from(node.clone());
                 node
             }
             Op::Boundary(Boundary {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Boundary(ref mut boundary) => {
                 let node: Link<Node> = Node::Boundary(back).into();
-                boundary._node = Some(node.clone());
+                boundary._node = Singleton::from(node.clone());
                 node
             }
             Op::Add(Add {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Add(ref mut add) => {
                 let node: Link<Node> = Node::Add(back).into();
-                add._node = Some(node.clone());
+                add._node = Singleton::from(node.clone());
                 node
             }
             Op::Sub(Sub {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Sub(ref mut sub) => {
                 let node: Link<Node> = Node::Sub(back).into();
-                sub._node = Some(node.clone());
+                sub._node = Singleton::from(node.clone());
                 node
             }
             Op::Mul(Mul {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Mul(ref mut mul) => {
                 let node: Link<Node> = Node::Mul(back).into();
-                mul._node = Some(node.clone());
+                mul._node = Singleton::from(node.clone());
                 node
             }
             Op::Exp(Exp {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Exp(ref mut exp) => {
                 let node: Link<Node> = Node::Exp(back).into();
-                exp._node = Some(node.clone());
+                exp._node = Singleton::from(node.clone());
                 node
             }
             Op::If(If {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::If(ref mut if_op) => {
                 let node: Link<Node> = Node::If(back).into();
-                if_op._node = Some(node.clone());
+                if_op._node = Singleton::from(node.clone());
                 node
             }
             Op::For(For {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::For(ref mut for_op) => {
                 let node: Link<Node> = Node::For(back).into();
-                for_op._node = Some(node.clone());
+                for_op._node = Singleton::from(node.clone());
                 node
             }
             Op::Call(Call {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Call(ref mut call) => {
                 let node: Link<Node> = Node::Call(back).into();
-                call._node = Some(node.clone());
+                call._node = Singleton::from(node.clone());
                 node
             }
             Op::Fold(Fold {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Fold(ref mut fold) => {
                 let node: Link<Node> = Node::Fold(back).into();
-                fold._node = Some(node.clone());
+                fold._node = Singleton::from(node.clone());
                 node
             }
             Op::Vector(Vector {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Vector(ref mut vector) => {
                 let node: Link<Node> = Node::Vector(back).into();
-                vector._node = Some(node.clone());
+                vector._node = Singleton::from(node.clone());
                 node
             }
             Op::Matrix(Matrix {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Matrix(ref mut matrix) => {
                 let node: Link<Node> = Node::Matrix(back).into();
-                matrix._node = Some(node.clone());
+                matrix._node = Singleton::from(node.clone());
                 node
             }
             Op::Accessor(Accessor {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Accessor(ref mut accessor) => {
                 let node: Link<Node> = Node::Accessor(back).into();
-                accessor._node = Some(node.clone());
+                accessor._node = Singleton::from(node.clone());
                 node
             }
             Op::BusOp(BusOp {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::BusOp(ref mut bus_op) => {
                 let node: Link<Node> = Node::BusOp(back).into();
-                bus_op._node = Some(node.clone());
+                bus_op._node = Singleton::from(node.clone());
                 node
             }
             Op::Parameter(Parameter {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Parameter(ref mut parameter) => {
                 let node: Link<Node> = Node::Parameter(back).into();
-                parameter._node = Some(node.clone());
+                parameter._node = Singleton::from(node.clone());
                 node
             }
             Op::Value(Value {
-                _node: Some(link), ..
+                _node: Singleton(Some(link)),
+                ..
             }) => link.clone(),
             Op::Value(ref mut value) => {
                 let node: Link<Node> = Node::Value(back).into();
-                value._node = Some(node.clone());
+                value._node = Singleton::from(node.clone());
                 node
             }
             Op::None(span) => Node::None(*span).into(),
@@ -423,116 +440,130 @@ impl Link<Op> {
         let back: BackLink<Op> = self.clone().into();
         match self.clone().borrow_mut().deref_mut() {
             Op::Enf(Enf {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Enf(ref mut enf) => {
                 let owner: Link<Owner> = Owner::Enf(back).into();
-                enf._owner = Some(owner.clone());
-                enf._owner.clone()
+                enf._owner = Singleton::from(owner.clone());
+                enf._owner.0.clone()
             }
             Op::Boundary(Boundary {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Boundary(ref mut boundary) => {
                 let owner: Link<Owner> = Owner::Boundary(back).into();
-                boundary._owner = Some(owner.clone());
-                boundary._owner.clone()
+                boundary._owner = Singleton::from(owner.clone());
+                boundary._owner.0.clone()
             }
             Op::Add(Add {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Add(ref mut add) => {
                 let owner: Link<Owner> = Owner::Add(back).into();
-                add._owner = Some(owner.clone());
-                add._owner.clone()
+                add._owner = Singleton::from(owner.clone());
+                add._owner.0.clone()
             }
             Op::Sub(Sub {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Sub(ref mut sub) => {
                 let owner: Link<Owner> = Owner::Sub(back).into();
-                sub._owner = Some(owner.clone());
-                sub._owner.clone()
+                sub._owner = Singleton::from(owner.clone());
+                sub._owner.0.clone()
             }
             Op::Mul(Mul {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Mul(ref mut mul) => {
                 let owner: Link<Owner> = Owner::Mul(back).into();
-                mul._owner = Some(owner.clone());
-                mul._owner.clone()
+                mul._owner = Singleton::from(owner.clone());
+                mul._owner.0.clone()
             }
             Op::Exp(Exp {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Exp(ref mut exp) => {
                 let owner: Link<Owner> = Owner::Exp(back).into();
-                exp._owner = Some(owner.clone());
-                exp._owner.clone()
+                exp._owner = Singleton::from(owner.clone());
+                exp._owner.0.clone()
             }
             Op::If(If {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::If(ref mut if_op) => {
                 let owner: Link<Owner> = Owner::If(back).into();
-                if_op._owner = Some(owner.clone());
-                if_op._owner.clone()
+                if_op._owner = Singleton::from(owner.clone());
+                if_op._owner.0.clone()
             }
             Op::For(For {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::For(ref mut for_op) => {
                 let owner: Link<Owner> = Owner::For(back).into();
-                for_op._owner = Some(owner.clone());
-                for_op._owner.clone()
+                for_op._owner = Singleton::from(owner.clone());
+                for_op._owner.0.clone()
             }
             Op::Call(Call {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Call(ref mut call) => {
                 let owner: Link<Owner> = Owner::Call(back).into();
-                call._owner = Some(owner.clone());
-                call._owner.clone()
+                call._owner = Singleton::from(owner.clone());
+                call._owner.0.clone()
             }
             Op::Fold(Fold {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Fold(ref mut fold) => {
                 let owner: Link<Owner> = Owner::Fold(back).into();
-                fold._owner = Some(owner.clone());
-                fold._owner.clone()
+                fold._owner = Singleton::from(owner.clone());
+                fold._owner.0.clone()
             }
             Op::Vector(Vector {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Vector(ref mut vector) => {
                 let owner: Link<Owner> = Owner::Vector(back).into();
-                vector._owner = Some(owner.clone());
-                vector._owner.clone()
+                vector._owner = Singleton::from(owner.clone());
+                vector._owner.0.clone()
             }
             Op::Matrix(Matrix {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Matrix(ref mut matrix) => {
                 let owner: Link<Owner> = Owner::Matrix(back).into();
-                matrix._owner = Some(owner.clone());
-                matrix._owner.clone()
+                matrix._owner = Singleton::from(owner.clone());
+                matrix._owner.0.clone()
             }
             Op::Accessor(Accessor {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::Accessor(ref mut accessor) => {
                 let owner: Link<Owner> = Owner::Accessor(back).into();
-                accessor._owner = Some(owner.clone());
-                accessor._owner.clone()
+                accessor._owner = Singleton::from(owner.clone());
+                accessor._owner.0.clone()
             }
             Op::BusOp(BusOp {
-                _owner: Some(link), ..
+                _owner: Singleton(Some(link)),
+                ..
             }) => Some(link.clone()),
             Op::BusOp(ref mut bus_op) => {
                 let owner: Link<Owner> = Owner::BusOp(back).into();
-                bus_op._owner = Some(owner.clone());
-                bus_op._owner.clone()
+                bus_op._owner = Singleton::from(owner.clone());
+                bus_op._owner.0.clone()
             }
             Op::Parameter(_) => None,
             Op::Value(_) => None,
@@ -794,5 +825,18 @@ impl Link<Op> {
             Op::Value(inner) => Some(inner),
             _ => None,
         })
+    }
+}
+
+impl From<i64> for Link<Op> {
+    fn from(value: i64) -> Self {
+        Op::Value(Value {
+            value: SpannedMirValue {
+                value: MirValue::Constant(ConstantValue::Felt(value as u64)),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .into()
     }
 }

@@ -139,9 +139,7 @@ impl<'a> MirBuilder<'a> {
         for trace_segment in &ast_eval.params {
             let mut all_params_flatten_for_trace_segment = Vec::new();
 
-            //        println!("trace_segment: {:#?}", trace_segment);
             for binding in &trace_segment.bindings {
-                //            println!("binding: {:#?}", binding);
                 let span = binding.name.map_or(SourceSpan::UNKNOWN, |n| n.span());
                 let params =
                     self.translate_params_ev(span, binding.name.as_ref(), &binding.ty, &mut i)?;
@@ -353,9 +351,6 @@ impl<'a> MirBuilder<'a> {
         let func = func;
         for stmt in body {
             let op = self.translate_statement(stmt)?;
-            //println!("statement: {:#?}", stmt);
-            //println!("op: {:#?}", op);
-            //println!();
             match func.clone().borrow().deref() {
                 Root::Function(f) => f.body.borrow_mut().push(op.clone()),
                 Root::Evaluator(e) => e.body.borrow_mut().push(op.clone()),
@@ -512,8 +507,6 @@ impl<'a> MirBuilder<'a> {
                     _ => unimplemented!(),
                 };
                 if *start != 0 || *end != 1 {
-                    eprintln!("start: {:#?}", start);
-                    eprintln!("end: {:#?}", end);
                     self.diagnostics
                         .diagnostic(Severity::Error)
                         .with_message("Bus comprehensions can only target a single latch")
@@ -541,8 +534,9 @@ impl<'a> MirBuilder<'a> {
             .borrow_mut()
             .clone_from(&sel.borrow());
         let bus_op_clone = bus_op.clone();
-        let bus_ref = bus_op_clone.as_bus_op_mut().unwrap();
-        let mut bus = bus_ref.bus.borrow_mut();
+        let bus_op_ref = bus_op_clone.as_bus_op_mut().unwrap();
+        let bus_link = bus_op_ref.bus.to_link().unwrap();
+        let mut bus = bus_link.borrow_mut();
         bus.latches.push(sel.clone());
         bus.columns.push(bus_op.clone());
         Ok(bus_op)
@@ -722,8 +716,6 @@ impl<'a> MirBuilder<'a> {
     }
 
     fn translate_call(&mut self, call: &'a ast::Call) -> Result<Link<Op>, CompileError> {
-        //println!("CALL ARGS: {:#?}", call);
-
         // First, resolve the callee, panic if it's not resolved
         let resolved_callee = call.callee.resolved().unwrap();
 
@@ -984,7 +976,26 @@ impl<'a> MirBuilder<'a> {
             .bus(bus)
             .kind(bus_op_kind);
         for arg in ast_bus_op.args.iter() {
-            let arg_node = self.translate_expr(arg)?;
+            let mut arg_node = self.translate_expr(arg)?;
+            let accessor_mut = arg_node.clone();
+            if let Some(accessor) = accessor_mut.as_accessor_mut() {
+                match accessor.access_type {
+                    AccessType::Default => {
+                        arg_node = accessor.indexable.clone();
+                    }
+                    _ => {
+                        self.diagnostics
+                            .diagnostic(Severity::Error)
+                            .with_message("expected default access type")
+                            .with_primary_label(
+                                arg.span(),
+                                "expected default access type, got this instead",
+                            )
+                            .emit();
+                        return Err(CompileError::Failed);
+                    }
+                }
+            }
             bus_op = bus_op.args(arg_node);
         }
         let bus_op = bus_op.build();

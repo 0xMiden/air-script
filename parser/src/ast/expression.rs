@@ -22,7 +22,7 @@ pub type Range = std::ops::Range<usize>;
 
 /// Represents any type of identifier in AirScript
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Spanned)]
-pub struct Identifier(Span<Symbol>);
+pub struct Identifier(pub Span<Symbol>);
 impl Identifier {
     pub fn new(span: SourceSpan, name: Symbol) -> Self {
         Self(Span::new(span, name))
@@ -848,9 +848,10 @@ impl fmt::Display for Boundary {
 }
 
 /// Represents the way an identifier is accessed/referenced in the source.
-#[derive(Hash, Debug, Clone, Eq, PartialEq)]
+#[derive(Hash, Debug, Clone, Eq, PartialEq, Default)]
 pub enum AccessType {
     /// Access refers to the entire bound value
+    #[default]
     Default,
     /// Access binds a sub-slice of a vector
     Slice(RangeExpr),

@@ -333,7 +333,6 @@ impl Visitor for InliningSecondPass<'_> {
                         .unwrap()
                         .clone();
                     updated_op = Some(new_node);
-                    //println!("Updating call node of function: {:?}", updated_op);
                 } else {
                     // We have finished inlining the body, we can now replace the Call node with all the body
                     let mut new_nodes = Vec::new();
@@ -359,7 +358,6 @@ impl Visitor for InliningSecondPass<'_> {
                     let new_nodes_vector = Vector::create(new_nodes, span);
 
                     updated_op = Some(new_nodes_vector);
-                    //println!("Updating call node of evaluator: {:?}", updated_op);
                 }
 
                 // Reset context to None
