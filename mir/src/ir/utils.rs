@@ -3,7 +3,7 @@ use std::{
     hash::{DefaultHasher, Hash, Hasher},
 };
 
-use air_parser::ast::{Identifier, NamespacedIdentifier, QualifiedIdentifier};
+use air_parser::ast::{Identifier, NamespacedIdentifier};
 use miden_diagnostics::{SourceSpan, Span};
 use pretty_assertions::assert_eq;
 
