@@ -1,8 +1,13 @@
+use std::ops::Deref;
+
 use air_parser::ast;
 
 use miden_diagnostics::{SourceSpan, Spanned};
 
-use crate::ir::{Link, Op};
+use crate::{
+    ir::{Link, Op},
+    CompileError,
+};
 
 /// A Mir struct to represent a Bus definition
 /// we have 2 cases:
@@ -61,6 +66,8 @@ pub struct Bus {
     pub columns: Vec<Link<Op>>,
     /// selectors denoting when a value is present
     pub latches: Vec<Link<Op>>,
+    first: Link<Op>,
+    last: Link<Op>,
     #[span]
     span: SourceSpan,
 }
@@ -81,5 +88,29 @@ impl Bus {
             ..Default::default()
         }
         .into()
+    }
+
+    pub fn set_first(&mut self, first: Link<Op>) -> Result<(), CompileError> {
+        let Op::None(_) = self.first.borrow().deref() else {
+            return Err(CompileError::Failed);
+        };
+        self.first = first;
+        Ok(())
+    }
+
+    pub fn set_last(&mut self, last: Link<Op>) -> Result<(), CompileError> {
+        let Op::None(_) = self.last.borrow().deref() else {
+            return Err(CompileError::Failed);
+        };
+        self.last = last;
+        Ok(())
+    }
+
+    pub fn get_first(&self) -> Link<Op> {
+        self.first.clone()
+    }
+
+    pub fn get_last(&self) -> Link<Op> {
+        self.last.clone()
     }
 }

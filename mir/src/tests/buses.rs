@@ -31,7 +31,7 @@ fn buses_in_boundary_constraints() {
     boundary_constraints {
         enf p.first = null;
         enf p.last = inputs;
-        enf q.last = null;
+        enf q.first = null;
         enf q.last = inputs;
     }
 

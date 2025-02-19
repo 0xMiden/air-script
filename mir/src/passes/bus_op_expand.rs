@@ -31,6 +31,11 @@ impl Pass for BusOpExpand<'_> {
             let bus_type = bus.borrow().bus_type.clone();
             let columns = bus.borrow().columns.clone(); // columns are the bus_operations (add or remove of a Vec of arguments)
             let latches = bus.borrow().latches.clone(); // latches are the selectors
+            let first = bus.borrow().get_first().clone();
+            let last = bus.borrow().get_last().clone();
+
+            println!("first: {:?}", &first);
+            println!("last: {:?}", &last);
 
             let bus_access = Value::create(SpannedMirValue {
                 span: bus.borrow().span(),

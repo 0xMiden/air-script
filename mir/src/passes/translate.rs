@@ -692,6 +692,48 @@ impl<'a> MirBuilder<'a> {
     ) -> Result<Link<Op>, CompileError> {
         let lhs = self.translate_scalar_expr(&bin_op.lhs)?;
         let rhs = self.translate_scalar_expr(&bin_op.rhs)?;
+
+        // Check if bin_op is a bus constraint, if so, add it to the Link<Bus>
+        if let (Op::Boundary(lhs_boundary), true) = (lhs.borrow().deref(), self.in_boundary) {
+            let lhs_child = lhs_boundary.expr.clone();
+            let kind = lhs_boundary.kind;
+
+            let lhs_child_as_value_ref = lhs_child.as_value();
+            if let Some(val_ref) = lhs_child_as_value_ref {
+                let SpannedMirValue { span: _span, value } = val_ref.value.clone();
+                if let MirValue::BusAccess(bus) = value {
+                    match kind {
+                        ast::Boundary::First => {
+                            bus.borrow_mut().set_first(rhs.clone()).map_err(|_| {
+                                self.diagnostics
+                                    .diagnostic(Severity::Error)
+                                    .with_message("bus boundary constraint already set")
+                                    .with_primary_label(
+                                        bin_op.span(),
+                                        "bus boundary constraint already set",
+                                    )
+                                    .emit();
+                                CompileError::Failed
+                            })?;
+                        }
+                        ast::Boundary::Last => {
+                            bus.borrow_mut().set_last(rhs.clone()).map_err(|_| {
+                                self.diagnostics
+                                    .diagnostic(Severity::Error)
+                                    .with_message("bus boundary constraint already set")
+                                    .with_primary_label(
+                                        bin_op.span(),
+                                        "bus boundary constraint already set",
+                                    )
+                                    .emit();
+                                CompileError::Failed
+                            })?;
+                        }
+                    }
+                }
+            }
+        }
+
         match bin_op.op {
             ast::BinaryOp::Add => {
                 let node = Add::builder().lhs(lhs).rhs(rhs).span(bin_op.span()).build();
