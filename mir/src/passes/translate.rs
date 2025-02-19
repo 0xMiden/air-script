@@ -6,6 +6,7 @@ use air_parser::{ast, symbols, LexicalScope};
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 
+use crate::ir::PublicInputBinding;
 use crate::{
     ir::{
         Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, Call, ConstantValue, Enf,
@@ -1125,29 +1126,49 @@ impl<'a> MirBuilder<'a> {
                 .build());
         }
 
-        if let Some(public_input) = self.public_input_access(access) {
-            return Ok(Value::builder()
-                .value(SpannedMirValue {
-                    span: access.span(),
-                    value: MirValue::PublicInput(public_input),
-                })
-                .build());
+        match self.public_input_access(access) {
+            (Some(public_input), None) => {
+                return Ok(Value::builder()
+                    .value(SpannedMirValue {
+                        span: access.span(),
+                        value: MirValue::PublicInput(public_input),
+                    })
+                    .build());
+            }
+            (None, Some(public_input_binding)) => {
+                return Ok(Value::builder()
+                    .value(SpannedMirValue {
+                        span: access.span(),
+                        value: MirValue::PublicInputBinding(public_input_binding),
+                    })
+                    .build());
+            }
+            _ => {}
         }
 
         panic!("undefined variable: {:?}", access);
     }
 
     // Check assumptions, probably this assumed that the inlining pass did some work
-    fn public_input_access(&self, access: &ast::SymbolAccess) -> Option<PublicInputAccess> {
-        let public_input = self.mir.public_inputs.get(access.name.as_ref())?;
-        if let AccessType::Index(index) = access.access_type {
-            Some(PublicInputAccess::new(public_input.name, index))
-        } else {
-            // This should have been caught earlier during compilation
-            unreachable!(
-                "unexpected public input access type encountered during lowering: {:#?}",
-                access
-            )
+    fn public_input_access(
+        &self,
+        access: &ast::SymbolAccess,
+    ) -> (Option<PublicInputAccess>, Option<PublicInputBinding>) {
+        let Some(public_input) = self.mir.public_inputs.get(access.name.as_ref()) else {
+            return (None, None);
+        };
+        match access.access_type {
+            AccessType::Default => (None, Some(PublicInputBinding::new(public_input.name))),
+            AccessType::Index(index) => {
+                (Some(PublicInputAccess::new(public_input.name, index)), None)
+            }
+            _ => {
+                // This should have been caught earlier during compilation
+                unreachable!(
+                    "unexpected public input access type encountered during lowering: {:#?}",
+                    access
+                )
+            }
         }
     }
 

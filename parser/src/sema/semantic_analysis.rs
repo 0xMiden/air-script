@@ -1417,42 +1417,41 @@ impl SemanticAnalysis<'_> {
                                 }
                             };
 
-                        // Validate that the symbol access produces a scalar value
-                        //
-                        // If no type is known, a diagnostic is already emitted, so proceed as if it is valid
-                        if let Some(ty) = access.column.ty.as_ref() {
-                            if !ty.is_scalar() {
-                                // Invalid constraint, only scalar values are allowed
-                                self.type_mismatch(
-                                    Some(ty),
-                                    access.span(),
-                                    &Type::Felt,
-                                    found.span(),
-                                    constraint_span,
-                                )?;
-                            }
-                        }
+                        match (found.clone().item, expr.rhs.as_mut()) {
+                            // Buses boundaries can be constrained by null, or by a public_input
+                            (BindingType::Bus(_), ScalarExpr::Null(_)) => {}
+                            (BindingType::Bus(_), ScalarExpr::SymbolAccess(access)) => {
+                                self.visit_mut_resolvable_identifier(&mut access.name)?;
+                                self.visit_mut_access_type(&mut access.access_type)?;
 
-                        // Verify that the right-hand expression evaluates to a scalar
-                        //
-                        // The only way this is not the case, is if it is a a symbol access which produces an aggregate
-                        self.visit_mut_scalar_expr(expr.rhs.as_mut())?;
-                        if let ScalarExpr::SymbolAccess(access) = expr.rhs.as_ref() {
-                            // Ensure this access produces a scalar, or if the type is unknown, assume it is valid
-                            // because a diagnostic will have already been emitted
-                            if !access.ty.as_ref().map(|t| t.is_scalar()).unwrap_or(true) {
-                                self.type_mismatch(
-                                    access.ty.as_ref(),
-                                    access.span(),
-                                    &Type::Felt,
-                                    access.name.span(),
-                                    constraint_span,
-                                )?;
-                            }
-                        }
+                                let resolved_binding_ty =
+                                    match self.resolvable_binding_type(&access.name) {
+                                        Ok(ty) => ty,
+                                        // An unresolved identifier at this point means that it is undefined,
+                                        // but we've already raised a diagnostic
+                                        //
+                                        // There is nothing useful we can do here other than continue traversing the module
+                                        // gathering as many undefined variable usages as possible before bailing
+                                        Err(_) => return ControlFlow::Continue(()),
+                                    };
 
-                        match (found.item, expr.rhs.as_ref()) {
-                            (BindingType::Bus(_), ScalarExpr::Null(_)) => {
+                                match resolved_binding_ty.item {
+                                    BindingType::PublicInput(_) => {}
+                                    _ => {
+                                        self.has_type_errors = true;
+                                        self.invalid_constraint(
+                                            access.span(),
+                                            "expected a reference to a public input",
+                                        )
+                                        .with_secondary_label(
+                                            access.name.span(),
+                                            "this is not a reference to a public input",
+                                        )
+                                        .emit();
+                                    }
+                                }
+                                // for input in self.program.public_inputs.values()
+
                                 // Buses boundaries can be constrained to null, nothing to do
                             }
                             (BindingType::Bus(_), _) => {
@@ -1465,7 +1464,7 @@ impl SemanticAnalysis<'_> {
                                         "but this expression is only valid to constrain columns",
                                     )
                                     .with_note(
-                                        "Only the null value is valid for constraining buses",
+                                        "Only the null value or a public input is valid for constraining buses",
                                     )
                                     .emit();
                             }
@@ -1483,7 +1482,41 @@ impl SemanticAnalysis<'_> {
                                 .with_note("The null value is only valid for defining empty buses")
                                 .emit();
                             }
-                            _ => {}
+                            _ => {
+                                // Validate that the symbol access produces a scalar value
+                                //
+                                // If no type is known, a diagnostic is already emitted, so proceed as if it is valid
+                                if let Some(ty) = access.column.ty.as_ref() {
+                                    if !ty.is_scalar() {
+                                        // Invalid constraint, only scalar values are allowed
+                                        self.type_mismatch(
+                                            Some(ty),
+                                            access.span(),
+                                            &Type::Felt,
+                                            found.span(),
+                                            constraint_span,
+                                        )?;
+                                    }
+                                }
+
+                                // Verify that the right-hand expression evaluates to a scalar
+                                //
+                                // The only way this is not the case, is if it is a a symbol access which produces an aggregate
+                                self.visit_mut_scalar_expr(expr.rhs.as_mut())?;
+                                if let ScalarExpr::SymbolAccess(access) = expr.rhs.as_ref() {
+                                    // Ensure this access produces a scalar, or if the type is unknown, assume it is valid
+                                    // because a diagnostic will have already been emitted
+                                    if !access.ty.as_ref().map(|t| t.is_scalar()).unwrap_or(true) {
+                                        self.type_mismatch(
+                                            access.ty.as_ref(),
+                                            access.span(),
+                                            &Type::Felt,
+                                            access.name.span(),
+                                            constraint_span,
+                                        )?;
+                                    }
+                                }
+                            }
                         }
 
                         // If we observed a random value and this constraint is

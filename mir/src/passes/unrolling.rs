@@ -216,6 +216,7 @@ impl UnrollingFirstPass<'_> {
                 }
                 MirValue::BusAccess(_) => {}
                 MirValue::Null => {}
+                MirValue::PublicInputBinding(_public_input_binding) => {}
             }
         }
 

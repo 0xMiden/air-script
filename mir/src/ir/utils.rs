@@ -22,7 +22,7 @@ pub fn strip_spans(mir: &mut Mir) {
 
 #[derive(Default)]
 pub struct StripSpansVisitor {
-    done: BTreeMap<usize, bool>,
+    _done: BTreeMap<usize, bool>,
     work_stack: Vec<Link<Node>>,
 }
 
@@ -247,6 +247,9 @@ impl Visitor for StripSpansVisitor {
                 };
             }
             MirValue::PublicInput(v) => {
+                v.name.0 = Span::new(SourceSpan::default(), v.name.0.item);
+            }
+            MirValue::PublicInputBinding(v) => {
                 v.name.0 = Span::new(SourceSpan::default(), v.name.0.item);
             }
             MirValue::RandomValue(_) => {}

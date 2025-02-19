@@ -4,9 +4,7 @@ use miden_diagnostics::{DiagnosticsHandler, SourceSpan, Spanned};
 
 use super::duplicate_node;
 use crate::{
-    ir::{
-        Accessor, Add, BusOpKind, Enf, Link, Mir, MirValue, Mul, Node, SpannedMirValue, Sub, Value,
-    },
+    ir::{Accessor, Add, BusOpKind, Enf, Mir, MirValue, Mul, SpannedMirValue, Sub, Value},
     CompileError,
 };
 
@@ -17,7 +15,6 @@ use crate::{
 pub struct BusOpExpand<'a> {
     #[allow(unused)]
     diagnostics: &'a DiagnosticsHandler,
-    _work_stack: Vec<Link<Node>>,
 }
 
 impl Pass for BusOpExpand<'_> {
@@ -279,17 +276,14 @@ impl Pass for BusOpExpand<'_> {
     }
 }
 
-/*impl<'a> BusOpExpand<'a> {
+impl<'a> BusOpExpand<'a> {
     #[allow(unused)]
     pub fn new(diagnostics: &'a DiagnosticsHandler) -> Self {
-        Self {
-            diagnostics,
-            work_stack: vec![],
-        }
+        Self { diagnostics }
     }
 }
 
-impl Visitor for BusOpExpand<'_> {
+/*impl Visitor for BusOpExpand<'_> {
     fn work_stack(&mut self) -> &mut Vec<Link<Node>> {
         &mut self.work_stack
     }
