@@ -1,0 +1,39 @@
+def BusesAir
+
+trace_columns {
+    main: [a, b, s1, s2, d],
+}
+
+buses {
+    unit p,
+    mult q,
+}
+
+public_inputs {
+    inputs: [2],
+}
+
+boundary_constraints {
+    enf p.first = null;
+    enf q.first = null;
+    enf p.last = null;
+    enf q.last = null;
+    # TODO: to be used when we have support for variable-length public inputs
+    #enf p.last = inputs;
+    #enf q.last = inputs;
+}
+
+integrity_constraints {
+    enf s1^2 = s1;
+    enf s2^2 = s2;
+
+    p.add(1, a) when s1;
+    p.rem(1, b) when s2;
+
+    p.add(2, b) when 1 - s1;
+    p.rem(2, a) when 1 - s2;
+
+    q.add(3, a) when s1;
+    q.add(3, a) when s1;
+    q.rem(3, a) for d;
+}

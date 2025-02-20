@@ -25,8 +25,15 @@ fn binary() {
 }
 
 #[test]
-fn buses() {
-    Test::new("tests/buses/buses.air".to_string())
+fn buses_simple() {
+    Test::new("tests/buses/buses_simple.air".to_string())
+        .transpile(Target::Masm, Pipeline::WithoutMIR)
+        .expect_err("Buses should not be supported in the WithoutMIR pipeline");
+}
+
+#[test]
+fn buses_complex() {
+    Test::new("tests/buses/buses_complex.air".to_string())
         .transpile(Target::Masm, Pipeline::WithoutMIR)
         .expect_err("Buses should not be supported in the WithoutMIR pipeline");
 }

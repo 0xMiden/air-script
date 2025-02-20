@@ -25,12 +25,22 @@ fn binary() {
 }
 
 #[test]
-fn buses() {
-    let generated_masm = Test::new("tests/buses/buses.air".to_string())
+fn buses_simple() {
+    let generated_masm = Test::new("tests/buses/buses_simple.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithMIR)
         .unwrap();
 
-    let expected = expect_file!["../buses/buses.rs"];
+    let expected = expect_file!["../buses/buses_simple.rs"];
+    expected.assert_eq(&generated_masm);
+}
+
+#[test]
+fn buses_complex() {
+    let generated_masm = Test::new("tests/buses/buses_complex.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_complex.rs"];
     expected.assert_eq(&generated_masm);
 }
 
