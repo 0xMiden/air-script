@@ -1,8 +1,5 @@
 use crate::{
-    ir::{
-        assert_bus_eq, Add, Builder, Bus, BusOp, BusOpKind, Fold, FoldOperator, Link, Mir, Op,
-        Vector,
-    },
+    ir::{assert_bus_eq, Add, Builder, Bus, Fold, FoldOperator, Link, Mir, Op, Vector},
     tests::translate,
 };
 use air_parser::{ast, Symbol};
@@ -137,30 +134,10 @@ fn buses_args_expr_in_integrity_expr() {
         .rhs(b.clone())
         .span(SourceSpan::default())
         .build();
-    let p_add: Link<Op> = BusOp::builder()
-        .bus(bus.clone())
-        .kind(BusOpKind::Add)
-        .args(x.clone())
-        .span(SourceSpan::default())
-        .build();
     let sel: Link<Op> = From::from(1);
-    let p_add_ref = p_add.as_bus_op_mut().unwrap();
-    p_add_ref._latch.update(&sel);
-    drop(p_add_ref);
-    bus.borrow_mut().columns.push(p_add.clone());
-    bus.borrow_mut().latches.push(sel.clone());
-    let p_rem: Link<Op> = BusOp::builder()
-        .bus(bus.clone())
-        .kind(BusOpKind::Rem)
-        .args(x.clone())
-        .span(SourceSpan::default())
-        .build();
-    let sel: Link<Op> = From::from(0);
-    let p_rem_ref = p_rem.as_bus_op_mut().unwrap();
-    p_rem_ref._latch.update(&sel);
-    drop(p_rem_ref);
-    bus.borrow_mut().columns.push(p_rem.clone());
-    bus.borrow_mut().latches.push(sel.clone());
+    let _p_add = bus.add(&[x.clone()], sel.clone(), SourceSpan::default());
+    let not_sel: Link<Op> = From::from(0);
+    let _p_rem = bus.rem(&[x.clone()], not_sel.clone(), SourceSpan::default());
     let bus_ident = result_mir.constraint_graph().buses.keys().next().unwrap();
     let mut expected_mir = Mir::new(result_mir.name);
     let _ = expected_mir

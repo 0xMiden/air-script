@@ -72,6 +72,15 @@ impl<T: PartialEq> PartialEq for Link<T> {
 
 impl<T> Eq for Link<T> where T: Eq {}
 
+impl<T> Hash for Link<T>
+where
+    T: Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.link.borrow().hash(state)
+    }
+}
+
 impl<T> From<T> for Link<T> {
     fn from(value: T) -> Self {
         Self::new(value)
@@ -99,15 +108,6 @@ where
 {
     fn span(&self) -> SourceSpan {
         self.borrow().span()
-    }
-}
-
-impl<T> Hash for Link<T>
-where
-    T: Hash,
-{
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.link.borrow().hash(state)
     }
 }
 

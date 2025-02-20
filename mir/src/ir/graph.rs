@@ -17,6 +17,7 @@ pub struct Graph {
     pub boundary_constraints_roots: ir::Link<Vec<ir::Link<ir::Op>>>,
     pub integrity_constraints_roots: ir::Link<Vec<ir::Link<ir::Op>>>,
     pub buses: BTreeMap<QualifiedIdentifier, ir::Link<ir::Bus>>,
+    bus_count: usize,
 }
 
 impl Graph {
@@ -163,6 +164,9 @@ impl Graph {
         ident: QualifiedIdentifier,
         bus: ir::Link<ir::Bus>,
     ) -> Result<(), CompileError> {
+        let id = self.bus_count;
+        bus.borrow_mut().id = id;
+        self.bus_count += 1;
         self.buses
             .insert(ident, bus)
             .map_or(Ok(()), |_| Err(CompileError::Failed))

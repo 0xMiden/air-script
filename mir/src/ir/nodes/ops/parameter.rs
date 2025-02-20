@@ -50,6 +50,11 @@ impl PartialEq for Parameter {
     fn eq(&self, other: &Self) -> bool {
         self.position == other.position
             && self.ty == other.ty
+            // TODO: This always returns true.
+            // fix this by inserting unique ids in the nodes in a
+            // linearized order in place of the hash.
+            // See the relationship between [crate::ir::Bus] and [crate::ir::BusOp]
+            // and their use in [crate::ir::Graph::insert_bus] for an example.
             && get_hash(&self.ref_node) == get_hash(&other.ref_node)
     }
 }
@@ -58,6 +63,11 @@ impl Hash for Parameter {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.position.hash(state);
         self.ty.hash(state);
+        // TODO: This always returns true.
+        // fix this by inserting unique ids in the nodes in a
+        // linearized order in place of the hash.
+        // See the relationship between [crate::ir::Bus] and [crate::ir::BusOp]
+        // and their use in [crate::ir::Graph::insert_bus] for an example.
         self.ref_node.hash(state);
     }
 }

@@ -9,7 +9,7 @@ pub enum BusOpKind {
     Rem,
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Debug, Spanned, Builder)]
+#[derive(Default, Clone, Eq, Debug, Spanned, Builder)]
 #[enum_wrapper(Op)]
 pub struct BusOp {
     pub parents: Vec<BackLink<Owner>>,
@@ -25,10 +25,19 @@ pub struct BusOp {
 
 impl Hash for BusOp {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.bus.hash(state);
+        self.bus.get_id().hash(state);
         self.kind.hash(state);
         self.args.hash(state);
         self._latch.hash(state);
+    }
+}
+
+impl PartialEq for BusOp {
+    fn eq(&self, other: &Self) -> bool {
+        self.bus.get_id() == other.bus.get_id()
+            && self.kind == other.kind
+            && self.args == other.args
+            && self._latch == other._latch
     }
 }
 

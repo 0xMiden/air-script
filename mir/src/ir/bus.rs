@@ -5,7 +5,7 @@ use air_parser::ast::{self, Identifier};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 use crate::{
-    ir::{Link, Op},
+    ir::{BackLink, Builder, BusOp, BusOpKind, Link, Op},
     CompileError,
 };
 
@@ -57,8 +57,9 @@ use crate::{
 /// with:
 ///     a, b, c, e, f, g being [Link<Op>] in the graph
 ///     d, s being [Link<Op>], s is boolean, d is a number.
-#[derive(Default, Clone, PartialEq, Eq, Debug, Spanned)]
+#[derive(Default, Clone, Eq, Debug, Spanned)]
 pub struct Bus {
+    /// Identifier of the bus
     pub name: Option<Identifier>,
     /// Type of bus
     pub bus_type: ast::BusType,
@@ -75,9 +76,19 @@ pub struct Bus {
 
 impl std::hash::Hash for Bus {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
         self.bus_type.hash(state);
         self.columns.hash(state);
         self.latches.hash(state);
+    }
+}
+
+impl PartialEq for Bus {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.bus_type == other.bus_type
+            && self.columns == other.columns
+            && self.latches == other.latches
     }
 }
 
@@ -114,5 +125,47 @@ impl Bus {
 
     pub fn get_last(&self) -> Link<Op> {
         self.last.clone()
+    }
+
+    pub fn get_name(&self) -> Option<Identifier> {
+        self.name
+    }
+}
+
+impl Link<Bus> {
+    pub fn add(&self, columns: &[Link<Op>], latch: Link<Op>, span: SourceSpan) -> Link<Op> {
+        self.bus_op(BusOpKind::Add, columns, latch, span)
+    }
+
+    pub fn rem(&self, columns: &[Link<Op>], latch: Link<Op>, span: SourceSpan) -> Link<Op> {
+        self.bus_op(BusOpKind::Rem, columns, latch, span)
+    }
+
+    fn bus_op(
+        &self,
+        kind: BusOpKind,
+        columns: &[Link<Op>],
+        latch: Link<Op>,
+        span: SourceSpan,
+    ) -> Link<Op> {
+        let mut bus_op = BusOp::builder().bus(self.clone()).kind(kind).span(span);
+        for column in columns {
+            bus_op = bus_op.args(column.clone());
+        }
+        let bus_op = bus_op.build();
+        let bus_op_ref = bus_op.as_bus_op_mut().unwrap();
+        bus_op_ref._latch.update(&latch);
+        drop(bus_op_ref);
+        self.borrow_mut().columns.push(bus_op.clone());
+        self.borrow_mut().latches.push(latch.clone());
+        bus_op
+    }
+}
+
+impl BackLink<Bus> {
+    pub fn get_name(&self) -> Option<Identifier> {
+        self.to_link()
+            .map(|l| l.borrow().get_name())
+            .unwrap_or_else(|| panic!("Bus was dropped"))
     }
 }
