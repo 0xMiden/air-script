@@ -204,6 +204,11 @@ impl Visitor for InliningFirstPass<'_> {
         let evaluators = graph.get_evaluator_nodes();
         let boundary_constraints_roots_ref = graph.boundary_constraints_roots.borrow();
         let integrity_constraints_roots_ref = graph.integrity_constraints_roots.borrow();
+        let bus_roots: Vec<_> = graph
+            .buses
+            .values()
+            .flat_map(|b| b.borrow().clone().columns.into_iter().collect::<Vec<_>>())
+            .collect();
 
         let combined_roots = boundary_constraints_roots_ref
             .clone()
@@ -215,6 +220,7 @@ impl Visitor for InliningFirstPass<'_> {
                     .into_iter()
                     .map(|ic| ic.as_node()),
             )
+            .chain(bus_roots.into_iter().map(|b| b.as_node()))
             .chain(evaluators.into_iter().map(|e| e.as_node()))
             .chain(functions.into_iter().map(|f| f.as_node()));
         combined_roots.collect()

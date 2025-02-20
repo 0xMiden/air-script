@@ -49,6 +49,10 @@ fn buses_in_integrity_constraints() {
         main: [a],
     }
 
+    fn double(a: felt) -> felt {
+        return a+a;
+    }
+
     buses {
         unit p,
         mult q,
@@ -69,7 +73,7 @@ fn buses_in_integrity_constraints() {
     }
 
     integrity_constraints {
-        p.add(1) when 1;
+        p.add(double(a)) when 1;
         p.rem(1) when 1;
         q.add(1, 2) when 1;
         q.add(1, 2) when 1;
