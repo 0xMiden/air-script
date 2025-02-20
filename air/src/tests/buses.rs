@@ -112,11 +112,7 @@ fn err_buses_boundaries_to_const() {
         enf a = 0;
     }";
 
-    expect_diagnostic(
-        source,
-        "error: invalid constraint",
-        Pipeline::WithoutMIR,
-    );
+    expect_diagnostic(source, "error: invalid constraint", Pipeline::WithoutMIR);
     expect_diagnostic(source, "error: invalid constraint", Pipeline::WithMIR);
 }
 
@@ -146,10 +142,6 @@ fn err_trace_columns_constrained_with_null() {
         enf a = 0;
     }";
 
-    expect_diagnostic(
-        source,
-        "error: invalid constraint",
-        Pipeline::WithoutMIR,
-    );
+    expect_diagnostic(source, "error: invalid constraint", Pipeline::WithoutMIR);
     expect_diagnostic(source, "error: invalid constraint", Pipeline::WithMIR);
 }

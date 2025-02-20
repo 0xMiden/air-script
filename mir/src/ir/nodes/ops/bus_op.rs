@@ -25,7 +25,7 @@ pub struct BusOp {
 
 impl Hash for BusOp {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.bus.get_id().hash(state);
+        self.bus.get_name().hash(state);
         self.kind.hash(state);
         self.args.hash(state);
         self._latch.hash(state);
@@ -34,7 +34,7 @@ impl Hash for BusOp {
 
 impl PartialEq for BusOp {
     fn eq(&self, other: &Self) -> bool {
-        self.bus.get_id() == other.bus.get_id()
+        self.bus.get_name() == other.bus.get_name()
             && self.kind == other.kind
             && self.args == other.args
             && self._latch == other._latch
