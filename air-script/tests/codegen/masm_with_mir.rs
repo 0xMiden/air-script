@@ -65,6 +65,16 @@ fn bitwise() {
 }
 
 #[test]
+fn buses() {
+    let generated_masm = Test::new("tests/buses/buses.air".to_string())
+        .transpile(Target::Masm, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses.masm"];
+    expected.assert_eq(&generated_masm);
+}
+
+#[test]
 fn constants() {
     let generated_masm = Test::new("tests/constants/constants.air".to_string())
         .transpile(Target::Masm, Pipeline::WithMIR)
