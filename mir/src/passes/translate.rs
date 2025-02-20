@@ -1203,9 +1203,7 @@ impl<'a> MirBuilder<'a> {
 
     // Check assumptions, probably this assumed that the inlining pass did some work
     fn public_input_access(&self, access: &ast::SymbolAccess) -> Option<PublicInputAccess> {
-        let Some(public_input) = self.mir.public_inputs.get(access.name.as_ref()) else {
-            return None;
-        };
+        let public_input = self.mir.public_inputs.get(access.name.as_ref())?;
         match access.access_type {
             AccessType::Index(index) => Some(PublicInputAccess::new(public_input.name, index)),
             _ => {
