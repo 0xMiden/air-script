@@ -1418,10 +1418,22 @@ impl SemanticAnalysis<'_> {
                             };
 
                         match (found.clone().item, expr.rhs.as_mut()) {
-                            // Buses boundaries can be constrained by null, or by a public_input
+                            // Buses boundaries can be constrained by null, or soon by a public_input
                             (BindingType::Bus(_), ScalarExpr::Null(_)) => {}
                             (BindingType::Bus(_), ScalarExpr::SymbolAccess(access)) => {
-                                self.visit_mut_resolvable_identifier(&mut access.name)?;
+                                self.has_type_errors = true;
+                                self.invalid_constraint(
+                                    access.span(),
+                                    "public input bus constraints are not yet supported",
+                                )
+                                .with_secondary_label(
+                                    access.name.span(),
+                                    "this a reference to a public input",
+                                )
+                                .emit();
+
+                                // TODO: Update when table public inputs are supported
+                                /*self.visit_mut_resolvable_identifier(&mut access.name)?;
                                 self.visit_mut_access_type(&mut access.access_type)?;
 
                                 let resolved_binding_ty =
@@ -1449,14 +1461,12 @@ impl SemanticAnalysis<'_> {
                                         )
                                         .emit();
                                     }
-                                }
-                                // for input in self.program.public_inputs.values()
+                                }*/
 
                                 // Buses boundaries can be constrained to null, nothing to do
                             }
                             (BindingType::Bus(_), _) => {
                                 // Buses cannot be constrained otherwise
-                                // TODO: Update when handling other buses constraints
                                 self.has_type_errors = true;
                                 self.invalid_constraint(expr.lhs.span(), "this constrains a bus")
                                     .with_secondary_label(
@@ -1464,7 +1474,8 @@ impl SemanticAnalysis<'_> {
                                         "but this expression is only valid to constrain columns",
                                     )
                                     .with_note(
-                                        "Only the null value or a public input is valid for constraining buses",
+                                        //"Only the null value or a public input is valid for constraining buses",
+                                        "Only the null value is valid for constraining buses",
                                     )
                                     .emit();
                             }

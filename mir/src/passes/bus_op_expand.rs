@@ -1,10 +1,15 @@
+use std::ops::Deref;
+
 use air_parser::ast::{AccessType, BusType};
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, SourceSpan, Spanned};
 
 use super::duplicate_node;
 use crate::{
-    ir::{Accessor, Add, BusOpKind, Enf, Mir, MirValue, Mul, SpannedMirValue, Sub, Value},
+    ir::{
+        Accessor, Add, Boundary, BusOpKind, ConstantValue, Enf, Mir, MirValue, Mul, Op,
+        SpannedMirValue, Sub, Value,
+    },
     CompileError,
 };
 
@@ -50,6 +55,77 @@ impl Pass for BusOpExpand<'_> {
 
             match bus_type {
                 BusType::Unit => {
+                    // Expand bus boundary constraints first
+                    match first.borrow().deref() {
+                        Op::Value(value) => {
+                            match value.value.value {
+                                // TODO: Will be used when handling variable-length public inputs
+                                /*MirValue::PublicInputBinding(public_input_binding) => {
+
+                                },*/
+                                MirValue::Null => {
+                                    // Empty bus
+
+                                    let bus_boundary = Boundary::create(
+                                        duplicate_node(bus_access.clone(), &mut Default::default()),
+                                        air_parser::ast::Boundary::First,
+                                        bus.borrow().span(),
+                                    );
+                                    let unit_val = Value::create(SpannedMirValue {
+                                        span: SourceSpan::default(),
+                                        value: MirValue::Constant(ConstantValue::Felt(1)),
+                                    });
+
+                                    let resulting_constraint = Enf::create(
+                                        Sub::create(bus_boundary, unit_val, SourceSpan::default()),
+                                        SourceSpan::default(),
+                                    );
+
+                                    graph.insert_boundary_constraints_root(resulting_constraint);
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        Op::None(_) => {}
+                        _ => unreachable!(),
+                    }
+
+                    match last.borrow().deref() {
+                        Op::Value(value) => {
+                            match value.value.value {
+                                // TODO: Will be used when handling variable-length public inputs
+                                /*MirValue::PublicInputBinding(public_input_binding) => {
+
+                                },*/
+                                MirValue::Null => {
+                                    // Empty bus
+
+                                    let bus_boundary = Boundary::create(
+                                        duplicate_node(bus_access.clone(), &mut Default::default()),
+                                        air_parser::ast::Boundary::Last,
+                                        bus.borrow().span(),
+                                    );
+                                    let unit_val = Value::create(SpannedMirValue {
+                                        span: SourceSpan::default(),
+                                        value: MirValue::Constant(ConstantValue::Felt(1)),
+                                    });
+
+                                    let resulting_constraint = Enf::create(
+                                        Sub::create(bus_boundary, unit_val, SourceSpan::default()),
+                                        SourceSpan::default(),
+                                    );
+
+                                    graph.insert_boundary_constraints_root(resulting_constraint);
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        Op::None(_) => {}
+                        _ => unreachable!(),
+                    }
+
+                    // Then, expend bus integrity constraints
+
                     // Example:
                     // p.add(a, b) when s
                     // p.rem(c, d) when (1 - s)
@@ -147,6 +223,77 @@ impl Pass for BusOpExpand<'_> {
                     graph.insert_integrity_constraints_root(resulting_constraint);
                 }
                 BusType::Mult => {
+                    // Expand bus boundary constraints first
+                    match first.borrow().deref() {
+                        Op::Value(value) => {
+                            match value.value.value {
+                                // TODO: Will be used when handling variable-length public inputs
+                                /*MirValue::PublicInputBinding(public_input_binding) => {
+
+                                },*/
+                                MirValue::Null => {
+                                    // Empty bus
+
+                                    let bus_boundary = Boundary::create(
+                                        duplicate_node(bus_access.clone(), &mut Default::default()),
+                                        air_parser::ast::Boundary::First,
+                                        bus.borrow().span(),
+                                    );
+                                    let unit_val = Value::create(SpannedMirValue {
+                                        span: SourceSpan::default(),
+                                        value: MirValue::Constant(ConstantValue::Felt(0)),
+                                    });
+
+                                    let resulting_constraint = Enf::create(
+                                        Sub::create(bus_boundary, unit_val, SourceSpan::default()),
+                                        SourceSpan::default(),
+                                    );
+
+                                    graph.insert_boundary_constraints_root(resulting_constraint);
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        Op::None(_) => {}
+                        _ => unreachable!(),
+                    }
+
+                    match last.borrow().deref() {
+                        Op::Value(value) => {
+                            match value.value.value {
+                                // TODO: Will be used when handling variable-length public inputs
+                                /*MirValue::PublicInputBinding(public_input_binding) => {
+
+                                },*/
+                                MirValue::Null => {
+                                    // Empty bus
+
+                                    let bus_boundary = Boundary::create(
+                                        duplicate_node(bus_access.clone(), &mut Default::default()),
+                                        air_parser::ast::Boundary::Last,
+                                        bus.borrow().span(),
+                                    );
+                                    let unit_val = Value::create(SpannedMirValue {
+                                        span: SourceSpan::default(),
+                                        value: MirValue::Constant(ConstantValue::Felt(0)),
+                                    });
+
+                                    let resulting_constraint = Enf::create(
+                                        Sub::create(bus_boundary, unit_val, SourceSpan::default()),
+                                        SourceSpan::default(),
+                                    );
+
+                                    graph.insert_boundary_constraints_root(resulting_constraint);
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        Op::None(_) => {}
+                        _ => unreachable!(),
+                    }
+
+                    // Then, expend bus integrity constraints
+
                     // Example:
                     // q.add(a, b, c) for d
                     // q.rem(e, f, g) when s
