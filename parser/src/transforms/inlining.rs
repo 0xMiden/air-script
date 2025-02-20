@@ -325,7 +325,11 @@ impl<'a> Inlining<'a> {
                 expr => Ok(vec![Statement::Expr(expr)]),
             },
             Statement::BusEnforce(_) => {
-                unimplemented!("buses are not implemented for this Pipeline")
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_message("buses are not implemented for this Pipeline")
+                    .emit();
+                Err(SemanticAnalysisError::Invalid)
             }
         }
     }
@@ -362,7 +366,11 @@ impl<'a> Inlining<'a> {
             }
             expr @ (Expr::Const(_) | Expr::Range(_) | Expr::SymbolAccess(_)) => Ok(expr),
             Expr::BusOperation(_) | Expr::Null(_) => {
-                unimplemented!("buses are not implemented for this Pipeline")
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_message("buses are not implemented for this Pipeline")
+                    .emit();
+                Err(SemanticAnalysisError::Invalid)
             }
         }
     }
@@ -682,7 +690,11 @@ impl<'a> Inlining<'a> {
                 }
             }
             Expr::BusOperation(_) | Expr::Null(_) => {
-                unimplemented!("buses are not implemented for this Pipeline")
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_message("buses are not implemented for this Pipeline")
+                    .emit();
+                return Err(SemanticAnalysisError::Invalid);
             }
         }
         Ok(())
@@ -743,7 +755,11 @@ impl<'a> Inlining<'a> {
                 Ok(())
             }
             ScalarExpr::BusOperation(_) | ScalarExpr::Null(_) => {
-                unimplemented!("buses are not implemented for this Pipeline")
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_message("buses are not implemented for this Pipeline")
+                    .emit();
+                Err(SemanticAnalysisError::Invalid)
             }
         }
     }
@@ -1841,7 +1857,7 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
             // expression position as a result of inlining/expansion
             ScalarExpr::Let(_) => unreachable!(),
             ScalarExpr::BusOperation(_) | ScalarExpr::Null(_) => {
-                unimplemented!("buses are not implemented for this Pipeline")
+                ControlFlow::Break(SemanticAnalysisError::Invalid)
             }
         }
     }
@@ -1884,9 +1900,7 @@ impl VisitMut<SemanticAnalysisError> for ApplyConstraintSelector<'_> {
             }
             Statement::EnforceAll(_) => unreachable!(),
             Statement::Expr(_) => ControlFlow::Continue(()),
-            Statement::BusEnforce(_) => {
-                unimplemented!("buses are not implemented for this Pipeline")
-            }
+            Statement::BusEnforce(_) => ControlFlow::Break(SemanticAnalysisError::Invalid),
         }
     }
 }

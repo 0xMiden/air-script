@@ -6,6 +6,7 @@ use air_parser::{ast, symbols, LexicalScope};
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 
+use crate::ir::BusAccess;
 //use crate::ir::PublicInputBinding;
 use crate::{
     ir::{
@@ -123,7 +124,7 @@ impl<'a> MirBuilder<'a> {
     }
 
     fn translate_bus_definition(&mut self, bus: &'a ast::Bus) -> Result<Link<Bus>, CompileError> {
-        Ok(Bus::create(bus.bus_type.clone(), bus.span()))
+        Ok(Bus::create(bus.name, bus.bus_type.clone(), bus.span()))
     }
 
     fn translate_evaluator_signature(
@@ -645,7 +646,7 @@ impl<'a> MirBuilder<'a> {
                     let node = Value::builder()
                         .value(SpannedMirValue {
                             span: access.span(),
-                            value: MirValue::BusAccess(bus.clone()),
+                            value: MirValue::BusAccess(BusAccess::new(bus.clone(), access.offset)),
                         })
                         .build();
                     Ok(node)
@@ -701,7 +702,8 @@ impl<'a> MirBuilder<'a> {
             let lhs_child_as_value_ref = lhs_child.as_value();
             if let Some(val_ref) = lhs_child_as_value_ref {
                 let SpannedMirValue { span: _span, value } = val_ref.value.clone();
-                if let MirValue::BusAccess(bus) = value {
+                if let MirValue::BusAccess(bus_access) = value {
+                    let bus = bus_access.bus;
                     match kind {
                         ast::Boundary::First => {
                             bus.borrow_mut().set_first(rhs.clone()).map_err(|_| {

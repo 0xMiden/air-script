@@ -5,7 +5,7 @@ use crate::{
     },
     tests::translate,
 };
-use air_parser::ast;
+use air_parser::{ast, Symbol};
 use miden_diagnostics::SourceSpan;
 
 use super::{compile, expect_diagnostic};
@@ -113,7 +113,11 @@ fn buses_args_expr_in_integrity_expr() {
     }";
     assert!(compile(source).is_ok());
     let mut result_mir = translate(source).unwrap();
-    let bus = Bus::create(ast::BusType::Unit, SourceSpan::default());
+    let bus = Bus::create(
+        ast::Identifier::new(SourceSpan::default(), Symbol::new(0)),
+        ast::BusType::Unit,
+        SourceSpan::default(),
+    );
     let vec_op = Vector::builder()
         .size(3)
         .elements(From::from(0))

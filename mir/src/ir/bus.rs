@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use air_parser::ast;
+use air_parser::ast::{self, Identifier};
 
 use miden_diagnostics::{SourceSpan, Spanned};
 
@@ -59,6 +59,7 @@ use crate::{
 ///     d, s being [Link<Op>], s is boolean, d is a number.
 #[derive(Default, Clone, PartialEq, Eq, Debug, Spanned)]
 pub struct Bus {
+    pub name: Option<Identifier>,
     /// Type of bus
     pub bus_type: ast::BusType,
     /// values stored in the bus
@@ -81,8 +82,9 @@ impl std::hash::Hash for Bus {
 }
 
 impl Bus {
-    pub fn create(bus_type: ast::BusType, span: SourceSpan) -> Link<Bus> {
+    pub fn create(name: Identifier, bus_type: ast::BusType, span: SourceSpan) -> Link<Bus> {
         Bus {
+            name: Some(name),
             bus_type,
             span,
             ..Default::default()

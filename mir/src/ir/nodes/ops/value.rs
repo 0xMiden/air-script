@@ -75,8 +75,29 @@ pub enum MirValue {
     /// A binding to a range of random values
     RandomValueBinding(RandomValueBinding),
     /// A binding to a [Bus].
-    BusAccess(Link<Bus>),
+    BusAccess(BusAccess),
     Null,
+}
+
+/// [BusAccess] is like [SymbolAccess], but is used to describe an access to a specific bus.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BusAccess {
+    /// The trace segment being accessed
+    pub bus: Link<Bus>,
+    /// The offset from the current row.
+    ///
+    /// Defaults to 0, which indicates no offset/the current row.
+    ///
+    /// For example, if accessing a trace column with `a'`, where `a` is bound to a single column,
+    /// the row offset would be `1`, as the `'` modifier indicates the "next" row.
+    pub row_offset: usize,
+}
+
+impl BusAccess {
+    /// Creates a new [BusAccess].
+    pub const fn new(bus: Link<Bus>, row_offset: usize) -> Self {
+        Self { bus, row_offset }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

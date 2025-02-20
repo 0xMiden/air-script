@@ -2,12 +2,12 @@ use std::ops::Deref;
 
 use air_parser::ast::{AccessType, BusType};
 use air_pass::Pass;
-use miden_diagnostics::{DiagnosticsHandler, SourceSpan, Spanned};
+use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Spanned};
 
 use super::duplicate_node;
 use crate::{
     ir::{
-        Accessor, Add, BusOpKind, ConstantValue, Enf, Link, Mir, MirValue, Mul, Op,
+        Accessor, Add, BusAccess, BusOpKind, ConstantValue, Enf, Link, Mir, MirValue, Mul, Op,
         SpannedMirValue, Sub, Value,
     },
     CompileError,
@@ -28,6 +28,15 @@ impl Pass for BusOpExpand<'_> {
     type Error = CompileError;
 
     fn run<'a>(&mut self, mut ir: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
+        if ir.num_random_values != 0 {
+            self.diagnostics
+                .diagnostic(Severity::Error)
+                .with_message("No random values should be set at this point")
+                .emit();
+            return Err(CompileError::Failed);
+        };
+        let mut max_num_random_values = 0;
+
         let graph = ir.constraint_graph_mut();
 
         let buses = graph.buses.clone();
@@ -38,13 +47,15 @@ impl Pass for BusOpExpand<'_> {
             let latches = bus.borrow().latches.clone(); // latches are the selectors
             let first = bus.borrow().get_first().clone();
             let last = bus.borrow().get_last().clone();
-
-            println!("first: {:?}", &first);
-            println!("last: {:?}", &last);
+            //println!("first: {:?}", &first);
+            //println!("last: {:?}", &last);
 
             let bus_access = Value::create(SpannedMirValue {
                 span: bus.borrow().span(),
-                value: MirValue::BusAccess(bus.clone()),
+                value: MirValue::BusAccess(BusAccess {
+                    bus: bus.clone(),
+                    row_offset: 0,
+                }),
             });
             let bus_access_with_offset = Accessor::create(
                 duplicate_node(bus_access.clone(), &mut Default::default()),
@@ -90,12 +101,14 @@ impl Pass for BusOpExpand<'_> {
                             span: SourceSpan::default(),
                             value: MirValue::RandomValue(0),
                         });
+                        max_num_random_values = max_num_random_values.max(1);
                         for (index, arg) in bus_op_args.iter().enumerate() {
                             // 1.2 Create corresponding alpha
                             let alpha = Value::create(SpannedMirValue {
                                 span: SourceSpan::default(),
                                 value: MirValue::RandomValue(index + 1),
                             });
+                            max_num_random_values = max_num_random_values.max(index + 1);
 
                             // 1.3 Multiply arg with alpha
                             let arg_times_alpha =
@@ -180,12 +193,14 @@ impl Pass for BusOpExpand<'_> {
                             span: SourceSpan::default(),
                             value: MirValue::RandomValue(0),
                         });
+                        max_num_random_values = max_num_random_values.max(1);
                         for (index, arg) in bus_op_args.iter().enumerate() {
                             // 1.2 Create corresponding alpha
                             let alpha = Value::create(SpannedMirValue {
                                 span: SourceSpan::default(),
                                 value: MirValue::RandomValue(index + 1),
                             });
+                            max_num_random_values = max_num_random_values.max(index + 1);
 
                             // 1.3 Multiply arg with alpha
                             let arg_times_alpha =
@@ -289,6 +304,8 @@ impl Pass for BusOpExpand<'_> {
                 }
             }
         }
+
+        ir.num_random_values = max_num_random_values as u16;
 
         Ok(ir)
     }

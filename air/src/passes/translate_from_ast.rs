@@ -433,7 +433,11 @@ impl AirBuilder<'_> {
             // These node types should not exist at this point
             ast::Expr::Call(_) | ast::Expr::ListComprehension(_) => unreachable!(),
             ast::Expr::BusOperation(_) | ast::Expr::Null(_) => {
-                unimplemented!("buses are not implemented for this Pipeline")
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_message("buses are not implemented for this Pipeline")
+                    .emit();
+                Err(CompileError::Failed)
             }
         }
     }
