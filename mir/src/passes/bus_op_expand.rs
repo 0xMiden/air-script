@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use air_parser::ast::{AccessType, BusType};
 use air_pass::Pass;
-use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Spanned};
+use miden_diagnostics::{DiagnosticsHandler, SourceSpan, Spanned};
 
 use super::duplicate_node;
 use crate::{
@@ -28,14 +28,17 @@ impl Pass for BusOpExpand<'_> {
     type Error = CompileError;
 
     fn run<'a>(&mut self, mut ir: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
-        if ir.num_random_values != 0 {
+        let mut max_num_random_values = ir.num_random_values as usize;
+        // TODO: When removing aux and rand values, use the following instead
+
+        /*if ir.num_random_values != 0 {
             self.diagnostics
                 .diagnostic(Severity::Error)
                 .with_message("No random values should be set at this point")
                 .emit();
             return Err(CompileError::Failed);
         };
-        let mut max_num_random_values = 0;
+        let mut max_num_random_values = 0;*/
 
         let graph = ir.constraint_graph_mut();
 

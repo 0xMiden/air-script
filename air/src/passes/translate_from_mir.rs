@@ -37,16 +37,29 @@ impl Pass for MirToAir<'_> {
 
         let mut trace_columns = mir.trace_columns.clone();
 
-        if trace_columns.len() != 1 {
+        // TODO: When removing aux and rand values, use the following instead
+        /*if trace_columns.len() != 1 {
             self.diagnostics
                 .diagnostic(Severity::Error)
                 .with_message("trace columns in mir should only have one segment (main trace)")
                 .emit();
             return Err(CompileError::Failed);
-        }
+        }*/
 
         let mut bus_bindings_map = HashMap::new();
         if !buses.is_empty() {
+            let existing_aux_segment: Vec<_> = trace_columns
+                .get(1)
+                .map(|ts| {
+                    ts.bindings
+                        .iter()
+                        .map(|binding| {
+                            Span::new(binding.span(), (binding.name.unwrap(), binding.size))
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+
             let bus_raw_bindings: Vec<_> = buses
                 .keys()
                 .map(|k| Span::new(k.span(), (Identifier::new(k.span(), k.name()), AUX_SEGMENT)))
@@ -57,12 +70,21 @@ impl Pass for MirToAir<'_> {
                 SourceSpan::default(),
                 AUX_SEGMENT,
                 Identifier::new(SourceSpan::default(), Symbol::new(AUX_SEGMENT as u32)),
-                bus_raw_bindings,
+                existing_aux_segment
+                    .into_iter()
+                    .chain(bus_raw_bindings)
+                    .collect(),
             );
             for binding in aux_trace_segment.bindings.iter() {
+                // Also contains non-bus identifiers
                 bus_bindings_map.insert(binding.name.unwrap(), binding.offset);
             }
-            trace_columns.push(aux_trace_segment);
+            if trace_columns.len() == 1 {
+                trace_columns.push(aux_trace_segment);
+            } else {
+                let aux = trace_columns.get_mut(1).unwrap();
+                *aux = aux_trace_segment;
+            }
         }
 
         air.trace_segment_widths = trace_columns.iter().map(|ts| ts.size as u16).collect();
