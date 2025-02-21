@@ -8,6 +8,7 @@
   - [Constraint descriptions](./description/constraints.md)
   - [Variables](./description/variables.md)
   - [Evaluators](./description/evaluators.md)
+  - [Buses](./description/buses.md)
   - [Convenience syntax](./description/convenience.md)
   - [AirScript Example](./description/example.md)
   - [Keywords](./description/keywords.md)

@@ -3,8 +3,8 @@
 AirScript defines the following keywords:
 
 - `boundary_constraints`: used to declare the source section where the [boundary constraints are described](./constraints.md#boundary_constraints).
-  - `first`: used to access the value of a trace column at the first row of the trace. _It may only be used when defining boundary constraints._
-  - `last`: used to access the value of a trace column at the last row of the trace. _It may only be used when defining boundary constraints._
+  - `first`: used to access the value of a trace column / bus at the first row of the trace. _It may only be used when defining boundary constraints._
+  - `last`: used to access the value of a trace column / bus at the last row of the trace. _It may only be used when defining boundary constraints._
 - `case`: used to declare arms of [conditional constraints](./convenience.md#conditional-constraints).
 - `const`: used to declare [constants](./declarations.md#constant-constant).
 - `def`: used to [define the name](./organization.md#root-module) of a root AirScript module.

@@ -12,6 +12,7 @@ All modules must start with a module name declaration followed by a set of sourc
 | [trace columns](./declarations.md#execution-trace-trace_columns)                      | required    | not allowed       |
 | [public inputs](./declarations.md#public-inputs-public_inputs)                        | required    | not allowed       |
 | [periodic columns](./declarations.md#periodic-columns-periodic_columns)               | optional    | optional          |
+| [buses](./declarations.md#buses-buses)                                     | optional    | optional          |
 | [random values](./declarations.md#random-values-random_values)                        | optional    | not allowed       |
 | [boundary constraints](./constraints.md#boundary-constraints-boundary_constraints)    | required    | not allowed       |
 | [integrity constraints](./constraints.md#integrity-constraints-integrity_constraints) | required    | not allowed       |
