@@ -1,7 +1,7 @@
 use air_parser::ast::{TraceColumnIndex, TraceSegmentId};
 
 /// [TraceAccess] is like [SymbolAccess], but is used to describe an access to a specific trace column or columns.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TraceAccess {
     /// The trace segment being accessed
     pub segment: TraceSegmentId,
