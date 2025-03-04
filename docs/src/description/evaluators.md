@@ -6,23 +6,14 @@ An evaluator consists of a declaration which specifies evaluator metadata and a 
 
 Evaluator declaration starts with the `ev` keyword, followed by the name of the evaluator, parameter declarations, and a code block surrounded by braces. For example:
 ```
-ev foo([a, b, c], [p]) {}
+ev foo([a, b, c]) {}
 ```
 Evaluator name must:
 - Be a string consisting of alpha-numeric characters and underscores.
 - Start with a letter.
 - Be unique among the evaluators declared in and imported by a module.
 
-Evaluator parameters define an evaluator's view into the execution trace. Specifically, they define the set of columns in the main and the auxiliary trace segments the evaluator can access. For example, the evaluator declared above can access 3 columns of the main trace segment (which can be referenced as `a`, `b`, and `c`), and 1 column in the auxiliary trace segment (which can be referenced as `p`).
-
-If an evaluator needs to access only the main trace segment, we can omit the parameters for the auxiliary trace segment. For example:
-```
-ev bar([a, b, c]) {}
-```
-If, however, an evaluator needs to access only the auxiliary trace segments, we must define the main trace segment parameters as an empty set like so:
-```
-ev baz([], [p]) {}
-```
+Evaluator parameters define an evaluator's view into the execution trace. Specifically, they define the set of columns in the main and the auxiliary trace segments the evaluator can access. For example, the evaluator declared above can access 3 columns of the main trace segment (which can be referenced as `a`, `b`, and `c`).
 
 An evaluator body must contain at least one integrity constraint. For example:
 ```
@@ -34,7 +25,6 @@ In general, an evaluator body may contain any set of expressions allowed in the 
 
 - Evaluators can access only the trace columns defined via its parameters.
 - Evaluators can access only constants and periodic columns defined in the same module.
-- Evaluators can access random values defined in the root module.
 
 Evaluators can be declared anywhere in a module, but usually are declared towards the end of the module.
 

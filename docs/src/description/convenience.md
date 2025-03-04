@@ -127,8 +127,8 @@ trace_columns {
 integrity_constraints {
     enf s^2 = s;
     enf match {
-        case s: c' = a + b
-        case !s: c' = a * c
+        case s: c' = a + b,
+        case !s: c' = a * c,
     };
 }
 ```
@@ -148,10 +148,10 @@ integrity_constraints {
     enf s0^2 = s0;
     enf s1^2 = s1;
     enf match {
-        case s0 & s1:   c' = a + b
-        case s0 & !s1:  c' = a * c
-        case !s0 & s1:  c' = a - b
-        case !s0 & !s1: c' = c
+        case s0 & s1:   c' = a + b,
+        case s0 & !s1:  c' = a * c,
+        case !s0 & s1:  c' = a - b,
+        case !s0 & !s1: c' = c,
     };
 }
 ```
@@ -171,8 +171,8 @@ trace_columns {
 integrity_constraints {
     enf s^2 = s;
     enf match {
-        case s: foo([a, b, c])
-        case !s: bar([a, b, c])
+        case s: foo([a, b, c]),
+        case !s: bar([a, b, c]),
     };
 }
 
@@ -199,8 +199,8 @@ trace_columns {
 integrity_constraints {
     enf s^2 = s;
     enf match {
-        case s: foo([a, b, c])
-        case !s: bar([a, b, c])
+        case s: foo([a, b, c]),
+        case !s: bar([a, b, c]),
     };
 }
 

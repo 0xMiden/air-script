@@ -8,13 +8,11 @@ Currently, AirScript is on version 0.3, which includes about 95% of features nee
 
 AirScript includes the following features:
 
-- **Trace Columns**: Users can declare trace columns for main and auxiliary traces as individual columns or groups of columns (e.g. `main: [a, b, c[3], d],` where `a`, `b`, and `d` are single columns and `c` refers to a group of 3 columns)
+- **Trace Columns**: Users can declare trace columns for the main trace as individual columns or groups of columns (e.g. `main: [a, b, c[3], d],` where `a`, `b`, and `d` are single columns and `c` refers to a group of 3 columns)
 
 - **Public Inputs**: Users can declare public inputs where each public input is a named vector (e.g. `stack_inputs: [16],`)
 
 - **Periodic Columns**: Users can declare periodic columns (e.g. `k0: [1, 0, 0, 0],`)
-
-- **Random Values**: Users can define random values provided by the verifier (e.g. `alphas: [x, y[14], z],` or `rand: [16],`)
 
 - **Buses**: Users can declare buses which serve as communication channels between chiplets. They can be one of 2 types:
   - `multiset`: simple multi-set based bus.

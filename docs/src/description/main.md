@@ -10,4 +10,3 @@
 - [Convenience syntax](./convenience.md)
 - [AirScript Example](./example.md)
 - [Keywords](./keywords.md)
-- [Appendix](./appendix.md)

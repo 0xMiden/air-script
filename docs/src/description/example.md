@@ -7,7 +7,6 @@ def ExampleAir
 
 trace_columns {
     main: [s, a, b, c],
-    aux: [p],
 }
 
 public_inputs {
@@ -53,9 +52,6 @@ integrity_constraints {
 
     # c = a * b when s = 1.
     enf s * (c - a * b) = 0;
-
-    # the auxiliary column contains the product of values of c offset by a random value.
-    enf p' = p * (c + $rand[0]);
 
     # insert p to the q bus when s = 1
     q.insert(p) when s;

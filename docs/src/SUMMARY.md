@@ -12,5 +12,4 @@
   - [Convenience syntax](./description/convenience.md)
   - [AirScript Example](./description/example.md)
   - [Keywords](./description/keywords.md)
-  - [Appendix](./description/appendix.md)
 - [Backends](./backends.md)
