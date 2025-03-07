@@ -30,7 +30,7 @@ pub struct ConstantPropagation<'a> {
     live: HashSet<Identifier>,
     in_constraint_comprehension: bool,
 }
-impl<'p> Pass for ConstantPropagation<'p> {
+impl Pass for ConstantPropagation<'_> {
     type Input<'a> = Program;
     type Output<'a> = Program;
     type Error = SemanticAnalysisError;
@@ -168,7 +168,7 @@ impl<'a> ConstantPropagation<'a> {
         Ok(result)
     }
 }
-impl<'a> VisitMut<SemanticAnalysisError> for ConstantPropagation<'a> {
+impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
     /// Fold constant expressions
     fn visit_mut_scalar_expr(
         &mut self,

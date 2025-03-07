@@ -193,7 +193,7 @@ impl std::ops::BitAnd<Boundary> for ColumnBoundaryFlags {
 
 /// Used to help format the boundary constraint flags
 struct FormatConstrainedFlags<'a>(&'a [Span<ColumnBoundaryFlags>]);
-impl<'a> fmt::Debug for FormatConstrainedFlags<'a> {
+impl fmt::Debug for FormatConstrainedFlags<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_list()
             .entries(self.0.iter().map(|c| c.item))

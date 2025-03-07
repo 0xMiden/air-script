@@ -6,7 +6,7 @@ use super::ParseTest;
 
 #[test]
 fn error_invalid_int() {
-    let num: u128 = u64::max_value() as u128 + 1;
+    let num: u128 = u64::MAX as u128 + 1;
     let source = format!(
         r#"
     def test

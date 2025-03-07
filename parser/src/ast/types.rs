@@ -1,7 +1,7 @@
 use super::*;
 
 /// The types of values which can be represented in an AirScript program
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Hash, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Type {
     /// A field element
     Felt,

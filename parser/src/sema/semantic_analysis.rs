@@ -136,7 +136,7 @@ impl<'a> SemanticAnalysis<'a> {
     }
 }
 
-impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
+impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
     fn visit_mut_module(&mut self, module: &mut Module) -> ControlFlow<SemanticAnalysisError> {
         self.current_module = Some(module.name);
 
@@ -1053,7 +1053,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
     }
 }
 
-impl<'a> SemanticAnalysis<'a> {
+impl SemanticAnalysis<'_> {
     /// Validate arguments for builtin functions, which currently consist only of the sum/prod reducers
     fn validate_call_to_builtin(&mut self, call: &Call) -> ControlFlow<SemanticAnalysisError> {
         match call.callee.as_ref().name() {

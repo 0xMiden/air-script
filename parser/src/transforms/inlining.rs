@@ -95,7 +95,7 @@ pub struct Inlining<'a> {
     next_ident_lc: usize,
     next_ident: usize,
 }
-impl<'p> Pass for Inlining<'p> {
+impl Pass for Inlining<'_> {
     type Input<'a> = Program;
     type Output<'a> = Program;
     type Error = SemanticAnalysisError;
@@ -1660,7 +1660,7 @@ struct RewriteIterableBindingsVisitor<'a> {
     /// should replace them in the comprehension body.
     values: &'a HashMap<Identifier, Expr>,
 }
-impl<'a> RewriteIterableBindingsVisitor<'a> {
+impl RewriteIterableBindingsVisitor<'_> {
     fn rewrite_scalar_access(
         &mut self,
         access: SymbolAccess,
@@ -1753,7 +1753,7 @@ impl<'a> RewriteIterableBindingsVisitor<'a> {
         ControlFlow::Continue(result)
     }
 }
-impl<'a> VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'a> {
+impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
     fn visit_mut_scalar_expr(
         &mut self,
         expr: &mut ScalarExpr,
@@ -1814,7 +1814,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'a> 
 struct ApplyConstraintSelector<'a> {
     selector: &'a ScalarExpr,
 }
-impl<'a> VisitMut<SemanticAnalysisError> for ApplyConstraintSelector<'a> {
+impl VisitMut<SemanticAnalysisError> for ApplyConstraintSelector<'_> {
     fn visit_mut_statement(
         &mut self,
         statement: &mut Statement,

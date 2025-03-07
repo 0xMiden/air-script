@@ -622,6 +622,12 @@ impl PartialEq for ConstSymbolAccess {
         self.name.eq(&other.name) && self.ty.eq(&other.ty)
     }
 }
+impl std::hash::Hash for ConstSymbolAccess {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.ty.hash(state);
+    }
+}
 impl fmt::Display for ConstSymbolAccess {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", &self.name)
@@ -684,13 +690,19 @@ impl PartialEq for RangeExpr {
         self.start.eq(&other.start) && self.end.eq(&other.end)
     }
 }
+impl std::hash::Hash for RangeExpr {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.start.hash(state);
+        self.end.hash(state);
+    }
+}
 impl fmt::Display for RangeExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}..{}", &self.start, &self.end)
     }
 }
 
-#[derive(Clone, Spanned, PartialEq, Eq, Debug)]
+#[derive(Hash, Clone, Spanned, PartialEq, Eq, Debug)]
 pub enum RangeBound {
     SymbolAccess(ConstSymbolAccess),
     Const(Span<usize>),
@@ -793,8 +805,9 @@ impl fmt::Display for BinaryOp {
 }
 
 /// Describes the type of boundary in the boundary constraint.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Default, Eq)]
 pub enum Boundary {
+    #[default]
     First,
     Last,
 }
@@ -808,7 +821,7 @@ impl fmt::Display for Boundary {
 }
 
 /// Represents the way an identifier is accessed/referenced in the source.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Hash, Debug, Clone, Eq, PartialEq)]
 pub enum AccessType {
     /// Access refers to the entire bound value
     Default,

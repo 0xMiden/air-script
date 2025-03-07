@@ -12,6 +12,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-air-ir = { package = "air-ir", path = "../../ir", version = "0.4" }
+air-ir = { package = "air-ir", path = "../../air", version = "0.4" }
 anyhow = "1.0"
 codegen = "0.2"

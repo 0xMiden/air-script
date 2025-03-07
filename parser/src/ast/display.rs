@@ -12,7 +12,7 @@ impl<T: fmt::Display> fmt::Display for DisplayBracketed<T> {
 
 /// Displays a slice of items surrounded by brackets, e.g. `[foo, bar]`
 pub struct DisplayList<'a, T>(pub &'a [T]);
-impl<'a, T: fmt::Display> fmt::Display for DisplayList<'a, T> {
+impl<T: fmt::Display> fmt::Display for DisplayList<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[{}]", DisplayCsv::new(self.0.iter()))
     }
@@ -28,7 +28,7 @@ impl<T: fmt::Display> fmt::Display for DisplayParenthesized<T> {
 
 /// Displays a slice of items surrounded by parentheses, e.g. `(foo, bar)`
 pub struct DisplayTuple<'a, T>(pub &'a [T]);
-impl<'a, T: fmt::Display> fmt::Display for DisplayTuple<'a, T> {
+impl<T: fmt::Display> fmt::Display for DisplayTuple<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({})", DisplayCsv::new(self.0.iter()))
     }
@@ -37,7 +37,7 @@ impl<'a, T: fmt::Display> fmt::Display for DisplayTuple<'a, T> {
 /// Displays a slice of items with their types surrounded by parentheses,
 /// e.g. `(foo: felt, bar: felt[12])`
 pub struct DisplayTypedTuple<'a, V, T>(pub &'a [(V, T)]);
-impl<'a, V: fmt::Display, T: fmt::Display> fmt::Display for DisplayTypedTuple<'a, V, T> {
+impl<V: fmt::Display, T: fmt::Display> fmt::Display for DisplayTypedTuple<'_, V, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -89,7 +89,7 @@ impl DisplayStatement<'_> {
         Ok(())
     }
 }
-impl<'a> fmt::Display for DisplayStatement<'a> {
+impl fmt::Display for DisplayStatement<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.write_indent(f)?;
         match self.statement {
@@ -130,7 +130,7 @@ impl DisplayLet<'_> {
         Ok(())
     }
 }
-impl<'a> fmt::Display for DisplayLet<'a> {
+impl fmt::Display for DisplayLet<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use core::fmt::Write;
 
