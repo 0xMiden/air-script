@@ -152,8 +152,8 @@ impl Pass for Inlining<'_> {
         // Public inputs..
         for input in program.public_inputs.values() {
             self.bindings.insert(
-                input.name,
-                BindingType::PublicInput(Type::Vector(input.size)),
+                input.name(),
+                BindingType::PublicInput(Type::Vector(input.size())),
             );
         }
         // For periodic columns, we register the imported item, but do not add any to the local bindings.
@@ -1140,8 +1140,8 @@ impl<'a> Inlining<'a> {
 
             for input in self.public_inputs.values() {
                 eval_bindings.insert(
-                    input.name,
-                    BindingType::PublicInput(Type::Vector(input.size)),
+                    input.name(),
+                    BindingType::PublicInput(Type::Vector(input.size())),
                 );
             }
         }
@@ -1250,8 +1250,8 @@ impl<'a> Inlining<'a> {
 
             for input in self.public_inputs.values() {
                 function_bindings.insert(
-                    input.name,
-                    BindingType::PublicInput(Type::Vector(input.size)),
+                    input.name(),
+                    BindingType::PublicInput(Type::Vector(input.size())),
                 );
             }
         }

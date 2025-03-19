@@ -86,7 +86,7 @@ fn test_inlining_with_evaluator_split_input_binding() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     expected
         .constants
@@ -200,7 +200,7 @@ fn test_inlining_with_vector_literal_binding_regrouped() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -289,7 +289,7 @@ fn test_inlining_with_vector_literal_binding_unordered() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -378,7 +378,7 @@ fn test_inlining_with_vector_literal_binding_different_arity_many_to_few() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -467,7 +467,7 @@ fn test_inlining_with_vector_literal_binding_different_arity_few_to_many() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -565,7 +565,7 @@ fn test_inlining_across_modules_with_nested_evaluators_variant1() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -677,7 +677,7 @@ fn test_inlining_across_modules_with_nested_evaluators_variant2() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -783,7 +783,7 @@ fn test_inlining_constraint_comprehensions_no_selector() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -861,7 +861,7 @@ fn test_inlining_constraint_comprehensions_with_selector() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -941,7 +941,7 @@ fn test_inlining_constraint_comprehensions_with_constant_selector() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -1020,7 +1020,7 @@ fn test_inlining_constraint_comprehensions_in_evaluator() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -1112,7 +1112,7 @@ fn test_inlining_constraints_with_folded_comprehensions_in_evaluator() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -1220,7 +1220,7 @@ fn test_inlining_with_function_call_as_binary_operand() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     expected.functions.insert(
         function_ident!(root, fold_sum),
@@ -1363,11 +1363,11 @@ fn test_repro_issue340() {
     ));
     expected.public_inputs.insert(
         ident!(stack_inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
     );
     expected.public_inputs.insert(
         ident!(stack_outputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(stack_outputs), 16),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(stack_outputs), 16),
     );
     expected.boundary_constraints.push(enforce!(eq!(
         bounded_access!(instruction_word, Boundary::First, Type::Felt),

@@ -10,8 +10,8 @@ pub(super) fn add_public_inputs_struct(scope: &mut Scope, ir: &Air) {
 
     for public_input in ir.public_inputs() {
         pub_inputs_struct.field(
-            public_input.name.as_str(),
-            format!("[Felt; {}]", public_input.size),
+            public_input.name().as_str(),
+            format!("[Felt; {}]", public_input.size()),
         );
     }
 
@@ -20,7 +20,7 @@ pub(super) fn add_public_inputs_struct(scope: &mut Scope, ir: &Air) {
 
     let pub_inputs_values: Vec<String> = ir
         .public_inputs()
-        .map(|input| input.name.to_string())
+        .map(|input| input.name().to_string())
         .collect();
 
     // add a constructor for public inputs
@@ -31,8 +31,8 @@ pub(super) fn add_public_inputs_struct(scope: &mut Scope, ir: &Air) {
         .line(format!("Self {{ {} }}", pub_inputs_values.join(", ")));
     for public_input in ir.public_inputs() {
         new_fn.arg(
-            public_input.name.as_str(),
-            format!("[Felt; {}]", public_input.size),
+            public_input.name().as_str(),
+            format!("[Felt; {}]", public_input.size()),
         );
     }
 

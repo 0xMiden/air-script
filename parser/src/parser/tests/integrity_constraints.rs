@@ -34,7 +34,7 @@ fn integrity_constraints() {
         .push(trace_segment!(0, "$main", [(clk, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -87,7 +87,7 @@ fn integrity_constraints_with_buses() {
         .push(trace_segment!(0, "$main", [(clk, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -194,7 +194,7 @@ fn multiple_integrity_constraints() {
         .push(trace_segment!(0, "$main", [(clk, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -248,7 +248,7 @@ fn integrity_constraint_with_periodic_col() {
     );
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -300,7 +300,7 @@ fn integrity_constraint_with_constants() {
         .insert(ident!(C), constant!(C = [[0, 1], [1, 0]]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -349,7 +349,7 @@ fn integrity_constraint_with_variables() {
         .push(trace_segment!(0, "$main", [(clk, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -395,7 +395,7 @@ fn integrity_constraint_with_indexed_trace_access() {
         .push(trace_segment!(0, "$main", [(a, 1), (b, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -441,7 +441,7 @@ fn ic_comprehension_one_iterable_identifier() {
         .push(trace_segment!(0, "$main", [(a, 1), (b, 1), (c, 4)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -486,7 +486,7 @@ fn ic_comprehension_one_iterable_range() {
         .push(trace_segment!(0, "$main", [(a, 1), (b, 1), (c, 4)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -531,7 +531,7 @@ fn ic_comprehension_with_selectors() {
         .push(trace_segment!(0, "$main", [(s, 2), (a, 1), (b, 1), (c, 4)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -589,7 +589,7 @@ fn ic_comprehension_with_evaluator_call() {
     );
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -649,7 +649,7 @@ fn ic_comprehension_with_evaluator_and_selectors() {
     );
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -712,7 +712,7 @@ fn ic_match_constraint() {
     );
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,

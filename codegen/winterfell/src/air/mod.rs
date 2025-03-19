@@ -55,8 +55,8 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
     // add public inputs
     for public_input in ir.public_inputs() {
         air_struct.field(
-            public_input.name.as_str(),
-            format!("[Felt; {}]", public_input.size),
+            public_input.name().as_str(),
+            format!("[Felt; {}]", public_input.size()),
         );
     }
 
@@ -148,7 +148,7 @@ let context = AirContext::new_multi_segment(
     // get public inputs
     let mut pub_inputs = Vec::new();
     for public_input in ir.public_inputs() {
-        pub_inputs.push(format!("{0}: public_inputs.{0}", public_input.name));
+        pub_inputs.push(format!("{0}: public_inputs.{0}", public_input.name()));
     }
     // return initialized Self.
     new.line(format!("Self {{ context, {} }}", pub_inputs.join(", ")));

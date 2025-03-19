@@ -30,8 +30,7 @@ pub use mul::Mul;
 pub use parameter::Parameter;
 pub use sub::Sub;
 pub use value::{
-    BusAccess, ConstantValue, MirType, MirValue, PeriodicColumnAccess,
-    PublicInputAccess, /*, PublicInputBinding*/
-    SpannedMirValue, TraceAccess, TraceAccessBinding, Value,
+    BusAccess, ConstantValue, MirType, MirValue, PeriodicColumnAccess, PublicInputAccess,
+    PublicInputBinding, SpannedMirValue, TraceAccess, TraceAccessBinding, Value,
 };
 pub use vector::Vector;

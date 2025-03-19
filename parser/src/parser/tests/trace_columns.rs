@@ -33,7 +33,7 @@ fn trace_columns() {
         .push(trace_segment!(0, "$main", [(clk, 1), (fmp, 1), (ctx, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -78,7 +78,7 @@ fn trace_columns_groups() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,

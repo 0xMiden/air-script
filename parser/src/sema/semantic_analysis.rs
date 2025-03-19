@@ -185,8 +185,8 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
             for input in self.program.public_inputs.values() {
                 assert_eq!(
                     self.locals.insert(
-                        NamespacedIdentifier::Binding(input.name),
-                        BindingType::PublicInput(Type::Vector(input.size))
+                        NamespacedIdentifier::Binding(input.name()),
+                        BindingType::PublicInput(Type::Vector(input.size()))
                     ),
                     None
                 );
@@ -1388,7 +1388,7 @@ impl SemanticAnalysis<'_> {
                             // Buses boundaries can be constrained by null
                             (BindingType::Bus(_), ScalarExpr::Null(_)) => {}
                             (BindingType::Bus(_), ScalarExpr::SymbolAccess(access)) => {
-                                self.has_type_errors = true;
+                                /* self.has_type_errors = true;
                                 self.invalid_constraint(
                                     access.span(),
                                     "public input bus constraints are not yet supported",
@@ -1397,7 +1397,40 @@ impl SemanticAnalysis<'_> {
                                     access.name.span(),
                                     "this a reference to a public input",
                                 )
-                                .emit();
+                                .emit(); */
+
+                                // TODO: Update when table public inputs are supported
+                                self.visit_mut_resolvable_identifier(&mut access.name)?;
+                                self.visit_mut_access_type(&mut access.access_type)?;
+
+                                let resolved_binding_ty =
+                                    match self.resolvable_binding_type(&access.name) {
+                                        Ok(ty) => ty,
+                                        // An unresolved identifier at this point means that it is undefined,
+                                        // but we've already raised a diagnostic
+                                        //
+                                        // There is nothing useful we can do here other than continue traversing the module
+                                        // gathering as many undefined variable usages as possible before bailing
+                                        Err(_) => return ControlFlow::Continue(()),
+                                    };
+
+                                match resolved_binding_ty.item {
+                                    BindingType::PublicInput(_) => {}
+                                    _ => {
+                                        self.has_type_errors = true;
+                                        self.invalid_constraint(
+                                            access.span(),
+                                            "expected a reference to a public input",
+                                        )
+                                        .with_secondary_label(
+                                            access.name.span(),
+                                            "this is not a reference to a public input",
+                                        )
+                                        .emit();
+                                    }
+                                }
+
+                                // Buses boundaries can be constrained to null, nothing to do
                             }
                             (BindingType::Bus(_), _) => {
                                 // Buses cannot be constrained otherwise

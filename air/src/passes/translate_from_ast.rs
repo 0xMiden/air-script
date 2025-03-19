@@ -576,7 +576,7 @@ impl AirBuilder<'_> {
     fn public_input_access(&self, access: &ast::SymbolAccess) -> Option<PublicInputAccess> {
         let public_input = self.air.public_inputs.get(access.name.as_ref())?;
         if let AccessType::Index(index) = access.access_type {
-            Some(PublicInputAccess::new(public_input.name, index))
+            Some(PublicInputAccess::new(public_input.name(), index))
         } else {
             // This should have been caught earlier during compilation
             unreachable!(

@@ -304,26 +304,72 @@ impl PartialEq for PeriodicColumn {
 /// Public inputs are represented by a named identifier which is used to identify a fixed
 /// size array of length `size`.
 #[derive(Debug, Clone, Spanned)]
-pub struct PublicInput {
-    #[span]
-    pub span: SourceSpan,
-    pub name: Identifier,
-    pub size: usize,
+pub enum PublicInput {
+    Vector {
+        #[span]
+        span: SourceSpan,
+        name: Identifier,
+        size: usize,
+    },
+    Table {
+        #[span]
+        span: SourceSpan,
+        name: Identifier,
+        size: usize,
+    },
 }
 impl PublicInput {
     #[inline]
-    pub fn new(span: SourceSpan, name: Identifier, size: u64) -> Self {
-        Self {
+    pub fn vector(span: SourceSpan, name: Identifier, size: u64) -> Self {
+        Self::Vector {
             span,
             name,
             size: size.try_into().unwrap(),
+        }
+    }
+    #[inline]
+    pub fn table(span: SourceSpan, name: Identifier, size: u64) -> Self {
+        Self::Table {
+            span,
+            name,
+            size: size.try_into().unwrap(),
+        }
+    }
+    #[inline]
+    pub fn name(&self) -> Identifier {
+        match self {
+            Self::Vector { name, .. } | Self::Table { name, .. } => *name,
+        }
+    }
+    #[inline]
+    pub fn size(&self) -> usize {
+        match self {
+            Self::Vector { size, .. } | Self::Table { size, .. } => *size,
         }
     }
 }
 impl Eq for PublicInput {}
 impl PartialEq for PublicInput {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.size == other.size
+        match (self, other) {
+            (
+                Self::Vector {
+                    name: l, size: ls, ..
+                },
+                Self::Vector {
+                    name: r, size: rs, ..
+                },
+            ) => l == r && ls == rs,
+            (
+                Self::Table {
+                    name: l, size: lc, ..
+                },
+                Self::Table {
+                    name: r, size: rc, ..
+                },
+            ) => l == r && lc == rc,
+            _ => false,
+        }
     }
 }
 

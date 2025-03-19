@@ -59,7 +59,7 @@ fn test_module() -> Module {
         .push(trace_segment!(0, "$main", [(clk, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.buses.insert(
         ident!(p),

@@ -146,7 +146,9 @@ PublicInputs: Span<Vec<PublicInput>> = {
 
 PublicInput: PublicInput = {
     <l:@L> <name: Identifier> ":" <size: Size> "," <r:@R>
-        => PublicInput::new(span!(l, r), name, size),
+        => PublicInput::vector(span!(l, r), name, size),
+    <l:@L> <name: Identifier> ":" <table: TableSize> "," <r:@R>
+        => PublicInput::table(span!(l, r), name, table),
 }
 
 // PERIODIC COLUMNS
@@ -610,6 +612,10 @@ Size: u64 = {
 
 Index: usize = {
     "[" <idx: Num_u64> "]" => idx as usize
+}
+
+TableSize: u64 = {
+    "[" "[" <cols: Num_u64> "]" "]" => <>
 }
 
 DeclIdentifier: Identifier = {

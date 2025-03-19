@@ -347,6 +347,9 @@ impl<'a> BusOpExpand<'a> {
 
                         to_update = Some(unit_val);
                     }
+                    MirValue::PublicInputBinding(access) => {
+                        eprintln!("Skipping Public input binding:\n{:#?}", access);
+                    }
                     _ => unreachable!(),
                 }
             }

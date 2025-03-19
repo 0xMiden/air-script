@@ -72,7 +72,7 @@ fn test_constant_propagation() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     expected
         .constants

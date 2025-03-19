@@ -65,6 +65,8 @@ pub enum MirValue {
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
+    /// A reference to a given public input
+    PublicInputBinding(PublicInputBinding),
     /// A reference to a specific index in the random values array
     ///
     /// Random values are not provided by the user in the AirScript program, but are used to expand Bus constraints.
@@ -189,6 +191,19 @@ pub struct PublicInputAccess {
 impl PublicInputAccess {
     pub const fn new(name: Identifier, index: usize) -> Self {
         Self { name, index }
+    }
+}
+
+/// Represents an access of a [PublicInput], similar in nature to [TraceAccess]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct PublicInputBinding {
+    /// The name of the public input to bind
+    pub name: Identifier,
+}
+
+impl PublicInputBinding {
+    pub const fn new(name: Identifier) -> Self {
+        Self { name }
     }
 }
 

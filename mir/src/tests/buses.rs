@@ -146,6 +146,38 @@ fn buses_args_expr_in_integrity_expr() {
     assert_bus_eq(&mut expected_mir, &mut result_mir);
 }
 
+#[test]
+fn buses_table_in_boundary_constraints() {
+    let source = "
+    def test
+    trace_columns {
+        main: [a],
+    }
+
+    public_inputs {
+        x: [[2]],
+        y: [[3]],
+    }
+
+    buses {
+        unit p,
+    }
+
+    boundary_constraints {
+        enf p.first = x;
+        enf p.last = y;
+    }
+
+    integrity_constraints {
+        enf a = 0;
+    }";
+
+    let result = compile(source);
+    eprintln!("{:#?}", result);
+    assert!(result.is_ok());
+    todo!()
+}
+
 // Tests that should return errors
 #[test]
 fn err_buses_boundaries_to_const() {
