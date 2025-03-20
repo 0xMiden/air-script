@@ -1,5 +1,8 @@
 use crate::{
-    ir::{assert_bus_eq, Add, Builder, Bus, Fold, FoldOperator, Link, Mir, Op, Vector},
+    ir::{
+        assert_bus_eq, Add, Builder, Bus, Fold, FoldOperator, Link, Mir, MirValue, Op,
+        PublicInputBinding, Vector,
+    },
     tests::translate,
 };
 use air_parser::{ast, Symbol};
@@ -173,9 +176,26 @@ fn buses_table_in_boundary_constraints() {
     }";
 
     let result = compile(source);
-    eprintln!("{:#?}", result);
     assert!(result.is_ok());
-    todo!()
+
+    let get_name = |op: &Link<Op>| -> ast::Identifier {
+        let MirValue::PublicInputBinding(PublicInputBinding { name: iden }) =
+            op.as_value().unwrap().value.value
+        else {
+            panic!("Expected a public input, got {:#?}", op);
+        };
+        iden
+    };
+    let mir = result.unwrap();
+    let bus = mir.constraint_graph().buses.values().next().unwrap();
+    let p = bus.borrow();
+    let first = get_name(&p.get_first());
+    let last = get_name(&p.get_last());
+    let public_inputs = &mir.public_inputs;
+    let mut pi = public_inputs.keys();
+    let (x, y) = (pi.next().unwrap(), pi.next().unwrap());
+    assert_eq!(first, x);
+    assert_eq!(last, y);
 }
 
 // Tests that should return errors
