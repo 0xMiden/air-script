@@ -1,14 +1,16 @@
+mod bus;
 mod constraints;
 mod degree;
 mod operation;
 mod trace;
 mod value;
 
+pub use self::bus::Bus;
 pub use self::constraints::{ConstraintDomain, ConstraintError, ConstraintRoot, Constraints};
 pub use self::degree::IntegrityConstraintDegree;
 pub use self::operation::Operation;
 pub use self::trace::TraceAccess;
-pub use self::value::{PeriodicColumnAccess, PublicInputAccess, Value};
+pub use self::value::{PeriodicColumnAccess, PublicInputAccess, PublicInputBinding, Value};
 
 pub use air_parser::{
     ast::{

@@ -74,6 +74,7 @@ impl Pass for MirToAir<'_> {
             air: &mut air,
             trace_columns: trace_columns.clone(),
             bus_bindings_map,
+            buses: HashMap::new(),
         };
 
         let graph = mir.constraint_graph();
@@ -86,6 +87,10 @@ impl Pass for MirToAir<'_> {
             builder.build_integrity_constraint(ic)?;
         }
 
+        for bus in buses.values() {
+            builder.build_bus(bus)?;
+        }
+
         Ok(air)
     }
 }
@@ -95,6 +100,7 @@ struct AirBuilder<'a> {
     air: &'a mut Air,
     trace_columns: Vec<TraceSegment>,
     bus_bindings_map: HashMap<Identifier, usize>,
+    buses: HashMap<Identifier, Bus>,
 }
 
 /// Helper function to remove the vector wrapper from a scalar operation
@@ -250,8 +256,14 @@ impl AirBuilder<'_> {
                             index: public_input_access.index,
                         })
                     }
+                    // TODO: Add support for PublicInputBinding of [ast::Table]
+                    MirValue::PublicInputBinding(public_input_binding) => {
+                        crate::ir::Value::PublicInputBinding(crate::ir::PublicInputBinding {
+                            name: public_input_binding.name,
+                        })
+                    }
                     MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
-                    _ => unreachable!("Unexpected MirValue: {:?}", mir_value),
+                    _ => unreachable!("Unexpected MirValue: {:#?}", mir_value),
                 };
 
                 Ok(self.insert_op(Operation::Value(value)))
@@ -515,6 +527,20 @@ impl AirBuilder<'_> {
             }
             _ => unreachable!(),
         }
+        Ok(())
+    }
+
+    fn build_bus(&mut self, mir_bus: &Link<mir::ir::Bus>) -> Result<(), CompileError> {
+        let mir_bus = mir_bus.borrow();
+        eprintln!("bus: {:#?}", mir_bus);
+        let first = self.insert_mir_operation(&mir_bus.get_first())?;
+        eprintln!("first: {:#?}", first);
+        let last = self.insert_mir_operation(&mir_bus.get_last())?;
+        eprintln!("last: {:#?}", last);
+        self.buses.insert(
+            mir_bus.name.unwrap(),
+            Bus::new(mir_bus.name, mir_bus.bus_type.clone(), first, last),
+        );
         Ok(())
     }
 

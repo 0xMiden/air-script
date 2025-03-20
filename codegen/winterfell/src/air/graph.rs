@@ -102,6 +102,9 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             }
+            Value::PublicInputBinding(air_ir::PublicInputBinding { name }) => {
+                todo!("WIP: PublicInputBinding({:?})", name)
+            }
             Value::RandomValue(idx) => {
                 format!("aux_rand_elements.get_segment_elements(0)[{idx}]")
             }

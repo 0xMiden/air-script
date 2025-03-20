@@ -16,6 +16,8 @@ pub enum Value {
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
+    /// A public input binding
+    PublicInputBinding(PublicInputBinding),
     /// A reference to the `random_values` array, specifically the element at the given index
     RandomValue(usize),
 }
@@ -44,4 +46,11 @@ impl PublicInputAccess {
     pub const fn new(name: Identifier, index: usize) -> Self {
         Self { name, index }
     }
+}
+
+/// Represents a binding to a [PublicInput]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct PublicInputBinding {
+    /// The name of the public input to bind
+    pub name: Identifier,
 }
