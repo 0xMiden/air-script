@@ -256,7 +256,7 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
             }
             assert_eq!(
                 self.locals
-                    .insert(namespaced_name, BindingType::Bus(bus.bus_type.clone())),
+                    .insert(namespaced_name, BindingType::Bus(bus.bus_type)),
                 None
             );
         }

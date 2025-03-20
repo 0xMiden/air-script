@@ -1,5 +1,6 @@
 use air_ir::{
-    Air, IntegrityConstraintDegree, NodeIndex, Operation, TraceAccess, TraceSegmentId, Value,
+    Air, Identifier, IntegrityConstraintDegree, NodeIndex, Operation, TraceAccess, TraceSegmentId,
+    Value,
 };
 
 use super::ElemType;
@@ -102,8 +103,8 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             }
-            Value::PublicInputBinding(air_ir::PublicInputBinding { name }) => {
-                todo!("WIP: PublicInputBinding({:?})", name)
+            Value::PublicInputBinding(air_ir::BusVariableBoundary { name, num_cols }) => {
+                generate_bus_varlen_pubinput(*name, *num_cols)
             }
             Value::RandomValue(idx) => {
                 format!("aux_rand_elements.get_segment_elements(0)[{idx}]")
@@ -149,4 +150,11 @@ fn binary_op_to_string(
         }
         _ => panic!("unsupported operation"),
     }
+}
+
+fn generate_bus_varlen_pubinput(name: Identifier, num_cols: usize) -> String {
+    eprintln!("TODO: generate_bus_varlen_pubinput");
+    eprintln!("name: {:?}", name);
+    eprintln!("num_cols: {:?}", num_cols);
+    todo!()
 }

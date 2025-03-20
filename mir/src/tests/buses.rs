@@ -1,7 +1,7 @@
 use crate::{
     ir::{
-        assert_bus_eq, Add, Builder, Bus, Fold, FoldOperator, Link, Mir, MirValue, Op,
-        PublicInputBinding, Vector,
+        assert_bus_eq, Add, Builder, Bus, BusVariableBoundary, Fold, FoldOperator, Link, Mir,
+        MirValue, Op, Vector,
     },
     tests::translate,
 };
@@ -178,24 +178,28 @@ fn buses_table_in_boundary_constraints() {
     let result = compile(source);
     assert!(result.is_ok());
 
-    let get_name = |op: &Link<Op>| -> ast::Identifier {
-        let MirValue::PublicInputBinding(PublicInputBinding { name: iden }) =
-            op.as_value().unwrap().value.value
+    let get_name = |op: &Link<Op>| -> (ast::Identifier, usize) {
+        let MirValue::PublicInputBinding(BusVariableBoundary {
+            name: iden,
+            num_cols,
+        }) = op.as_value().unwrap().value.value
         else {
             panic!("Expected a public input, got {:#?}", op);
         };
-        iden
+        (iden, num_cols)
     };
     let mir = result.unwrap();
     let bus = mir.constraint_graph().buses.values().next().unwrap();
     let p = bus.borrow();
-    let first = get_name(&p.get_first());
-    let last = get_name(&p.get_last());
+    let (first, first_nc) = get_name(&p.get_first());
+    let (last, last_nc) = get_name(&p.get_last());
     let public_inputs = &mir.public_inputs;
     let mut pi = public_inputs.keys();
     let (x, y) = (pi.next().unwrap(), pi.next().unwrap());
     assert_eq!(first, x);
     assert_eq!(last, y);
+    assert_eq!(first_nc, 2);
+    assert_eq!(last_nc, 3);
 }
 
 // Tests that should return errors

@@ -2,6 +2,7 @@ use air_parser::ast;
 
 use crate::NodeIndex;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Bus {
     pub name: Option<ast::Identifier>,
     pub bus_type: ast::BusType,

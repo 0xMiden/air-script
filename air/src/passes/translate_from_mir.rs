@@ -258,8 +258,9 @@ impl AirBuilder<'_> {
                     }
                     // TODO: Add support for PublicInputBinding of [ast::Table]
                     MirValue::PublicInputBinding(public_input_binding) => {
-                        crate::ir::Value::PublicInputBinding(crate::ir::PublicInputBinding {
+                        crate::ir::Value::PublicInputBinding(crate::ir::BusVariableBoundary {
                             name: public_input_binding.name,
+                            num_cols: public_input_binding.num_cols,
                         })
                     }
                     MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
@@ -539,7 +540,7 @@ impl AirBuilder<'_> {
         eprintln!("last: {:#?}", last);
         self.buses.insert(
             mir_bus.name.unwrap(),
-            Bus::new(mir_bus.name, mir_bus.bus_type.clone(), first, last),
+            Bus::new(mir_bus.name, mir_bus.bus_type, first, last),
         );
         Ok(())
     }

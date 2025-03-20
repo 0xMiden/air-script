@@ -17,7 +17,7 @@ pub enum Value {
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
     /// A public input binding
-    PublicInputBinding(PublicInputBinding),
+    PublicInputBinding(BusVariableBoundary),
     /// A reference to the `random_values` array, specifically the element at the given index
     RandomValue(usize),
 }
@@ -50,7 +50,16 @@ impl PublicInputAccess {
 
 /// Represents a binding to a [PublicInput]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct PublicInputBinding {
+pub struct BusVariableBoundary {
     /// The name of the public input to bind
     pub name: Identifier,
+    pub num_cols: usize,
+}
+impl BusVariableBoundary {
+    pub const fn new(name: Identifier, columns: usize) -> Self {
+        Self {
+            name,
+            num_cols: columns,
+        }
+    }
 }

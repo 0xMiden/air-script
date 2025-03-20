@@ -66,7 +66,7 @@ pub enum MirValue {
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
     /// A reference to a given public input
-    PublicInputBinding(PublicInputBinding),
+    PublicInputBinding(BusVariableBoundary),
     /// A reference to a specific index in the random values array
     ///
     /// Random values are not provided by the user in the AirScript program, but are used to expand Bus constraints.
@@ -195,15 +195,16 @@ impl PublicInputAccess {
 }
 
 /// Represents an access of a [PublicInput], similar in nature to [TraceAccess]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct PublicInputBinding {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BusVariableBoundary {
     /// The name of the public input to bind
     pub name: Identifier,
+    pub num_cols: usize,
 }
 
-impl PublicInputBinding {
-    pub const fn new(name: Identifier) -> Self {
-        Self { name }
+impl BusVariableBoundary {
+    pub const fn new(name: Identifier, num_cols: usize) -> Self {
+        Self { name, num_cols }
     }
 }
 

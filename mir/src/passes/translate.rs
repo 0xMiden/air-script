@@ -10,9 +10,9 @@ use crate::ir::BusAccess;
 //use crate::ir::PublicInputBinding;
 use crate::{
     ir::{
-        Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, Call, ConstantValue, Enf,
-        Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir, MirType, MirValue,
-        Mul, Op, Owner, Parameter, PublicInputAccess, PublicInputBinding, Root, SpannedMirValue,
+        Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, BusVariableBoundary, Call,
+        ConstantValue, Enf, Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir,
+        MirType, MirValue, Mul, Op, Owner, Parameter, PublicInputAccess, Root, SpannedMirValue,
         Sub, TraceAccess, TraceAccessBinding, Value, Vector,
     },
     passes::duplicate_node,
@@ -120,7 +120,7 @@ impl<'a> MirBuilder<'a> {
     }
 
     fn translate_bus_definition(&mut self, bus: &'a ast::Bus) -> Result<Link<Bus>, CompileError> {
-        Ok(Bus::create(bus.name, bus.bus_type.clone(), bus.span()))
+        Ok(Bus::create(bus.name, bus.bus_type, bus.span()))
     }
 
     fn translate_evaluator_signature(
@@ -1220,12 +1220,18 @@ impl<'a> MirBuilder<'a> {
     fn public_input_access(
         &self,
         access: &ast::SymbolAccess,
-    ) -> (Option<PublicInputAccess>, Option<PublicInputBinding>) {
+    ) -> (Option<PublicInputAccess>, Option<BusVariableBoundary>) {
         let Some(public_input) = self.mir.public_inputs.get(access.name.as_ref()) else {
             return (None, None);
         };
         match access.access_type {
-            AccessType::Default => (None, Some(PublicInputBinding::new(public_input.name()))),
+            AccessType::Default => (
+                None,
+                Some(BusVariableBoundary::new(
+                    public_input.name(),
+                    public_input.size(),
+                )),
+            ),
             AccessType::Index(index) => (
                 Some(PublicInputAccess::new(public_input.name(), index)),
                 None,

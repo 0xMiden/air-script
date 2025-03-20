@@ -31,7 +31,7 @@ impl Pass for BusOpExpand<'_> {
         let buses = graph.buses.clone();
 
         for (_ident, bus) in buses {
-            let bus_type = bus.borrow().bus_type.clone();
+            let bus_type = bus.borrow().bus_type;
             let columns = bus.borrow().columns.clone(); // columns are the bus_operations (insert or remove of a Vec of arguments)
             let latches = bus.borrow().latches.clone(); // latches are the selectors
             let first = bus.borrow().get_first().clone();
@@ -52,8 +52,11 @@ impl Pass for BusOpExpand<'_> {
             );
 
             // Expand bus boundary constraints first
-            self.handle_boundary_constraint(bus_type.clone(), first);
-            self.handle_boundary_constraint(bus_type.clone(), last);
+            self.handle_boundary_constraint(bus_type, first/*, air_parser::ast::Boundary::First, bus_access.clone(), bus.borrow().span()*/);
+            self.handle_boundary_constraint(
+                bus_type,
+                last, /*, air_parser::ast::Boundary::Last, bus_access.clone(), bus.borrow().span()*/
+            );
 
             // Then, expend bus integrity constraints
             match bus_type {
@@ -332,7 +335,11 @@ impl<'a> BusOpExpand<'a> {
 
         match link.borrow().deref() {
             Op::Value(value) => {
-                match value.value.value {
+                match &value.value.value {
+                    // TODO: Will be used when handling variable-length public inputs
+                    /*MirValue::PublicInputBinding(public_input_binding) => {
+
+                    },*/
                     MirValue::Null => {
                         // Empty bus
 

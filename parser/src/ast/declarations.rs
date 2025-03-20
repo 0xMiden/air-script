@@ -90,7 +90,7 @@ impl Bus {
         }
     }
 }
-#[derive(Default, Hash, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Copy, Hash, Debug, Clone, PartialEq, Eq)]
 pub enum BusType {
     /// A multiset bus
     #[default]
