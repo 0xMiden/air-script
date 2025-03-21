@@ -2,6 +2,13 @@ use air_ir::Air;
 
 use super::Scope;
 
+pub(super) fn public_input_type_to_string(public_input: &air_ir::PublicInput) -> String {
+    match public_input {
+        air_ir::PublicInput::Vector { size, .. } => format!("[Felt; {}]", size),
+        air_ir::PublicInput::Table { size, .. } => format!("Vec<[Felt; {}]>", size),
+    }
+}
+
 /// Updates the provided scope with a public inputs.
 pub(super) fn add_public_inputs_struct(scope: &mut Scope, ir: &Air) {
     let name = "PublicInputs";
@@ -11,7 +18,7 @@ pub(super) fn add_public_inputs_struct(scope: &mut Scope, ir: &Air) {
     for public_input in ir.public_inputs() {
         pub_inputs_struct.field(
             public_input.name().as_str(),
-            format!("[Felt; {}]", public_input.size()),
+            public_input_type_to_string(public_input),
         );
     }
 
@@ -32,7 +39,7 @@ pub(super) fn add_public_inputs_struct(scope: &mut Scope, ir: &Air) {
     for public_input in ir.public_inputs() {
         new_fn.arg(
             public_input.name().as_str(),
-            format!("[Felt; {}]", public_input.size()),
+            public_input_type_to_string(public_input),
         );
     }
 

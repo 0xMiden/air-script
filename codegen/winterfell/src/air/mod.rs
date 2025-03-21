@@ -1,5 +1,5 @@
 mod public_inputs;
-use public_inputs::add_public_inputs_struct;
+use public_inputs::{add_public_inputs_struct, public_input_type_to_string};
 
 mod periodic_columns;
 use periodic_columns::add_fn_get_periodic_column_values;
@@ -56,7 +56,7 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
     for public_input in ir.public_inputs() {
         air_struct.field(
             public_input.name().as_str(),
-            format!("[Felt; {}]", public_input.size()),
+            public_input_type_to_string(public_input),
         );
     }
 
