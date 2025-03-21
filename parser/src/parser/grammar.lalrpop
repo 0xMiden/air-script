@@ -146,9 +146,9 @@ PublicInputs: Span<Vec<PublicInput>> = {
 
 PublicInput: PublicInput = {
     <l:@L> <name: Identifier> ":" <size: Size> "," <r:@R>
-        => PublicInput::vector(span!(l, r), name, size),
+        => PublicInput::new_vector(span!(l, r), name, size),
     <l:@L> <name: Identifier> ":" <table: TableSize> "," <r:@R>
-        => PublicInput::table(span!(l, r), name, table),
+        => PublicInput::new_table(span!(l, r), name, table),
 }
 
 // PERIODIC COLUMNS

@@ -35,11 +35,11 @@ fn public_inputs_vec() {
         .push(trace_segment!(0, "$main", [(clk, 1)]));
     expected.public_inputs.insert(
         ident!(program_hash),
-        PublicInput::vector(SourceSpan::UNKNOWN, ident!(program_hash), 4),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(program_hash), 4),
     );
     expected.public_inputs.insert(
         ident!(stack_inputs),
-        PublicInput::vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -83,11 +83,11 @@ fn public_inputs_table() {
         .push(trace_segment!(0, "$main", [(clk, 1)]));
     expected.public_inputs.insert(
         ident!(a),
-        PublicInput::table(SourceSpan::UNKNOWN, ident!(a), 4),
+        PublicInput::new_table(SourceSpan::UNKNOWN, ident!(a), 4),
     );
     expected.public_inputs.insert(
         ident!(b),
-        PublicInput::table(SourceSpan::UNKNOWN, ident!(b), 32),
+        PublicInput::new_table(SourceSpan::UNKNOWN, ident!(b), 32),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,

@@ -87,7 +87,7 @@ fn modules_integration_test() {
     );
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected
         .integrity_constraints

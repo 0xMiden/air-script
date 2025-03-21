@@ -320,7 +320,7 @@ pub enum PublicInput {
 }
 impl PublicInput {
     #[inline]
-    pub fn vector(span: SourceSpan, name: Identifier, size: u64) -> Self {
+    pub fn new_vector(span: SourceSpan, name: Identifier, size: u64) -> Self {
         Self::Vector {
             span,
             name,
@@ -328,7 +328,7 @@ impl PublicInput {
         }
     }
     #[inline]
-    pub fn table(span: SourceSpan, name: Identifier, size: u64) -> Self {
+    pub fn new_table(span: SourceSpan, name: Identifier, size: u64) -> Self {
         Self::Table {
             span,
             name,

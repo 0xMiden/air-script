@@ -1,5 +1,4 @@
 use core::panic;
-use std::cell::RefMut;
 use std::ops::Deref;
 
 use air_parser::ast::AccessType;
@@ -8,7 +7,6 @@ use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 
 use crate::ir::BusAccess;
-//use crate::ir::PublicInputBinding;
 use crate::{
     ir::{
         Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, BusVariableBoundary, Call,

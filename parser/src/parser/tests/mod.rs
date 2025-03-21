@@ -701,7 +701,7 @@ fn full_air_file() {
     // }
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::vector(miden_diagnostics::SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::new_vector(miden_diagnostics::SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     // trace_columns {
     //     main: [clk, fmp, ctx]

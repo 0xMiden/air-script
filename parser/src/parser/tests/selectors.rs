@@ -33,7 +33,7 @@ fn single_selector() {
         .push(trace_segment!(0, "$main", [(clk, 1), (n1, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -79,7 +79,7 @@ fn chained_selectors() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
