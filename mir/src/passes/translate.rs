@@ -1,4 +1,5 @@
 use core::panic;
+use std::cell::RefMut;
 use std::ops::Deref;
 
 use air_parser::ast::AccessType;
@@ -115,6 +116,23 @@ impl<'a> MirBuilder<'a> {
         self.in_boundary = false;
         for integrity_constraint in integrity_constraints {
             self.translate_statement(integrity_constraint)?;
+        }
+
+        for bus in self.mir.constraint_graph().buses.values() {
+            let bus_name = bus
+                .borrow()
+                .name
+                .unwrap_or_else(|| panic!("bus missing name"));
+            if let Some(ref mut mirvalue) = bus.borrow().get_first().as_value_mut() {
+                if let MirValue::PublicInputBinding(ref mut first) = mirvalue.value.value {
+                    first.bus_name = Some(bus_name);
+                }
+            }
+            if let Some(ref mut mirvalue) = bus.borrow().get_last().as_value_mut() {
+                if let MirValue::PublicInputBinding(ref mut last) = mirvalue.value.value {
+                    last.bus_name = Some(bus_name);
+                }
+            }
         }
         Ok(())
     }

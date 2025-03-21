@@ -103,9 +103,11 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             }
-            Value::PublicInputBinding(air_ir::BusVariableBoundary { name, num_cols }) => {
-                generate_bus_varlen_pubinput(*name, *num_cols)
-            }
+            Value::PublicInputBinding(air_ir::BusVariableBoundary {
+                table_name,
+                bus_name,
+                num_cols,
+            }) => generate_bus_varlen_pubinput(*table_name, *bus_name, *num_cols),
             Value::RandomValue(idx) => {
                 format!("aux_rand_elements.get_segment_elements(0)[{idx}]")
             }
@@ -152,9 +154,14 @@ fn binary_op_to_string(
     }
 }
 
-fn generate_bus_varlen_pubinput(name: Identifier, num_cols: usize) -> String {
+fn generate_bus_varlen_pubinput(
+    table_name: Identifier,
+    bus_name: Identifier,
+    num_cols: usize,
+) -> String {
     eprintln!("TODO: generate_bus_varlen_pubinput");
-    eprintln!("name: {:?}", name);
+    eprintln!("name: {:?}", table_name);
+    eprintln!("bus_name: {:?}", bus_name);
     eprintln!("num_cols: {:?}", num_cols);
     todo!()
 }

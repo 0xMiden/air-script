@@ -258,10 +258,11 @@ impl AirBuilder<'_> {
                     }
                     // TODO: Add support for PublicInputBinding of [ast::Table]
                     MirValue::PublicInputBinding(public_input_binding) => {
-                        crate::ir::Value::PublicInputBinding(crate::ir::BusVariableBoundary {
-                            name: public_input_binding.name,
-                            num_cols: public_input_binding.num_cols,
-                        })
+                        crate::ir::Value::PublicInputBinding(crate::ir::BusVariableBoundary::new(
+                            public_input_binding.table_name,
+                            public_input_binding.bus_name.unwrap(),
+                            public_input_binding.num_cols,
+                        ))
                     }
                     MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
                     _ => unreachable!("Unexpected MirValue: {:#?}", mir_value),

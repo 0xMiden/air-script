@@ -198,13 +198,20 @@ impl PublicInputAccess {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BusVariableBoundary {
     /// The name of the public input to bind
-    pub name: Identifier,
+    pub table_name: Identifier,
+    /// The name of the bus to bind
+    pub bus_name: Option<Identifier>,
+    /// The number of columns in the table
     pub num_cols: usize,
 }
 
 impl BusVariableBoundary {
-    pub const fn new(name: Identifier, num_cols: usize) -> Self {
-        Self { name, num_cols }
+    pub const fn new(table_name: Identifier, num_cols: usize) -> Self {
+        Self {
+            table_name,
+            bus_name: None,
+            num_cols,
+        }
     }
 }
 

@@ -180,13 +180,14 @@ fn buses_table_in_boundary_constraints() {
 
     let get_name = |op: &Link<Op>| -> (ast::Identifier, usize) {
         let MirValue::PublicInputBinding(BusVariableBoundary {
-            name: iden,
+            table_name,
+            bus_name: _,
             num_cols,
         }) = op.as_value().unwrap().value.value
         else {
             panic!("Expected a public input, got {:#?}", op);
         };
-        (iden, num_cols)
+        (table_name, num_cols)
     };
     let mir = result.unwrap();
     let bus = mir.constraint_graph().buses.values().next().unwrap();
