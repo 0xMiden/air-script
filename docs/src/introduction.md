@@ -16,7 +16,10 @@ AirScript includes the following features:
 
 - **Random Values**: Users can define random values provided by the verifier (e.g. `alphas: [x, y[14], z],` or `rand: [16],`)
 
-- **Buses**: Users can declare buses (e.g. `unit p,`)
+- **Buses**: Users can declare buses which serve as communication channels between chiplets. They can be one of 2 types:
+  - `unit`: simple multi-set based bus.
+  - `mult`: more complex LogUp based bus.
+(e.g. `unit p,`, or `mult q,`)
 
 - **Boundary Constraints**: Users can enforce boundary constraints on main and auxiliary trace columns using public inputs, random values, constants and variables.
 
