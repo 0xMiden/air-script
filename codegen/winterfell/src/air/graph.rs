@@ -163,5 +163,10 @@ fn generate_bus_varlen_pubinput(
     eprintln!("name: {:?}", table_name);
     eprintln!("bus_name: {:?}", bus_name);
     eprintln!("num_cols: {:?}", num_cols);
-    todo!()
+    let expr = "".to_string();
+    format!(
+        "/*BUSVARLENPUBINPUT: {} {} {}*/",
+        table_name, bus_name, num_cols
+    )
+    //todo!()
 }
