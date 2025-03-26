@@ -35,5 +35,5 @@ integrity_constraints {
 
     q.add(3, a) when s1;
     q.add(3, a) when s1;
-    q.rem(3, a) for d;
+    q.rem(4, b) for d;
 }
