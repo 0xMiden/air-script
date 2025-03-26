@@ -24,9 +24,8 @@ boundary_constraints {
 }
 
 integrity_constraints {
-    p.add(1) when 1;
-    p.rem(1) when 1;
-    q.add(1, 2) when 1;
-    q.add(1, 2) when 1;
+    p.add(1) when a;
+    p.rem(1) when (1 - a);
+    q.add(1, 2) when a;
     q.rem(1, 2) for 2;
 }
