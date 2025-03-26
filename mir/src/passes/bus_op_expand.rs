@@ -84,14 +84,8 @@ impl Pass for BusOpExpand<'_> {
 
                     // p' * ( columns removed combined with alphas ) = p * ( columns added combined with alphas )
 
-                    let mut p_factor = Value::create(SpannedMirValue {
-                        span: SourceSpan::default(),
-                        value: crate::ir::MirValue::Constant(crate::ir::ConstantValue::Felt(1)),
-                    });
-                    let mut p_prime_factor = Value::create(SpannedMirValue {
-                        span: SourceSpan::default(),
-                        value: MirValue::Constant(crate::ir::ConstantValue::Felt(1)),
-                    });
+                    let mut p_factor = None;
+                    let mut p_prime_factor = None;
 
                     for (column, latch) in columns.iter().zip(latches.iter()) {
                         let bus_op = column.as_bus_op().unwrap();
@@ -143,29 +137,41 @@ impl Pass for BusOpExpand<'_> {
                         // 4. Multiply them to p_factor or p_prime_factor (depending on bus_op_kind: add: p, rem: p_prime)
                         match bus_op_kind {
                             BusOpKind::Add => {
-                                p_factor = Mul::create(
-                                    p_factor,
-                                    args_combined_with_latch_and_latch_inverse,
-                                    SourceSpan::default(),
-                                );
+                                p_factor = match p_factor {
+                                    Some(p_factor) => Some(Mul::create(
+                                        p_factor,
+                                        args_combined_with_latch_and_latch_inverse,
+                                        SourceSpan::default(),
+                                    )),
+                                    None => Some(args_combined_with_latch_and_latch_inverse),
+                                };
                             }
                             BusOpKind::Rem => {
-                                p_prime_factor = Mul::create(
-                                    p_prime_factor,
-                                    args_combined_with_latch_and_latch_inverse,
-                                    SourceSpan::default(),
-                                );
+                                p_prime_factor = match p_prime_factor {
+                                    Some(p_prime_factor) => Some(Mul::create(
+                                        p_prime_factor,
+                                        args_combined_with_latch_and_latch_inverse,
+                                        SourceSpan::default(),
+                                    )),
+                                    None => Some(args_combined_with_latch_and_latch_inverse),
+                                };
                             }
                         }
                     }
 
                     // 5. Multiply the factors with the bus column (with and without offset for p' and p respectively)
-                    let p_prod = Mul::create(p_factor, bus_access, SourceSpan::default());
-                    let p_prime_prod = Mul::create(
-                        p_prime_factor,
-                        bus_access_with_offset,
-                        SourceSpan::default(),
-                    );
+                    let p_prod = match p_factor {
+                        Some(p_factor) => Mul::create(p_factor, bus_access, SourceSpan::default()),
+                        None => bus_access,
+                    };
+                    let p_prime_prod = match p_prime_factor {
+                        Some(p_prime_factor) => Mul::create(
+                            p_prime_factor,
+                            bus_access_with_offset,
+                            SourceSpan::default(),
+                        ),
+                        None => bus_access_with_offset,
+                    };
 
                     // 6. Create the resulting constraint and insert it into the graph
                     let resulting_constraint = Enf::create(
@@ -218,84 +224,104 @@ impl Pass for BusOpExpand<'_> {
                     }
 
                     // 2. Compute the product of all factors (will be used to mult q and q')
-                    let mut total_factors = Value::create(SpannedMirValue {
-                        span: SourceSpan::default(),
-                        value: MirValue::Constant(crate::ir::ConstantValue::Felt(1)),
-                    });
+                    let mut total_factors = None;
                     for factor in factors.iter() {
-                        total_factors =
-                            Mul::create(total_factors, factor.clone(), SourceSpan::default());
+                        total_factors = match total_factors {
+                            Some(total_factors) => Some(Mul::create(
+                                total_factors,
+                                factor.clone(),
+                                SourceSpan::default(),
+                            )),
+                            None => Some(factor.clone()),
+                        };
                     }
 
                     // 3. For each column, compute the product of all factors except the one of the current column, and multiply it with the latch
-                    let mut terms_added_to_bus = Value::create(SpannedMirValue {
-                        span: SourceSpan::default(),
-                        value: MirValue::Constant(crate::ir::ConstantValue::Felt(0)),
-                    });
-                    let mut terms_removed_from_bus = Value::create(SpannedMirValue {
-                        span: SourceSpan::default(),
-                        value: MirValue::Constant(crate::ir::ConstantValue::Felt(0)),
-                    });
+                    let mut terms_added_to_bus = None;
+                    let mut terms_removed_from_bus = None;
                     for (index, (column, latch)) in columns.iter().zip(latches.iter()).enumerate() {
                         let bus_op = column.as_bus_op().unwrap();
                         let bus_op_kind = bus_op.kind.clone();
 
                         // 3.1 Compute the product of all factors except the one of the current column
-                        let mut factors_without_current = Value::create(SpannedMirValue {
-                            span: SourceSpan::default(),
-                            value: MirValue::Constant(crate::ir::ConstantValue::Felt(1)),
-                        });
+                        let mut factors_without_current = None;
                         for (i, factor) in factors.iter().enumerate() {
                             if i != index {
-                                factors_without_current = Mul::create(
-                                    factors_without_current,
-                                    factor.clone(),
-                                    SourceSpan::default(),
-                                );
+                                factors_without_current = match factors_without_current {
+                                    Some(factors_without_current) => Some(Mul::create(
+                                        factors_without_current,
+                                        factor.clone(),
+                                        SourceSpan::default(),
+                                    )),
+                                    None => Some(factor.clone()),
+                                };
                             }
                         }
 
                         // 3.2 Multiply by latch
-                        let factors_without_current_with_latch = Mul::create(
-                            factors_without_current,
-                            latch.clone(),
-                            SourceSpan::default(),
-                        );
+                        let factors_without_current_with_latch = match factors_without_current {
+                            Some(factors_without_current) => Mul::create(
+                                factors_without_current,
+                                latch.clone(),
+                                SourceSpan::default(),
+                            ),
+                            None => latch.clone(),
+                        };
 
                         // 3.3 Depending on the bus_op_kind, add to q_factor or q_prime_factor
                         match bus_op_kind {
                             BusOpKind::Add => {
-                                terms_added_to_bus = Add::create(
-                                    terms_added_to_bus,
-                                    factors_without_current_with_latch,
-                                    SourceSpan::default(),
-                                );
+                                terms_added_to_bus = match terms_added_to_bus {
+                                    Some(terms_added_to_bus) => Some(Add::create(
+                                        terms_added_to_bus,
+                                        factors_without_current_with_latch,
+                                        SourceSpan::default(),
+                                    )),
+                                    None => Some(factors_without_current_with_latch),
+                                };
                             }
                             BusOpKind::Rem => {
-                                terms_removed_from_bus = Add::create(
-                                    terms_removed_from_bus,
-                                    factors_without_current_with_latch,
-                                    SourceSpan::default(),
-                                );
+                                terms_removed_from_bus = match terms_removed_from_bus {
+                                    Some(terms_removed_from_bus) => Some(Add::create(
+                                        terms_removed_from_bus,
+                                        factors_without_current_with_latch,
+                                        SourceSpan::default(),
+                                    )),
+                                    None => Some(factors_without_current_with_latch),
+                                };
                             }
                         }
                     }
 
                     // 4. Add all the terms together
-                    let q_prod =
-                        Mul::create(total_factors.clone(), bus_access, SourceSpan::default());
-                    let q_prime_prod = Mul::create(
-                        total_factors.clone(),
-                        bus_access_with_offset,
-                        SourceSpan::default(),
-                    );
-                    let q_term =
-                        Add::create(q_prod, terms_added_to_bus.clone(), SourceSpan::default());
-                    let q_prime_term = Add::create(
-                        q_prime_prod,
-                        terms_removed_from_bus.clone(),
-                        SourceSpan::default(),
-                    );
+                    let q_prod = match total_factors.clone() {
+                        Some(total_factors) => {
+                            Mul::create(total_factors, bus_access, SourceSpan::default())
+                        }
+                        None => bus_access,
+                    };
+                    let q_prime_prod = match total_factors {
+                        Some(total_factors) => Mul::create(
+                            total_factors,
+                            bus_access_with_offset,
+                            SourceSpan::default(),
+                        ),
+                        None => bus_access_with_offset,
+                    };
+                    let q_term = match terms_added_to_bus {
+                        Some(terms_added_to_bus) => {
+                            Add::create(q_prod, terms_added_to_bus.clone(), SourceSpan::default())
+                        }
+                        None => q_prod,
+                    };
+                    let q_prime_term = match terms_removed_from_bus {
+                        Some(terms_removed_from_bus) => Add::create(
+                            q_prime_prod,
+                            terms_removed_from_bus.clone(),
+                            SourceSpan::default(),
+                        ),
+                        None => q_prime_prod,
+                    };
 
                     // 5. Create the resulting constraint and insert it into the graph
                     let resulting_constraint = Enf::create(
