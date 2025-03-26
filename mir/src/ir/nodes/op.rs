@@ -133,8 +133,8 @@ impl Child for Op {
 }
 
 impl Link<Op> {
-    /// Debug the current [Op], showing [std::cell::RefCell]'s `@{pointer}` and inner struct
-    /// This is useful to debug shared mutability issues
+    /// Debug the current [Op], showing [std::cell::RefCell]'s `@{pointer}` and inner struct.
+    /// This is useful to debug shared mutability issues.
     pub fn debug(&self) -> String {
         match self.borrow().deref() {
             Op::Enf(e) => format!("Op::Enf@{}({:#?})", self.get_ptr(), e),
@@ -156,9 +156,9 @@ impl Link<Op> {
             Op::None(_) => "Op::None".to_string(),
         }
     }
-    /// Update the current [Op] with the other [Op]
+    /// Update the current [Op] with the other [Op].
     /// Also updates all instances of [Node] and [Owner] wrappers,
-    /// setting them to the new variant
+    /// setting them to the new variant.
     pub fn set(&self, other: &Link<Op>) {
         let other_node = other.as_node();
         let self_node = self.as_node();
@@ -282,8 +282,8 @@ impl Link<Op> {
         }
     }
 
-    /// Get the current [Op]'s [Node] variant
-    /// creating a new [Node] if it doesn't exist, re-using it as a singleton otherwise
+    /// Get the current [Op]'s [Node] variant,
+    /// creating a new [Node] if it doesn't exist, re-using it as a singleton otherwise.
     pub fn as_node(&self) -> Link<Node> {
         let back: BackLink<Op> = self.clone().into();
         match self.clone().borrow_mut().deref_mut() {
@@ -434,8 +434,8 @@ impl Link<Op> {
             Op::None(span) => Node::None(*span).into(),
         }
     }
-    /// Try getting the current [Op]'s [Owner] variant
-    /// creating a new [Owner] if it doesn't exist, re-using it as a singleton otherwise
+    /// Try getting the current [Op]'s [Owner] variant,
+    /// creating a new [Owner] if it doesn't exist, re-using it as a singleton otherwise.
     pub fn as_owner(&self) -> Option<Link<Owner>> {
         let back: BackLink<Op> = self.clone().into();
         match self.clone().borrow_mut().deref_mut() {
@@ -571,7 +571,7 @@ impl Link<Op> {
         }
     }
     /// Try getting the current [Op]'s inner [Enf].
-    /// Returns None if the current [Op] is not an [Enf] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [Enf] or the Rc count is zero.
     pub fn as_enf(&self) -> Option<Ref<Enf>> {
         get_inner(self.borrow(), |op| match op {
             Op::Enf(inner) => Some(inner),
@@ -579,7 +579,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Enf], borrowing mutably.
-    /// Returns None if the current [Op] is not an [Enf] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [Enf] or the Rc count is zero.
     pub fn as_enf_mut(&self) -> Option<RefMut<Enf>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Enf(inner) => Some(inner),
@@ -587,7 +587,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Boundary].
-    /// Returns None if the current [Op] is not a [Boundary] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Boundary] or the Rc count is zero.
     pub fn as_boundary(&self) -> Option<Ref<Boundary>> {
         get_inner(self.borrow(), |op| match op {
             Op::Boundary(inner) => Some(inner),
@@ -595,7 +595,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Boundary], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Boundary] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Boundary] or the Rc count is zero.
     pub fn as_boundary_mut(&self) -> Option<RefMut<Boundary>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Boundary(inner) => Some(inner),
@@ -603,7 +603,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Add].
-    /// Returns None if the current [Op] is not an [Add] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [Add] or the Rc count is zero.
     pub fn as_add(&self) -> Option<Ref<Add>> {
         get_inner(self.borrow(), |op| match op {
             Op::Add(inner) => Some(inner),
@@ -611,7 +611,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Add], borrowing mutably.
-    /// Returns None if the current [Op] is not an [Add] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [Add] or the Rc count is zero.
     pub fn as_add_mut(&self) -> Option<RefMut<Add>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Add(inner) => Some(inner),
@@ -619,7 +619,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Sub].
-    /// Returns None if the current [Op] is not a [Sub] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Sub] or the Rc count is zero.
     pub fn as_sub(&self) -> Option<Ref<Sub>> {
         get_inner(self.borrow(), |op| match op {
             Op::Sub(inner) => Some(inner),
@@ -627,7 +627,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Sub], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Sub] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Sub] or the Rc count is zero.
     pub fn as_sub_mut(&self) -> Option<RefMut<Sub>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Sub(inner) => Some(inner),
@@ -635,7 +635,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Mul].
-    /// Returns None if the current [Op] is not a [Mul] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Mul] or the Rc count is zero.
     pub fn as_mul(&self) -> Option<Ref<Mul>> {
         get_inner(self.borrow(), |op| match op {
             Op::Mul(inner) => Some(inner),
@@ -643,7 +643,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Mul], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Mul] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Mul] or the Rc count is zero.
     pub fn as_mul_mut(&self) -> Option<RefMut<Mul>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Mul(inner) => Some(inner),
@@ -651,7 +651,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Exp].
-    /// Returns None if the current [Op] is not an [Exp] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [Exp] or the Rc count is zero.
     pub fn as_exp(&self) -> Option<Ref<Exp>> {
         get_inner(self.borrow(), |op| match op {
             Op::Exp(inner) => Some(inner),
@@ -659,7 +659,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Exp], borrowing mutably.
-    /// Returns None if the current [Op] is not an [Exp] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [Exp] or the Rc count is zero.
     pub fn as_exp_mut(&self) -> Option<RefMut<Exp>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Exp(inner) => Some(inner),
@@ -667,7 +667,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [If].
-    /// Returns None if the current [Op] is not an [If] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [If] or the Rc count is zero.
     pub fn as_if(&self) -> Option<Ref<If>> {
         get_inner(self.borrow(), |op| match op {
             Op::If(inner) => Some(inner),
@@ -675,7 +675,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [If], borrowing mutably.
-    /// Returns None if the current [Op] is not an [If] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [If] or the Rc count is zero.
     pub fn as_if_mut(&self) -> Option<RefMut<If>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::If(inner) => Some(inner),
@@ -683,7 +683,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [For].
-    /// Returns None if the current [Op] is not a [For] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [For] or the Rc count is zero.
     pub fn as_for(&self) -> Option<Ref<For>> {
         get_inner(self.borrow(), |op| match op {
             Op::For(inner) => Some(inner),
@@ -691,7 +691,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [For], borrowing mutably.
-    /// Returns None if the current [Op] is not a [For] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [For] or the Rc count is zero.
     pub fn as_for_mut(&self) -> Option<RefMut<For>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::For(inner) => Some(inner),
@@ -699,7 +699,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Call].
-    /// Returns None if the current [Op] is not a [Call] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Call] or the Rc count is zero.
     pub fn as_call(&self) -> Option<Ref<Call>> {
         get_inner(self.borrow(), |op| match op {
             Op::Call(inner) => Some(inner),
@@ -707,7 +707,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Call], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Call] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Call] or the Rc count is zero.
     pub fn as_call_mut(&self) -> Option<RefMut<Call>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Call(inner) => Some(inner),
@@ -715,7 +715,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Fold].
-    /// Returns None if the current [Op] is not a [Fold] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Fold] or the Rc count is zero.
     pub fn as_fold(&self) -> Option<Ref<Fold>> {
         get_inner(self.borrow(), |op| match op {
             Op::Fold(inner) => Some(inner),
@@ -723,7 +723,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Fold], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Fold] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Fold] or the Rc count is zero.
     pub fn as_fold_mut(&self) -> Option<RefMut<Fold>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Fold(inner) => Some(inner),
@@ -731,7 +731,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Vector].
-    /// Returns None if the current [Op] is not a [Vector] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Vector] or the Rc count is zero.
     pub fn as_vector(&self) -> Option<Ref<Vector>> {
         get_inner(self.borrow(), |op| match op {
             Op::Vector(inner) => Some(inner),
@@ -739,7 +739,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Vector], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Vector] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Vector] or the Rc count is zero.
     pub fn as_vector_mut(&self) -> Option<RefMut<Vector>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Vector(inner) => Some(inner),
@@ -747,7 +747,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Matrix].
-    /// Returns None if the current [Op] is not a [Matrix] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Matrix] or the Rc count is zero.
     pub fn as_matrix(&self) -> Option<Ref<Matrix>> {
         get_inner(self.borrow(), |op| match op {
             Op::Matrix(inner) => Some(inner),
@@ -755,7 +755,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Matrix], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Matrix] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Matrix] or the Rc count is zero.
     pub fn as_matrix_mut(&self) -> Option<RefMut<Matrix>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Matrix(inner) => Some(inner),
@@ -763,7 +763,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Accessor].
-    /// Returns None if the current [Op] is not an [Accessor] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [Accessor] or the Rc count is zero.
     pub fn as_accessor(&self) -> Option<Ref<Accessor>> {
         get_inner(self.borrow(), |op| match op {
             Op::Accessor(inner) => Some(inner),
@@ -771,7 +771,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Accessor], borrowing mutably.
-    /// Returns None if the current [Op] is not an [Accessor] or the Rc count is zero
+    /// Returns None if the current [Op] is not an [Accessor] or the Rc count is zero.
     pub fn as_accessor_mut(&self) -> Option<RefMut<Accessor>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Accessor(inner) => Some(inner),
@@ -779,7 +779,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [BusOp].
-    /// Returns None if the current [Op] is not a [BusOp] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [BusOp] or the Rc count is zero.
     pub fn as_bus_op(&self) -> Option<Ref<BusOp>> {
         get_inner(self.borrow(), |op| match op {
             Op::BusOp(inner) => Some(inner),
@@ -787,7 +787,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [BusOp], borrowing mutably.
-    /// Returns None if the current [Op] is not a [BusOp] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [BusOp] or the Rc count is zero.
     pub fn as_bus_op_mut(&self) -> Option<RefMut<BusOp>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::BusOp(inner) => Some(inner),
@@ -795,7 +795,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Parameter].
-    /// Returns None if the current [Op] is not a [Parameter] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Parameter] or the Rc count is zero.
     pub fn as_parameter(&self) -> Option<Ref<Parameter>> {
         get_inner(self.borrow(), |op| match op {
             Op::Parameter(inner) => Some(inner),
@@ -803,7 +803,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Parameter], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Parameter] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Parameter] or the Rc count is zero.
     pub fn as_parameter_mut(&self) -> Option<RefMut<Parameter>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Parameter(inner) => Some(inner),
@@ -811,7 +811,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Value].
-    /// Returns None if the current [Op] is not a [Value] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Value] or the Rc count is zero.
     pub fn as_value(&self) -> Option<Ref<Value>> {
         get_inner(self.borrow(), |op| match op {
             Op::Value(inner) => Some(inner),
@@ -819,7 +819,7 @@ impl Link<Op> {
         })
     }
     /// Try getting the current [Op]'s inner [Value], borrowing mutably.
-    /// Returns None if the current [Op] is not a [Value] or the Rc count is zero
+    /// Returns None if the current [Op] is not a [Value] or the Rc count is zero.
     pub fn as_value_mut(&self) -> Option<RefMut<Value>> {
         get_inner_mut(self.borrow_mut(), |op| match op {
             Op::Value(inner) => Some(inner),

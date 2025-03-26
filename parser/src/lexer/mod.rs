@@ -605,7 +605,6 @@ where
         let next = self.read();
         match Token::from_keyword_or_ident(self.slice()) {
             Token::Ident(id) if next == '(' => Token::FunctionIdent(id),
-            //Token::Ident(id) if next == '.' => Token::BusIdent(id),
             token => token,
         }
     }

@@ -171,24 +171,24 @@ impl Graph {
             .map_or(Ok(()), |_| Err(CompileError::Failed))
     }
 
-    /// Queries a given bus
+    /// Queries a given bus,
     /// returning a [ir::Link<ir::Bus>] if it exists.
     pub fn get_bus_link(&self, ident: &QualifiedIdentifier) -> Option<ir::Link<ir::Bus>> {
         self.buses.get(ident).cloned()
     }
-    /// Queries a given bus
+    /// Queries a given bus,
     /// returning a reference to the bus if it exists.
     pub fn get_bus(&self, ident: &QualifiedIdentifier) -> Option<Ref<ir::Bus>> {
         self.buses.get(ident).map(|n| n.borrow())
     }
 
-    /// Queries a given bus
+    /// Queries a given bus,
     /// returning a mutable reference to the bus if it exists.
     pub fn get_bus_mut(&mut self, ident: &QualifiedIdentifier) -> Option<RefMut<ir::Bus>> {
         self.buses.get_mut(ident).map(|n| n.borrow_mut())
     }
 
-    /// Queries all bus nodes
+    /// Queries all bus nodes.
     pub fn get_bus_nodes(&self) -> Vec<ir::Link<ir::Bus>> {
         self.buses.values().cloned().collect()
     }

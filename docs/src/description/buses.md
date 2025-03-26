@@ -4,7 +4,7 @@ A bus is a construct which aims to simplify description of non-local constraints
 
 ## Bus types
 
-- Multiset (`unit`): Multiset-based buses can represent constraints specifying given values have been added or removed from a column, in no specific order.
+- Multiset (`unit`): Multiset-based buses can represent constraints which specify values that must have been added or removed from a column, in no particular order.
 [Citation needed]()
 
 - LogUp (`mult`): LogUp-based buses are more complex than multiset buses, and can encode the multiplicity of an element: an element can be added or removed multiple times.
