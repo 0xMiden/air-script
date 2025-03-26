@@ -140,17 +140,17 @@ impl Pass for BusOpExpand<'_> {
                             SourceSpan::default(),
                         );
 
-                        // 4. add to p_factor or p_prime_factor (depending on bus_op_kind: add: p, rem: p_prime)
+                        // 4. Multiply them to p_factor or p_prime_factor (depending on bus_op_kind: add: p, rem: p_prime)
                         match bus_op_kind {
                             BusOpKind::Add => {
-                                p_factor = Add::create(
+                                p_factor = Mul::create(
                                     p_factor,
                                     args_combined_with_latch_and_latch_inverse,
                                     SourceSpan::default(),
                                 );
                             }
                             BusOpKind::Rem => {
-                                p_prime_factor = Add::create(
+                                p_prime_factor = Mul::create(
                                     p_prime_factor,
                                     args_combined_with_latch_and_latch_inverse,
                                     SourceSpan::default(),
