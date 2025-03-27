@@ -340,7 +340,7 @@ impl Expr {
             Self::Call(ref call) => call.ty,
             Self::ListComprehension(ref lc) => lc.ty,
             Self::Let(ref let_expr) => let_expr.ty(),
-            Self::BusOperation(_) | Self::Null(_) => todo!(),
+            Self::BusOperation(_) | Self::Null(_) => Some(Type::Felt),
         }
     }
 }
@@ -542,7 +542,7 @@ impl ScalarExpr {
             },
             Self::Call(ref expr) => Ok(expr.ty),
             Self::Let(ref expr) => Ok(expr.ty()),
-            Self::BusOperation(_) | ScalarExpr::Null(_) => todo!(),
+            Self::BusOperation(_) | ScalarExpr::Null(_) => Ok(Some(Type::Felt)),
         }
     }
 }

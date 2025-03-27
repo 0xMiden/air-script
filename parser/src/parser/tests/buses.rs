@@ -90,5 +90,5 @@ fn err_empty_buses() {
 
     buses{}";
 
-    ParseTest::new().expect_module_diagnostic(&source, "expected one of: '\"mult\"', '\"unit\"'");
+    ParseTest::new().expect_module_diagnostic(source, "expected one of: '\"mult\"', '\"unit\"'");
 }

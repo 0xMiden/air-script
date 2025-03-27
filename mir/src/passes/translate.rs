@@ -407,7 +407,11 @@ impl<'a> MirBuilder<'a> {
             ast::Expr::Call(c) => self.translate_call(c),
             ast::Expr::ListComprehension(lc) => self.translate_list_comprehension(lc),
             ast::Expr::Let(l) => self.translate_let(l),
-            ast::Expr::BusOperation(_) | ast::Expr::Null(_) => todo!(),
+            ast::Expr::Null(_) => Ok(Value::create(SpannedMirValue {
+                span: expr.span(),
+                value: MirValue::Null,
+            })),
+            ast::Expr::BusOperation(bo) => self.translate_bus_operation(bo),
         }
     }
 

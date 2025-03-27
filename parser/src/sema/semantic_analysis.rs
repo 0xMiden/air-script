@@ -1849,9 +1849,6 @@ impl SemanticAnalysis<'_> {
                     .emit();
                 Err(InvalidAccessError::InvalidBinding)
             }
-            // TODO BUS: Is it the correct binding type? Or do we want to throw an error?
-            // It seems that bus operations should be handled like Binary equality (enf a = 1)
-            // But it seems weird to assign a type to such operations
             Expr::BusOperation(ref _expr) => Ok(BindingType::Local(Type::Felt)),
             Expr::Null(_) => Ok(BindingType::Local(Type::Felt)),
         }
