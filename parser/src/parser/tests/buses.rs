@@ -27,17 +27,6 @@ fn buses() {
 }
 
 #[test]
-fn empty_buses() {
-    let source = "
-    mod test
-
-    buses{}";
-
-    let expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
-    ParseTest::new().expect_module_ast(source, expected);
-}
-
-#[test]
 fn boundary_constraints_buses() {
     let _source = "
     mod test
@@ -92,4 +81,14 @@ fn integrity_constraints_buses() {
         Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
     );
     ParseTest::new().expect_module_ast(source, expected);*/
+}
+
+#[test]
+fn err_empty_buses() {
+    let source = "
+    mod test
+
+    buses{}";
+
+    ParseTest::new().expect_module_diagnostic(&source, "expected one of: '\"mult\"', '\"unit\"'");
 }

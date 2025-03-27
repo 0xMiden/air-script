@@ -185,9 +185,9 @@ PeriodicColumn: PeriodicColumn = {
 // BUSES
 // ================================================================================================
 
-// Buses are not required, and there is no limit to the number that can be provided.
+// Buses are not required, but if the section is specified at least one Bus declaration is required.
 Buses: Span<Vec<Bus>> = {
-    <l:@L> "buses" "{" <bus:Bus*> "}" <r:@R>
+    <l:@L> "buses" "{" <bus:Bus+> "}" <r:@R>
         => Span::new(span!(l, r), bus)
 }
 
