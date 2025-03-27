@@ -10,7 +10,6 @@ use miden_diagnostics::Spanned;
 /// The constraints graph for the Mir.
 ///
 /// We store constraints (boundary and integrity), as well as function and evaluator definitions.
-///
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Graph {
     functions: BTreeMap<QualifiedIdentifier, ir::Link<ir::Root>>,
@@ -158,8 +157,8 @@ impl Graph {
             .retain(|n| *n != root);
     }
 
-    /// Inserts a bus into the graph,
-    /// returning an error if the bus already exists (declaration conflict).
+    /// Inserts a bus into the graph, returning an error
+    /// if the bus already exists (declaration conflict).
     pub fn insert_bus(
         &mut self,
         ident: QualifiedIdentifier,
@@ -171,19 +170,16 @@ impl Graph {
             .map_or(Ok(()), |_| Err(CompileError::Failed))
     }
 
-    /// Queries a given bus,
-    /// returning a [ir::Link<ir::Bus>] if it exists.
+    /// Queries a given bus, returning a [ir::Link<ir::Bus>] if it exists.
     pub fn get_bus_link(&self, ident: &QualifiedIdentifier) -> Option<ir::Link<ir::Bus>> {
         self.buses.get(ident).cloned()
     }
-    /// Queries a given bus,
-    /// returning a reference to the bus if it exists.
+    /// Queries a given bus, returning a reference to the bus if it exists.
     pub fn get_bus(&self, ident: &QualifiedIdentifier) -> Option<Ref<ir::Bus>> {
         self.buses.get(ident).map(|n| n.borrow())
     }
 
-    /// Queries a given bus,
-    /// returning a mutable reference to the bus if it exists.
+    /// Queries a given bus, returning a mutable reference to the bus if it exists.
     pub fn get_bus_mut(&mut self, ident: &QualifiedIdentifier) -> Option<RefMut<ir::Bus>> {
         self.buses.get_mut(ident).map(|n| n.borrow_mut())
     }
