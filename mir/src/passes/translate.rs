@@ -531,7 +531,20 @@ impl<'a> MirBuilder<'a> {
         };
         let sel = match list_comp.selector.as_ref() {
             Some(selector) => self.translate_scalar_expr(selector)?,
-            None => todo!(), // Should we always have a selector?
+            None => {
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_message("Bus operations should always have a selector or a multiplicity")
+                    .with_primary_label(
+                        list_comp.span(),
+                        format!(
+                            "expected a non-empty selector or multiplicity, got: \n{:#?}",
+                            list_comp.selector
+                        ),
+                    )
+                    .emit();
+                return Err(CompileError::Failed);
+            }
         };
         bus_op
             .as_bus_op_mut()
