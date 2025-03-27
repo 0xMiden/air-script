@@ -73,7 +73,6 @@ impl PartialEq for Node {
 impl std::hash::Hash for Node {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         // We first convert the [BackLink] to an [Option<Link>] and hash those
-        eprintln!("hashing node: {:#?}", self);
         match self {
             Node::Function(f) => f.to_link().hash(state),
             Node::Evaluator(e) => e.to_link().hash(state),
