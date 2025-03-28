@@ -604,7 +604,8 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
             if let Some(expected_ty) = result_ty.replace(iterable_ty) {
                 if expected_ty != iterable_ty {
                     self.has_type_errors = true;
-                    self.type_mismatch(
+                    // Note: We don't break here but at the end of the module's compilation, as we want to continue to gather as many errors as possible
+                    let _ = self.type_mismatch(
                         Some(&iterable_ty),
                         iterable.span(),
                         &expected_ty,
@@ -762,7 +763,9 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
         match (expr.lhs.ty(), expr.rhs.ty()) {
             (Ok(Some(lty)), Ok(Some(rty))) => {
                 if lty != rty {
-                    self.type_mismatch(
+                    self.has_type_errors = true;
+                    // Note: We don't break here but at the end of the module's compilation, as we want to continue to gather as many errors as possible
+                    let _ = self.type_mismatch(
                         Some(&lty),
                         expr.lhs.span(),
                         &rty,
@@ -1241,7 +1244,8 @@ impl SemanticAnalysis<'_> {
 
                         if size != param.size {
                             self.has_type_errors = true;
-                            self.type_mismatch(
+                            // Note: We don't break here but at the end of the module's compilation, as we want to continue to gather as many errors as possible
+                            let _ = self.type_mismatch(
                                 Some(&Type::Vector(param.size)),
                                 arg.span(),
                                 &Type::Vector(size),
@@ -1260,7 +1264,8 @@ impl SemanticAnalysis<'_> {
                             param.size,
                             Type::Vector(param.size),
                         ));
-                        self.binding_mismatch(
+                        // Note: We don't break here but at the end of the module's compilation, as we want to continue to gather as many errors as possible
+                        let _ = self.binding_mismatch(
                             &binding_ty,
                             arg.span(),
                             &expected,
