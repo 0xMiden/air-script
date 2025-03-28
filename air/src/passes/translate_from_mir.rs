@@ -37,15 +37,6 @@ impl Pass for MirToAir<'_> {
 
         let mut trace_columns = mir.trace_columns.clone();
 
-        // TODO: When removing aux and rand values, use the following instead
-        /*if trace_columns.len() != 1 {
-            self.diagnostics
-                .diagnostic(Severity::Error)
-                .with_message("trace columns in mir should only have one segment (main trace)")
-                .emit();
-            return Err(CompileError::Failed);
-        }*/
-
         let mut bus_bindings_map = HashMap::new();
         if !buses.is_empty() {
             let existing_aux_segment: Vec<_> = trace_columns
@@ -412,7 +403,6 @@ impl AirBuilder<'_> {
                         let bus = bus_access.bus;
                         let name = bus.borrow().deref().name.unwrap();
                         let column = self.bus_bindings_map.get(&name).unwrap();
-                        // TODO: add offset
                         let trace_access =
                             mir::ir::TraceAccess::new(AUX_SEGMENT, *column, bus_access.row_offset);
                         (trace_access, lhs_span)

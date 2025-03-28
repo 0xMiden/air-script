@@ -17,7 +17,6 @@ pub struct Graph {
     pub boundary_constraints_roots: ir::Link<Vec<ir::Link<ir::Op>>>,
     pub integrity_constraints_roots: ir::Link<Vec<ir::Link<ir::Op>>>,
     pub buses: BTreeMap<QualifiedIdentifier, ir::Link<ir::Bus>>,
-    bus_count: usize,
 }
 
 impl Graph {

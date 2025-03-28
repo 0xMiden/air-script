@@ -65,9 +65,6 @@ pub enum MirValue {
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
-    // TODO: Will be used when handling variable-length public inputs
-    /*/// A reference to a given public input
-    PublicInputBinding(PublicInputBinding),*/
     /// A reference to the `random_values` array, specifically the element at the given index
     RandomValue(usize),
     /// A binding to a set of consecutive trace columns of a given size
@@ -202,20 +199,6 @@ impl PublicInputAccess {
         Self { name, index }
     }
 }
-
-// TODO: Will be used when handling variable-length public inputs
-/*/// Represents an access of a [PublicInput], similar in nature to [TraceAccess]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct PublicInputBinding {
-    /// The name of the public input to bind
-    pub name: Identifier,
-}
-
-impl PublicInputBinding {
-    pub const fn new(name: Identifier) -> Self {
-        Self { name }
-    }
-}*/
 
 impl Default for SpannedMirValue {
     fn default() -> Self {

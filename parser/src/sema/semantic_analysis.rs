@@ -1423,7 +1423,7 @@ impl SemanticAnalysis<'_> {
                             };
 
                         match (found.clone().item, expr.rhs.as_mut()) {
-                            // Buses boundaries can be constrained by null, or soon by a public_input
+                            // Buses boundaries can be constrained by null
                             (BindingType::Bus(_), ScalarExpr::Null(_)) => {}
                             (BindingType::Bus(_), ScalarExpr::SymbolAccess(access)) => {
                                 self.has_type_errors = true;
@@ -1436,39 +1436,6 @@ impl SemanticAnalysis<'_> {
                                     "this a reference to a public input",
                                 )
                                 .emit();
-
-                                // TODO: Update when table public inputs are supported
-                                /*self.visit_mut_resolvable_identifier(&mut access.name)?;
-                                self.visit_mut_access_type(&mut access.access_type)?;
-
-                                let resolved_binding_ty =
-                                    match self.resolvable_binding_type(&access.name) {
-                                        Ok(ty) => ty,
-                                        // An unresolved identifier at this point means that it is undefined,
-                                        // but we've already raised a diagnostic
-                                        //
-                                        // There is nothing useful we can do here other than continue traversing the module
-                                        // gathering as many undefined variable usages as possible before bailing
-                                        Err(_) => return ControlFlow::Continue(()),
-                                    };
-
-                                match resolved_binding_ty.item {
-                                    BindingType::PublicInput(_) => {}
-                                    _ => {
-                                        self.has_type_errors = true;
-                                        self.invalid_constraint(
-                                            access.span(),
-                                            "expected a reference to a public input",
-                                        )
-                                        .with_secondary_label(
-                                            access.name.span(),
-                                            "this is not a reference to a public input",
-                                        )
-                                        .emit();
-                                    }
-                                }*/
-
-                                // Buses boundaries can be constrained to null, nothing to do
                             }
                             (BindingType::Bus(_), _) => {
                                 // Buses cannot be constrained otherwise
@@ -1479,7 +1446,6 @@ impl SemanticAnalysis<'_> {
                                         "but this expression is only valid to constrain columns",
                                     )
                                     .with_note(
-                                        //"Only the null value or a public input is valid for constraining buses",
                                         "Only the null value is valid for constraining buses",
                                     )
                                     .emit();

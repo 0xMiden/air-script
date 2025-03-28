@@ -215,7 +215,7 @@ impl UnrollingFirstPass<'_> {
                     updated_value = Some(Vector::create(vec, value_ref.span()));
                 }
                 MirValue::BusAccess(_) => {}
-                MirValue::Null => {} //MirValue::PublicInputBinding(_public_input_binding) => {}
+                MirValue::Null => {}
             }
         }
 

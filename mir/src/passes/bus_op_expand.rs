@@ -29,16 +29,6 @@ impl Pass for BusOpExpand<'_> {
 
     fn run<'a>(&mut self, mut ir: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
         let mut max_num_random_values = ir.num_random_values as usize;
-        // TODO: When removing aux and rand values, use the following instead
-
-        /*if ir.num_random_values != 0 {
-            self.diagnostics
-                .diagnostic(Severity::Error)
-                .with_message("No random values should be set at this point")
-                .emit();
-            return Err(CompileError::Failed);
-        };
-        let mut max_num_random_values = 0;*/
 
         let graph = ir.constraint_graph_mut();
 
@@ -66,11 +56,8 @@ impl Pass for BusOpExpand<'_> {
             );
 
             // Expand bus boundary constraints first
-            self.handle_boundary_constraint(bus_type.clone(), first/*, air_parser::ast::Boundary::First, bus_access.clone(), bus.borrow().span()*/);
-            self.handle_boundary_constraint(
-                bus_type.clone(),
-                last, /*, air_parser::ast::Boundary::Last, bus_access.clone(), bus.borrow().span()*/
-            );
+            self.handle_boundary_constraint(bus_type.clone(), first);
+            self.handle_boundary_constraint(bus_type.clone(), last);
 
             // Then, expend bus integrity constraints
             match bus_type {
@@ -354,10 +341,6 @@ impl<'a> BusOpExpand<'a> {
         match link.borrow().deref() {
             Op::Value(value) => {
                 match value.value.value {
-                    // TODO: Will be used when handling variable-length public inputs
-                    /*MirValue::PublicInputBinding(public_input_binding) => {
-
-                    },*/
                     MirValue::Null => {
                         // Empty bus
 
@@ -371,19 +354,6 @@ impl<'a> BusOpExpand<'a> {
                         });
 
                         to_update = Some(unit_val);
-
-                        /*let bus_boundary = Boundary::create(
-                            duplicate_node(bus_access.clone(), &mut Default::default()),
-                            boundary,
-                            bus_span,
-                        );
-
-                        let resulting_constraint = Enf::create(
-                            Sub::create(bus_boundary, unit_val, SourceSpan::default()),
-                            SourceSpan::default(),
-                        );
-
-                        //graph.insert_boundary_constraints_root(resulting_constraint);*/
                     }
                     _ => unreachable!(),
                 }
@@ -397,55 +367,3 @@ impl<'a> BusOpExpand<'a> {
         }
     }
 }
-
-/*impl Visitor for BusOpExpand<'_> {
-    fn work_stack(&mut self) -> &mut Vec<Link<Node>> {
-        &mut self.work_stack
-    }
-    fn root_nodes_to_visit(
-        &self,
-        graph: &crate::ir::Graph,
-    ) -> Vec<crate::ir::Link<crate::ir::Node>> {
-        let boundary_constraints_roots_ref = graph.boundary_constraints_roots.borrow();
-        let integrity_constraints_roots_ref = graph.integrity_constraints_roots.borrow();
-        let combined_roots = boundary_constraints_roots_ref
-            .clone()
-            .into_iter()
-            .map(|bc| bc.as_node())
-            .chain(
-                integrity_constraints_roots_ref
-                    .clone()
-                    .into_iter()
-                    .map(|ic| ic.as_node()),
-            );
-        combined_roots.collect()
-    }
-
-    fn visit_node(&mut self, graph: &mut Graph, node: Link<Node>) -> Result<(), CompileError> {
-        let updated_op: Result<Option<Link<Op>>, CompileError> = match node.borrow().deref() {
-            Node::BusOp(bus_op) => {
-                let bus_op_link: Link<Op> = bus_op.clone().into();
-                let mut updated_node = None;
-
-                {
-                    // safe to unwrap because we just dispatched on it
-                    let bus_op_ref = bus_op_link.as_bus_op().unwrap();
-                    let bus = bus_op_ref.bus.clone();
-                    let bus_kind = bus.borrow().bus_type.clone();
-                    let bus_operator = bus_op_ref.kind.clone();
-                    let args = bus_op_ref.args.clone();
-                }
-
-                Ok(updated_node)
-            }
-            _ => Ok(None),
-        };
-
-        // We update the node if needed
-        if let Some(updated_op) = updated_op? {
-            node.as_op().unwrap().set(&updated_op);
-        }
-
-        Ok(())
-    }
-}*/
