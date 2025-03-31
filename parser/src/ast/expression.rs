@@ -92,7 +92,7 @@ impl From<ResolvableIdentifier> for Identifier {
 ///
 /// Identifiers in AirScript are separated into two namespaces: one for functions,
 /// and one for buses and bindings. This is because functions cannot be bound, added to or remove from,
-/// buses cannot be called, and bindings cannot be called either
+/// while buses and bindings cannot be called.
 /// So we can always disambiguate identifiers based on its usage.
 ///
 /// It is still probably best practice to avoid having name conflicts between functions,
