@@ -549,7 +549,7 @@ impl<'a> MirBuilder<'a> {
         bus_op
             .as_bus_op_mut()
             .unwrap()
-            ._latch
+            .latch
             .borrow_mut()
             .clone_from(&sel.borrow());
         let bus_op_clone = bus_op.clone();
@@ -1060,7 +1060,8 @@ impl<'a> MirBuilder<'a> {
             }
             bus_op = bus_op.args(arg_node);
         }
-        let bus_op = bus_op.build();
+        // Latch is unknown at this point, will be set later in translate_bus_enforce
+        let bus_op = bus_op.latch(1.into()).build();
         Ok(bus_op)
     }
 

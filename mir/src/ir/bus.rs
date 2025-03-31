@@ -152,10 +152,7 @@ impl Link<Bus> {
         for column in columns {
             bus_op = bus_op.args(column.clone());
         }
-        let bus_op = bus_op.build();
-        let bus_op_ref = bus_op.as_bus_op_mut().unwrap();
-        bus_op_ref._latch.update(&latch);
-        drop(bus_op_ref);
+        let bus_op = bus_op.latch(latch.clone()).build();
         self.borrow_mut().columns.push(bus_op.clone());
         self.borrow_mut().latches.push(latch.clone());
         bus_op

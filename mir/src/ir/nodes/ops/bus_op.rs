@@ -16,7 +16,7 @@ pub struct BusOp {
     pub bus: BackLink<Bus>,
     pub kind: BusOpKind,
     pub args: Vec<Link<Op>>,
-    pub _latch: Link<Op>,
+    pub latch: Link<Op>,
     pub _node: Singleton<Node>,
     pub _owner: Singleton<Owner>,
     #[span]
@@ -28,7 +28,7 @@ impl Hash for BusOp {
         self.bus.get_name().hash(state);
         self.kind.hash(state);
         self.args.hash(state);
-        self._latch.hash(state);
+        self.latch.hash(state);
     }
 }
 
@@ -37,7 +37,7 @@ impl PartialEq for BusOp {
         self.bus.get_name() == other.bus.get_name()
             && self.kind == other.kind
             && self.args == other.args
-            && self._latch == other._latch
+            && self.latch == other.latch
     }
 }
 
@@ -63,7 +63,7 @@ impl Parent for BusOp {
     type Child = Op;
     fn children(&self) -> Link<Vec<Link<Self::Child>>> {
         let mut children = self.args.clone();
-        children.push(self._latch.clone());
+        children.push(self.latch.clone());
         children.into()
     }
 }
