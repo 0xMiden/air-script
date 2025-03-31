@@ -36,7 +36,7 @@ The above example states that the bus `p` should be empty at the beginning and e
 
 ## Bus integrity constraints
 
-In the integrity constraints section, we can add and remove elements (as tuples of felts) to and from a bus. In the following examples, `p` and `q` are respectively multiset and LogUp based buses.
+In the integrity constraints section, we can insert and remove elements (as tuples of felts) into and from a bus. In the following examples, `p` and `q` are respectively multiset and LogUp based buses.
 
 ```
 integrity_constraints {

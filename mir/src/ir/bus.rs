@@ -64,7 +64,7 @@ pub struct Bus {
     /// Type of bus
     pub bus_type: ast::BusType,
     /// values stored in the bus
-    /// colums are joined with randomness (αi) in the bus constraint equation
+    /// columns are joined with randomness (αi) in the bus constraint equation
     pub columns: Vec<Link<Op>>,
     /// selectors denoting when a value is present
     pub latches: Vec<Link<Op>>,
