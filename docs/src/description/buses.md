@@ -6,6 +6,7 @@ A bus is a construct which aims to simplify description of non-local constraints
 
 - Multiset (`multiset`): Multiset-based buses can represent constraints which specify values that must have been inserted or removed from a column, in no particular order.
 [Incremental Multiset Hash Functions and Their Application to Memory Integrity Checking - Clarke et al. MIT CSAIL (2018)](https://people.csail.mit.edu/devadas/pubs/mhashes.pdf)
+[Miden VM - Multiset Checks](https://0xpolygonmiden.github.io/miden-vm/design/lookups/multiset.html)
 
 - LogUp (`logup`): LogUp-based buses are more complex than multiset buses, and can encode the multiplicity of an element: an element can be inserted or removed multiple times.
 [Multivariate lookups based on logarithmic derivatives - Ulrich Haböck, Orbis Labs, Polygon Labs](https://eprint.iacr.org/2022/1530)
