@@ -30,7 +30,9 @@ AirScript defines the following keywords:
   - `main`: used to declare the main execution trace.
   - `aux`: used to declare the auxiliary execution trace.
 - `use`: used to [import evaluators](./organization.md#importing-evaluators) from library AirScript modules.
-- `when`: used to specify a binary selector for [bus](./declarations.md#buses-buses) operations. _It may only be used when defining integrity constraints._
+- `when`: used to specify a binary selector. _It may only be used when defining integrity constraints_:
+  - [bus integrity constraints](./buses.md#bus-integrity-constraints).
+  - [conditional constraints and conditional evaluators](./convenience.md#when-keyword).
 - `$<identifier>`: used to access random values provided by the verifier.
 - `$main`: used to access columns in the main execution trace by index.
 - `$aux`: used to access columns in the auxiliary execution trace by index.

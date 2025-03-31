@@ -216,3 +216,63 @@ ev bar([a, b, c]) {
     enf c' = a * b;
 }
 ```
+
+### `when` keyword
+
+The `when` keyword can be used to apply a binary selector to constraints where only one of the two branches is specified, the other being a no-op.
+
+Its usage in the case of bus operations is handled separately, as defined in [buses.md](./buses.md#bus-integrity-constraints).
+
+In the case of [conditional constraints](./convenience.md#conditional-constraints) and [conditional evaluators](./evaluators.md#conditional-evaluators), `constraint when selector` is equivalent to:
+```
+enf match {
+    case selector: constraint
+    case !selector: 1 // this is a no_op
+};
+```
+
+Examples:
+
+A bus operation with a binary selector:
+```
+trace_columns {
+    main: [a, b, s],
+}
+
+buses {
+    multiset p,
+}
+
+integrity_constraints {
+    enf s^2 = s;
+    p.insert(a, b) when s;
+}
+```
+
+A conditional constraint:
+```
+trace_columns {
+    main: [a, b, c, s],
+}
+
+integrity_constraints {
+    enf s^2 = s;
+    enf c' = a + b when s;
+}
+```
+
+A conditional evaluator:
+```
+trace_columns {
+    main: [a, b, c, s],
+}
+
+ev foo([a, b, c]) {
+    enf c' = a + b;
+}
+
+integrity_constraints {
+    enf s^2 = s;
+    enf foo([a, b, c]) when s;
+}
+```
