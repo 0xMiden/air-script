@@ -327,11 +327,7 @@ impl<'a> BusOpExpand<'a> {
         Self { diagnostics }
     }
 
-    fn handle_boundary_constraint(
-        &self,
-        bus_type: BusType,
-        link: Link<Op>,
-    ) {
+    fn handle_boundary_constraint(&self, bus_type: BusType, link: Link<Op>) {
         let mut to_update = None;
 
         match link.borrow().deref() {
@@ -342,7 +338,7 @@ impl<'a> BusOpExpand<'a> {
 
                         let unit_constant = match bus_type {
                             BusType::Multiset => 1, // Product, unit for product is 1
-                            BusType::Logup => 0, // Sum of inverses, unit for sum is 0
+                            BusType::Logup => 0,    // Sum of inverses, unit for sum is 0
                         };
                         let unit_val = Value::create(SpannedMirValue {
                             span: SourceSpan::default(),

@@ -90,5 +90,6 @@ fn err_empty_buses() {
 
     buses{}";
 
-    ParseTest::new().expect_module_diagnostic(source, "expected one of: '\"logup\"', '\"multiset\"'");
+    ParseTest::new()
+        .expect_module_diagnostic(source, "expected one of: '\"logup\"', '\"multiset\"'");
 }
