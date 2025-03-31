@@ -205,3 +205,61 @@ fn err_trace_columns_constrained_with_null() {
 
     expect_diagnostic(source, "error: invalid constraint");
 }
+
+#[test]
+fn err_bus_constrained_with_bus_access() {
+    let source = "
+        def test
+
+    trace_columns {
+        main: [a],
+    }
+
+    buses {
+        multiset p,
+        logup q,
+    }
+
+    public_inputs {
+        inputs: [2],
+    }
+
+    boundary_constraints {
+        enf p.last = p.first;
+    }
+
+    integrity_constraints {
+        enf a = 0;
+    }";
+
+    expect_diagnostic(source, "error: invalid constraint");
+}
+
+#[test]
+fn err_trace_columns_constrained_with_bus_access() {
+    let source = "
+        def test
+
+    trace_columns {
+        main: [a],
+    }
+
+    buses {
+        multiset p,
+        logup q,
+    }
+
+    public_inputs {
+        inputs: [2],
+    }
+
+    boundary_constraints {
+        enf a.last = p.first;
+    }
+
+    integrity_constraints {
+        enf a = 0;
+    }";
+
+    expect_diagnostic(source, "error: invalid expression");
+}

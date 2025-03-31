@@ -1443,7 +1443,7 @@ impl SemanticAnalysis<'_> {
                                 self.invalid_constraint(expr.lhs.span(), "this constrains a bus")
                                     .with_secondary_label(
                                         expr.rhs.span(),
-                                        "but this expression is only valid to constrain columns",
+                                        "but this expression is not valid to constrain buses",
                                     )
                                     .with_note(
                                         "Only the null value is valid for constraining buses",
