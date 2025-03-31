@@ -57,7 +57,7 @@ integrity_constraints {
     # the auxiliary column contains the product of values of c offset by a random value.
     enf p' = p * (c + $rand[0]);
 
-    # add p to the q bus when s = 1
-    q.add(p) when s;
+    # insert p to the q bus when s = 1
+    q.insert(p) when s;
 }
 ```

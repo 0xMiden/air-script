@@ -73,11 +73,11 @@ fn buses_in_integrity_constraints() {
     }
 
     integrity_constraints {
-        p.add(double(a)) when 1;
-        p.rem(1) when 1;
-        q.add(1, 2) when 1;
-        q.add(1, 2) when 1;
-        q.rem(1, 2) for 2;
+        p.insert(double(a)) when 1;
+        p.remove(1) when 1;
+        q.insert(1, 2) when 1;
+        q.insert(1, 2) when 1;
+        q.remove(1, 2) for 2;
     }";
 
     expect_diagnostic(

@@ -16,8 +16,8 @@ use crate::{
 ///
 /// these constraints:
 /// ```air
-/// p.add(a, b) when s
-/// p.rem(c, d) when (1 - s)
+/// p.insert(a, b) when s
+/// p.remove(c, d) when (1 - s)
 /// ```
 /// translate to this equation:
 /// ```tex
@@ -39,8 +39,8 @@ use crate::{
 ///
 /// these constraints:
 /// ```air
-/// q.add(a, b, c) for d
-/// q.rem(e, f, g) when s
+/// q.insert(a, b, c) for d
+/// q.remove(e, f, g) when s
 /// ```
 /// translate to this equation:
 /// ```tex
@@ -133,12 +133,12 @@ impl Bus {
 }
 
 impl Link<Bus> {
-    pub fn add(&self, columns: &[Link<Op>], latch: Link<Op>, span: SourceSpan) -> Link<Op> {
-        self.bus_op(BusOpKind::Add, columns, latch, span)
+    pub fn insert(&self, columns: &[Link<Op>], latch: Link<Op>, span: SourceSpan) -> Link<Op> {
+        self.bus_op(BusOpKind::Insert, columns, latch, span)
     }
 
-    pub fn rem(&self, columns: &[Link<Op>], latch: Link<Op>, span: SourceSpan) -> Link<Op> {
-        self.bus_op(BusOpKind::Rem, columns, latch, span)
+    pub fn remove(&self, columns: &[Link<Op>], latch: Link<Op>, span: SourceSpan) -> Link<Op> {
+        self.bus_op(BusOpKind::Remove, columns, latch, span)
     }
 
     fn bus_op(

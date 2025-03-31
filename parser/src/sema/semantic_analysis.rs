@@ -1661,7 +1661,7 @@ impl SemanticAnalysis<'_> {
             }
             expr => {
                 self.invalid_constraint(expr.span(), "expected either an equality expression, a call to an evaluator, or a bus operation here")
-                    .with_note("Integrity constraints must be expressed as an equality, e.g. `a = 0`, a call, e.g. `evaluator(a)`, or a bus operation, e.g. `p.add(a) when 1`")
+                    .with_note("Integrity constraints must be expressed as an equality, e.g. `a = 0`, a call, e.g. `evaluator(a)`, or a bus operation, e.g. `p.insert(a) when 1`")
                     .emit();
                 ControlFlow::Break(SemanticAnalysisError::Invalid)
             }

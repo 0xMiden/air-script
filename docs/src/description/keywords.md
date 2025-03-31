@@ -2,7 +2,6 @@
 
 AirScript defines the following keywords:
 
-- `add`: used to add a tuple to a [bus](./declarations.md#buses-buses). _It may only be used when defining integrity constraints._
 - `boundary_constraints`: used to declare the source section where the [boundary constraints are described](./constraints.md#boundary_constraints).
   - `first`: used to access the value of a trace column / bus at the first row of the trace. _It may only be used when defining boundary constraints._
   - `last`: used to access the value of a trace column / bus at the last row of the trace. _It may only be used when defining boundary constraints._
@@ -17,6 +16,7 @@ AirScript defines the following keywords:
   - in the context of [LogUp bus operations](./buses.md#bus-integrity-constraints), used to specify multiplicity. _It may only be used when defining integrity constraints._
   - in the context of [list comprehensions](./convenience.md#list-comprehension), used to specify the bound variable.
 - `in`: used to specify the iterable in a [list comprehension](./convenience.md#list-comprehension).
+- `insert`: used to insert a tuple to a [bus](./declarations.md#buses-buses). _It may only be used when defining integrity constraints._
 - `integrity_constraints`: used to declare the source section where the [integrity constraints are described](./constraints.md#integrity_constraints).
 - `let`: used to declare intermediate variables in the boundary_constraints or integrity_constraints source sections.
 - `mod`: used to [define a name](./organization.md#library-modules) of a library AirScript module.
@@ -24,7 +24,7 @@ AirScript defines the following keywords:
 - `prod`: used to fold a list into a single value by multiplying all of the values in the list together.
 - `public_inputs`: used to declare the source section where the [public inputs are declared](./declarations.md). _They may only be referenced when defining boundary constraints._
 - `random_values`: used to declare the source section where the [random values are described](./declarations.md).
-- `rem`: used to remove a tuple from a [bus](./declarations.md#buses-buses). _It may only be used when defining integrity constraints._
+- `remove`: used to remove a tuple from a [bus](./declarations.md#buses-buses). _It may only be used when defining integrity constraints._
 - `sum`: used to fold a list into a single value by summing all of the values in the list.
 - `trace_columns`: used to declare the source section where the [execution trace is described](./declarations.md). _They may only be referenced when defining integrity constraints._
   - `main`: used to declare the main execution trace.

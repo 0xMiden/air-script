@@ -70,11 +70,11 @@ fn buses_in_integrity_constraints() {
     }
 
     integrity_constraints {
-        p.add(1) when 1;
-        p.rem(1) when 1;
-        q.add(1, 2) when 1;
-        q.add(1, 2) when 1;
-        q.rem(1, 2) for 2;
+        p.insert(1) when 1;
+        p.remove(1) when 1;
+        q.insert(1, 2) when 1;
+        q.insert(1, 2) when 1;
+        q.remove(1, 2) for 2;
     }";
 
     assert!(compile(source).is_ok());
@@ -105,8 +105,8 @@ fn buses_args_expr_in_integrity_expr() {
         let vec = [x for x in 0..3];
         let b = 41;
         let x = sum(vec) + b;
-        p.add(x) when 1;
-        p.rem(x) when 0;
+        p.insert(x) when 1;
+        p.remove(x) when 0;
     }";
     assert!(compile(source).is_ok());
     let mut result_mir = translate(source).unwrap();
@@ -135,9 +135,9 @@ fn buses_args_expr_in_integrity_expr() {
         .span(SourceSpan::default())
         .build();
     let sel: Link<Op> = From::from(1);
-    let _p_add = bus.add(&[x.clone()], sel.clone(), SourceSpan::default());
+    let _p_add = bus.insert(&[x.clone()], sel.clone(), SourceSpan::default());
     let not_sel: Link<Op> = From::from(0);
-    let _p_rem = bus.rem(&[x.clone()], not_sel.clone(), SourceSpan::default());
+    let _p_rem = bus.remove(&[x.clone()], not_sel.clone(), SourceSpan::default());
     let bus_ident = result_mir.constraint_graph().buses.keys().next().unwrap();
     let mut expected_mir = Mir::new(result_mir.name);
     let _ = expected_mir

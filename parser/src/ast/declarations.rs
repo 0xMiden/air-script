@@ -107,16 +107,16 @@ pub enum BusType {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BusOperator {
-    /// Add a tuple to the bus
-    Add,
+    /// Insert a tuple to the bus
+    Insert,
     /// Remove a tuple from the bus
-    Rem,
+    Remove,
 }
 impl std::fmt::Display for BusOperator {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::Add => write!(f, "add"),
-            Self::Rem => write!(f, "rem"),
+            Self::Insert => write!(f, "insert"),
+            Self::Remove => write!(f, "remove"),
         }
     }
 }

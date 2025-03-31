@@ -5,8 +5,8 @@ use std::hash::Hash;
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash)]
 pub enum BusOpKind {
     #[default]
-    Add,
-    Rem,
+    Insert,
+    Remove,
 }
 
 #[derive(Default, Clone, Eq, Debug, Spanned, Builder)]

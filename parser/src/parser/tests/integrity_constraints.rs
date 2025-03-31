@@ -74,11 +74,11 @@ fn integrity_constraints_with_buses() {
     }
 
     integrity_constraints {
-        p.add(1) when 1;
-        p.rem(1) when 1;
-        q.add(1, 2) when 1;
-        q.add(1, 2) when 1;
-        q.rem(1, 2) for 2;
+        p.insert(1) when 1;
+        p.remove(1) when 1;
+        q.insert(1, 2) when 1;
+        q.insert(1, 2) when 1;
+        q.remove(1, 2) for 2;
     }";
 
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
@@ -107,34 +107,34 @@ fn integrity_constraints_with_buses() {
 
     let mut bus_enforces = Vec::new();
 
-    // p.add(1) when 1;
+    // p.insert(1) when 1;
     bus_enforces.push(bus_enforce!(lc!(
         (("%0", range!(0..1))) => 
-        bus_add!(p, vec![expr!(int!(1))]),
+        bus_insert!(p, vec![expr!(int!(1))]),
         when int!(1))));
 
-    //p.rem(1) when 1;
+    //p.remove(1) when 1;
     bus_enforces.push(bus_enforce!(lc!(
         (("%1", range!(0..1))) => 
-        bus_rem!(p, vec![expr!(int!(1))]),
+        bus_remove!(p, vec![expr!(int!(1))]),
         when int!(1))));
 
-    //q.add(1, 2) when 1;
+    //q.insert(1, 2) when 1;
     bus_enforces.push(bus_enforce!(lc!(
         (("%2", range!(0..1))) => 
-        bus_add!(q, vec![expr!(int!(1)), expr!(int!(2))]),
+        bus_insert!(q, vec![expr!(int!(1)), expr!(int!(2))]),
         when int!(1))));
 
-    //q.add(1, 2) when 1;
+    //q.insert(1, 2) when 1;
     bus_enforces.push(bus_enforce!(lc!(
         (("%3", range!(0..1))) => 
-        bus_add!(q, vec![expr!(int!(1)), expr!(int!(2))]),
+        bus_insert!(q, vec![expr!(int!(1)), expr!(int!(2))]),
         when int!(1))));
 
-    //q.rem(1, 2) for 2;
+    //q.remove(1, 2) for 2;
     bus_enforces.push(bus_enforce!(lc!(
         (("%4", range!(0..1))) => 
-        bus_rem!(q, vec![expr!(int!(1)), expr!(int!(2))]),
+        bus_remove!(q, vec![expr!(int!(1)), expr!(int!(2))]),
         for int!(2))));
 
     expected.integrity_constraints = Some(Span::new(SourceSpan::UNKNOWN, bus_enforces));

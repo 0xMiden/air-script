@@ -596,23 +596,23 @@ macro_rules! eq {
     };
 }
 
-macro_rules! bus_add {
+macro_rules! bus_insert {
     ($bus:ident, $expr:expr) => {
         ScalarExpr::BusOperation(BusOperation::new(
             miden_diagnostics::SourceSpan::UNKNOWN,
             ident!($bus),
-            BusOperator::Add,
+            BusOperator::Insert,
             $expr,
         ))
     };
 }
 
-macro_rules! bus_rem {
+macro_rules! bus_remove {
     ($bus:ident, $rhs:expr) => {
         ScalarExpr::BusOperation(BusOperation::new(
             miden_diagnostics::SourceSpan::UNKNOWN,
             ident!($bus),
-            BusOperator::Rem,
+            BusOperator::Remove,
             $rhs,
         ))
     };

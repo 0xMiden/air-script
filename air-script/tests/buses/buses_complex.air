@@ -27,13 +27,13 @@ integrity_constraints {
     enf s1^2 = s1;
     enf s2^2 = s2;
 
-    p.add(1, a) when s1;
-    p.rem(1, b) when s2;
+    p.insert(1, a) when s1;
+    p.remove(1, b) when s2;
 
-    p.add(2, b) when 1 - s1;
-    p.rem(2, a) when 1 - s2;
+    p.insert(2, b) when 1 - s1;
+    p.remove(2, a) when 1 - s2;
 
-    q.add(3, a) when s1;
-    q.add(3, a) when s1;
-    q.rem(4, b) for d;
+    q.insert(3, a) when s1;
+    q.insert(3, a) when s1;
+    q.remove(4, b) for d;
 }

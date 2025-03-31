@@ -427,8 +427,8 @@ ConstraintExpr: Statement = {
     }
 }
 
-// 1. `p.add(a, b) when s`
-// 2. `q.add(a, b) for m`
+// 1. `p.insert(a, b) when s`
+// 2. `q.insert(a, b) for m`
 BusConstraintExpr: Statement = {
     <l:@L> <expr: ScalarBusConstraintExpr> <selector: WithSelector> <r:@R> => {
         let generated_name = format!("%{}", *next_var);
@@ -471,8 +471,8 @@ ScalarBusConstraintExpr: ScalarExpr = {
 }
 
 BusOperator: BusOperator = {
-    "add" => BusOperator::Add,
-    "rem" => BusOperator::Rem
+    "insert" => BusOperator::Insert,
+    "remove" => BusOperator::Remove
 }
 
 WithSelector: ScalarExpr = {
@@ -718,8 +718,8 @@ extern {
         "multiset" => Token::Multiset,
         "logup" => Token::Logup,
         "null" => Token::Null,
-        "add" => Token::Add,
-        "rem" => Token::Rem,
+        "insert" => Token::Insert,
+        "remove" => Token::Remove,
         "boundary_constraints" => Token::BoundaryConstraints,
         "first" => Token::First,
         "last" => Token::Last,

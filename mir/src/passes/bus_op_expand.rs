@@ -13,10 +13,6 @@ use crate::{
     CompileError,
 };
 
-/// TODO MIR:
-/// If needed, implement bus operation expand pass on MIR
-/// See https://github.com/0xPolygonMiden/air-script/issues/183
-///   
 pub struct BusOpExpand<'a> {
     #[allow(unused)]
     diagnostics: &'a DiagnosticsHandler,
@@ -36,7 +32,7 @@ impl Pass for BusOpExpand<'_> {
 
         for (_ident, bus) in buses {
             let bus_type = bus.borrow().bus_type.clone();
-            let columns = bus.borrow().columns.clone(); // columns are the bus_operations (add or remove of a Vec of arguments)
+            let columns = bus.borrow().columns.clone(); // columns are the bus_operations (insert or remove of a Vec of arguments)
             let latches = bus.borrow().latches.clone(); // latches are the selectors
             let first = bus.borrow().get_first().clone();
             let last = bus.borrow().get_last().clone();
@@ -63,11 +59,11 @@ impl Pass for BusOpExpand<'_> {
             match bus_type {
                 BusType::Multiset => {
                     // Example:
-                    // p.add(a, b) when s
-                    // p.rem(c, d) when (1 - s)
+                    // p.insert(a, b) when s
+                    // p.remove(c, d) when (1 - s)
                     // => p' * (( A0 + A1 c + A2 d ) ( 1 - s ) + s) = p * ( A0 + A1 a + A2 b ) s + 1 - s
 
-                    // p' * ( columns removed combined with alphas ) = p * ( columns added combined with alphas )
+                    // p' * ( columns removed combined with alphas ) = p * ( columns inserted combined with alphas )
 
                     let mut p_factor = None;
                     let mut p_prime_factor = None;
@@ -119,9 +115,9 @@ impl Pass for BusOpExpand<'_> {
                             SourceSpan::default(),
                         );
 
-                        // 4. Multiply them to p_factor or p_prime_factor (depending on bus_op_kind: add: p, rem: p_prime)
+                        // 4. Multiply them to p_factor or p_prime_factor (depending on bus_op_kind: insert: p, remove: p_prime)
                         match bus_op_kind {
-                            BusOpKind::Add => {
+                            BusOpKind::Insert => {
                                 p_factor = match p_factor {
                                     Some(p_factor) => Some(Mul::create(
                                         p_factor,
@@ -131,7 +127,7 @@ impl Pass for BusOpExpand<'_> {
                                     None => Some(args_combined_with_latch_and_latch_inverse),
                                 };
                             }
-                            BusOpKind::Rem => {
+                            BusOpKind::Remove => {
                                 p_prime_factor = match p_prime_factor {
                                     Some(p_prime_factor) => Some(Mul::create(
                                         p_prime_factor,
@@ -168,12 +164,12 @@ impl Pass for BusOpExpand<'_> {
                 }
                 BusType::Logup => {
                     // Example:
-                    // q.add(a, b, c) for d
-                    // q.rem(e, f, g) when s
+                    // q.insert(a, b, c) for d
+                    // q.remove(e, f, g) when s
                     // => q' + s / ( A0 + A1 e + A2 f + A3 g ) = q + d / ( A0 + A1 a + A2 b + A3 c )
 
-                    //  q' + s / ( columns removed combined with alphas ) = q + d / ( columns added combined with alphas )
-                    // PROD * q' + s * ( columns added combined with alphas ) = PROD * q + d * ( columns removed combined with alphas )
+                    //  q' + s / ( columns removed combined with alphas ) = q + d / ( columns inserted combined with alphas )
+                    // PROD * q' + s * ( columns inserted combined with alphas ) = PROD * q + d * ( columns removed combined with alphas )
 
                     // 1. Compute all the factors
                     let mut factors = vec![];
@@ -208,7 +204,7 @@ impl Pass for BusOpExpand<'_> {
                         factors.push(args_combined);
                     }
 
-                    // 2. Compute the product of all factors (will be used to logup q and q')
+                    // 2. Compute the product of all factors (will be used to multiply q and q')
                     let mut total_factors = None;
                     for factor in factors.iter() {
                         total_factors = match total_factors {
@@ -255,7 +251,7 @@ impl Pass for BusOpExpand<'_> {
 
                         // 3.3 Depending on the bus_op_kind, add to q_factor or q_prime_factor
                         match bus_op_kind {
-                            BusOpKind::Add => {
+                            BusOpKind::Insert => {
                                 terms_added_to_bus = match terms_added_to_bus {
                                     Some(terms_added_to_bus) => Some(Add::create(
                                         terms_added_to_bus,
@@ -265,7 +261,7 @@ impl Pass for BusOpExpand<'_> {
                                     None => Some(factors_without_current_with_latch),
                                 };
                             }
-                            BusOpKind::Rem => {
+                            BusOpKind::Remove => {
                                 terms_removed_from_bus = match terms_removed_from_bus {
                                     Some(terms_removed_from_bus) => Some(Add::create(
                                         terms_removed_from_bus,
@@ -334,7 +330,7 @@ impl<'a> BusOpExpand<'a> {
     fn handle_boundary_constraint(
         &self,
         bus_type: BusType,
-        link: Link<Op>, /*, boundary: air_parser::ast::Boundary, bus_access: Link<Op>, bus_span: SourceSpan*/
+        link: Link<Op>,
     ) {
         let mut to_update = None;
 

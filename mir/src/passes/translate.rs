@@ -1029,8 +1029,8 @@ impl<'a> MirBuilder<'a> {
             return Err(CompileError::Failed);
         };
         let bus_op_kind = match ast_bus_op.op {
-            ast::BusOperator::Add => BusOpKind::Add,
-            ast::BusOperator::Rem => BusOpKind::Rem,
+            ast::BusOperator::Insert => BusOpKind::Insert,
+            ast::BusOperator::Remove => BusOpKind::Remove,
         };
 
         let mut bus_op = BusOp::builder()
