@@ -61,7 +61,7 @@ impl Pass for BusOpExpand<'_> {
 
             // Then, expend bus integrity constraints
             match bus_type {
-                BusType::Unit => {
+                BusType::Multiset => {
                     // Example:
                     // p.add(a, b) when s
                     // p.rem(c, d) when (1 - s)
@@ -166,7 +166,7 @@ impl Pass for BusOpExpand<'_> {
 
                     graph.insert_integrity_constraints_root(resulting_constraint);
                 }
-                BusType::Mult => {
+                BusType::Logup => {
                     // Example:
                     // q.add(a, b, c) for d
                     // q.rem(e, f, g) when s
@@ -208,7 +208,7 @@ impl Pass for BusOpExpand<'_> {
                         factors.push(args_combined);
                     }
 
-                    // 2. Compute the product of all factors (will be used to mult q and q')
+                    // 2. Compute the product of all factors (will be used to logup q and q')
                     let mut total_factors = None;
                     for factor in factors.iter() {
                         total_factors = match total_factors {
@@ -345,8 +345,8 @@ impl<'a> BusOpExpand<'a> {
                         // Empty bus
 
                         let unit_constant = match bus_type {
-                            BusType::Unit => 1, // Product, unit for product is 1
-                            BusType::Mult => 0, // Sum of inverses, unit for sum is 0
+                            BusType::Multiset => 1, // Product, unit for product is 1
+                            BusType::Logup => 0, // Sum of inverses, unit for sum is 0
                         };
                         let unit_val = Value::create(SpannedMirValue {
                             span: SourceSpan::default(),

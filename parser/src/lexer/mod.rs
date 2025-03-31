@@ -121,9 +121,9 @@ pub enum Token {
     /// Marks the beginning of buses section in the constraints file.
     Buses,
     /// Used to represent a multiset bus declaration.
-    Unit,
+    Multiset,
     /// Used to represent a logup bus declaration.
-    Mult,
+    Logup,
     /// Used to represent an empty bus
     Null,
     /// Used to represent the addition of a given tuple to a bus
@@ -203,8 +203,8 @@ impl Token {
             "fn" => Self::Fn,
             "felt" => Self::Felt,
             "buses" => Self::Buses,
-            "unit" => Self::Unit,
-            "mult" => Self::Mult,
+            "multiset" => Self::Multiset,
+            "logup" => Self::Logup,
             "null" => Self::Null,
             "add" => Self::Add,
             "rem" => Self::Rem,
@@ -282,8 +282,8 @@ impl fmt::Display for Token {
             Self::Fn => write!(f, "fn"),
             Self::Felt => write!(f, "felt"),
             Self::Buses => write!(f, "buses"),
-            Self::Unit => write!(f, "unit"),
-            Self::Mult => write!(f, "mult"),
+            Self::Multiset => write!(f, "multiset"),
+            Self::Logup => write!(f, "logup"),
             Self::Null => write!(f, "null"),
             Self::Add => write!(f, "add"),
             Self::Rem => write!(f, "rem"),

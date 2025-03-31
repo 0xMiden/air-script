@@ -17,8 +17,8 @@ fn buses_in_boundary_constraints() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {
@@ -51,8 +51,8 @@ fn buses_in_integrity_constraints() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {
@@ -94,7 +94,7 @@ fn buses_args_expr_in_integrity_expr() {
     }
 
     buses {
-        unit p,
+        multiset p,
     }
 
     boundary_constraints {
@@ -112,7 +112,7 @@ fn buses_args_expr_in_integrity_expr() {
     let mut result_mir = translate(source).unwrap();
     let bus = Bus::create(
         ast::Identifier::new(SourceSpan::default(), Symbol::new(0)),
-        ast::BusType::Unit,
+        ast::BusType::Multiset,
         SourceSpan::default(),
     );
     let vec_op = Vector::builder()
@@ -157,8 +157,8 @@ fn err_buses_boundaries_to_const() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {
@@ -187,8 +187,8 @@ fn err_trace_columns_constrained_with_null() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {

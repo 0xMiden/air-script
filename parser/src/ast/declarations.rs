@@ -100,9 +100,9 @@ impl Bus {
 pub enum BusType {
     /// A multiset bus
     #[default]
-    Unit,
+    Multiset,
     /// A logup bus
-    Mult,
+    Logup,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

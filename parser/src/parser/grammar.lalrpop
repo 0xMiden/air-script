@@ -197,8 +197,8 @@ Bus: Bus = {
 }
 
 BusType: BusType = {
-    "unit" => BusType::Unit,
-    "mult" => BusType::Mult,
+    "multiset" => BusType::Multiset,
+    "logup" => BusType::Logup,
 }
 
 // RANDOM VALUES
@@ -715,8 +715,8 @@ extern {
         "periodic_columns" => Token::PeriodicColumns,
         "random_values" => Token::RandomValues,
         "buses" => Token::Buses,
-        "unit" => Token::Unit,
-        "mult" => Token::Mult,
+        "multiset" => Token::Multiset,
+        "logup" => Token::Logup,
         "null" => Token::Null,
         "add" => Token::Add,
         "rem" => Token::Rem,

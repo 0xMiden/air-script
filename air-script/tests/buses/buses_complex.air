@@ -5,8 +5,8 @@ trace_columns {
 }
 
 buses {
-    unit p,
-    mult q,
+    multiset p,
+    logup q,
 }
 
 public_inputs {

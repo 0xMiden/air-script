@@ -60,8 +60,8 @@ fn integrity_constraints_with_buses() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {
@@ -98,11 +98,11 @@ fn integrity_constraints_with_buses() {
     ));
     expected.buses.insert(
         ident!(p),
-        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Unit),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset),
     );
     expected.buses.insert(
         ident!(q),
-        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup),
     );
 
     let mut bus_enforces = Vec::new();

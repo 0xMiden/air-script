@@ -20,7 +20,7 @@ periodic_columns {
 }
 
 buses {
-    mult: q,
+    logup: q,
 }
 
 boundary_constraints {

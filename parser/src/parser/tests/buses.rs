@@ -10,18 +10,18 @@ fn buses() {
     mod test
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.buses.insert(
         ident!(p),
-        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Unit),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset),
     );
     expected.buses.insert(
         ident!(q),
-        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup),
     );
     ParseTest::new().expect_module_ast(source, expected);
 }
@@ -32,8 +32,8 @@ fn boundary_constraints_buses() {
     mod test
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
     
     boundary_constraints {
@@ -44,11 +44,11 @@ fn boundary_constraints_buses() {
     /*let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.buses.insert(
         ident!(p),
-        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Unit),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset),
     );
     expected.buses.insert(
         ident!(q),
-        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup),
     );
     ParseTest::new().expect_module_ast(source, expected);*/
 }
@@ -59,8 +59,8 @@ fn integrity_constraints_buses() {
     mod test
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
     
     integrity_constraints {
@@ -74,11 +74,11 @@ fn integrity_constraints_buses() {
     /*let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.buses.insert(
         ident!(p),
-        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Unit),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset),
     );
     expected.buses.insert(
         ident!(q),
-        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup),
     );
     ParseTest::new().expect_module_ast(source, expected);*/
 }
@@ -90,5 +90,5 @@ fn err_empty_buses() {
 
     buses{}";
 
-    ParseTest::new().expect_module_diagnostic(source, "expected one of: '\"mult\"', '\"unit\"'");
+    ParseTest::new().expect_module_diagnostic(source, "expected one of: '\"logup\"', '\"multiset\"'");
 }

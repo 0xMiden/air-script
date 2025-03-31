@@ -15,8 +15,8 @@ trace_columns {
 }
 
 buses {
-    unit p,
-    mult q,
+    multiset p,
+    logup q,
 }
 
 public_inputs {
@@ -38,8 +38,8 @@ integrity_constraints {
 /// }
 ///
 /// buses {
-///     unit p,
-///     mult q,
+///     multiset p,
+///     logup q,
 /// }
 ///
 /// public_inputs {
@@ -63,11 +63,11 @@ fn test_module() -> Module {
     );
     expected.buses.insert(
         ident!(p),
-        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Unit),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset),
     );
     expected.buses.insert(
         ident!(q),
-        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Mult),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup),
     );
     expected.integrity_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,

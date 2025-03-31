@@ -10,8 +10,8 @@ fn buses_in_boundary_constraints() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {
@@ -54,8 +54,8 @@ fn buses_in_integrity_constraints() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {
@@ -99,8 +99,8 @@ fn err_buses_boundaries_to_const() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {
@@ -130,8 +130,8 @@ fn err_trace_columns_constrained_with_null() {
     }
 
     buses {
-        unit p,
-        mult q,
+        multiset p,
+        logup q,
     }
 
     public_inputs {

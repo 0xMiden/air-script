@@ -12,7 +12,7 @@ use crate::{
 /// A Mir struct to represent a Bus definition
 /// we have 2 cases:
 ///
-/// - [BusType::Unit]: multiset check
+/// - [BusType::Multiset]: multiset check
 ///
 /// these constraints:
 /// ```air
@@ -26,7 +26,7 @@ use crate::{
 /// with this bus definition:
 /// ```ignore
 /// Bus {
-///     bus_type: BusType::Unit,
+///     bus_type: BusType::Multiset,
 ///     columns: [a, b, c, d],
 ///     latches: [s, 1 - s],
 /// }
@@ -35,7 +35,7 @@ use crate::{
 ///     a, b, c, d, s being [Link<Op>] in the graph
 ///     s, 1 - s being [Link<Op>] representing booleans in the graph
 ///
-/// - [BusType::Mult]: LogUp bus
+/// - [BusType::Logup]: LogUp bus
 ///
 /// these constraints:
 /// ```air
@@ -49,7 +49,7 @@ use crate::{
 /// with this bus definition:
 /// ```ignore
 /// Bus {
-///     bus_type: BusType::Mult,
+///     bus_type: BusType::Logup,
 ///     columns: [a, b, c, e, f, g],
 ///     latches: [d, s],
 /// }

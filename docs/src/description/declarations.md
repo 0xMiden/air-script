@@ -100,12 +100,12 @@ The following is an example of a valid `buses` source section:
 
 ```
 buses {
-    unit p,
-    mult q,
+    multiset p,
+    logup q,
 }
 ```
 
-In the above example, we declare two buses: `p` of type `unit`, and `q` of type `mult`. They respectively correspond to a multiset-based bus and a LogUp-based bus, that expand to different constraints. More information on bus types can be found in the [buses](./buses.md) section. 
+In the above example, we declare two buses: `p` of type `multiset`, and `q` of type `logup`. They respectively correspond to a multiset-based bus and a LogUp-based bus, that expand to different constraints. More information on bus types can be found in the [buses](./buses.md) section. 
 
 ## Random values (`random_values`)
 
