@@ -164,7 +164,7 @@ impl Pass for BusOpExpand<'_> {
                 }
                 BusType::Logup => {
                     // Example:
-                    // q.insert(a, b, c) for d
+                    // q.insert(a, b, c) with d
                     // q.remove(e, f, g) when s
                     // => q' + s / ( A0 + A1 e + A2 f + A3 g ) = q + d / ( A0 + A1 a + A2 b + A3 c )
 

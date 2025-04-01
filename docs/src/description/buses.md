@@ -58,11 +58,11 @@ $$
 ```
 integrity_constraints {
     q.remove(e, f, g) when s;
-    q.insert(a, b, c) for d;
+    q.insert(a, b, c) with d;
 }
 ```
 
-Similarly to the previous example elements can be inserted or removed from `q` with binary selectors. However, as it is a LogUp-based bus, it is also possible to add and remove elements with a given scalar multiplicity with the `for` keyword (here, `d` does not have to be binary).
+Similarly to the previous example elements can be inserted or removed from `q` with binary selectors. However, as it is a LogUp-based bus, it is also possible to add and remove elements with a given scalar multiplicity with the `with` keyword (here, `d` does not have to be binary).
 
 The global resulting constraint on the column of the bus is the following, where $\alpha_i$ corresponds to the i-th random value provided by the verifier:
 

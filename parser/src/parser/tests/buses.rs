@@ -68,7 +68,7 @@ fn integrity_constraints_buses() {
         p.remove(1) when 1;
         q.insert(1, 2) when 1;
         q.insert(1, 2) when 1;
-        q.remove(1, 2) for 2;
+        q.remove(1, 2) with 2;
     }";
 
     /*let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));

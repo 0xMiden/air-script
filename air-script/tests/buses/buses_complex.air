@@ -35,5 +35,5 @@ integrity_constraints {
 
     q.insert(3, a) when s1;
     q.insert(3, a) when s1;
-    q.remove(4, b) for d;
+    q.remove(4, b) with d;
 }

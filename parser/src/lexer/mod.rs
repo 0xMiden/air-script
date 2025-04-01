@@ -159,6 +159,7 @@ pub enum Token {
     Case,
     When,
     Felt,
+    With,
 
     // PUNCTUATION
     // --------------------------------------------------------------------------------------------
@@ -219,6 +220,7 @@ impl Token {
             "match" => Self::Match,
             "case" => Self::Case,
             "when" => Self::When,
+            "with" => Self::With,
             other => Self::Ident(Symbol::intern(other)),
         }
     }
@@ -298,6 +300,7 @@ impl fmt::Display for Token {
             Self::Match => write!(f, "match"),
             Self::Case => write!(f, "case"),
             Self::When => write!(f, "when"),
+            Self::With => write!(f, "with"),
             Self::Quote => write!(f, "'"),
             Self::Colon => write!(f, ":"),
             Self::ColonColon => write!(f, "::"),

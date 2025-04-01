@@ -78,7 +78,7 @@ fn integrity_constraints_with_buses() {
         p.remove(1) when 1;
         q.insert(1, 2) when 1;
         q.insert(1, 2) when 1;
-        q.remove(1, 2) for 2;
+        q.remove(1, 2) with 2;
     }";
 
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
@@ -131,11 +131,11 @@ fn integrity_constraints_with_buses() {
         bus_insert!(q, vec![expr!(int!(1)), expr!(int!(2))]),
         when int!(1))));
 
-    //q.remove(1, 2) for 2;
+    //q.remove(1, 2) with 2;
     bus_enforces.push(bus_enforce!(lc!(
         (("%4", range!(0..1))) => 
         bus_remove!(q, vec![expr!(int!(1)), expr!(int!(2))]),
-        for int!(2))));
+        with int!(2))));
 
     expected.integrity_constraints = Some(Span::new(SourceSpan::UNKNOWN, bus_enforces));
 

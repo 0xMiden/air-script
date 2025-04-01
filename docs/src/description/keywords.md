@@ -12,9 +12,7 @@ AirScript defines the following keywords:
 - `enf`: used to describe a single [constraint](./constraints.md).
   - `enf match`: used to describe [conditional constraints](./convenience.md#conditional-constraints).
 - `ev`: used to declare a transition constraint [evaluator](./evaluators.md).
-- `for`:
-  - in the context of [LogUp bus operations](./buses.md#bus-integrity-constraints), used to specify multiplicity. _It may only be used when defining integrity constraints._
-  - in the context of [list comprehensions](./convenience.md#list-comprehension), used to specify the bound variable.
+- `for`: used to specify the bound variable in a [list comprehensions](./convenience.md#list-comprehension).
 - `in`: used to specify the iterable in a [list comprehension](./convenience.md#list-comprehension).
 - `insert`: used to insert a tuple to a [bus](./declarations.md#buses-buses). _It may only be used when defining integrity constraints._
 - `integrity_constraints`: used to declare the source section where the [integrity constraints are described](./constraints.md#integrity_constraints).
@@ -33,6 +31,7 @@ AirScript defines the following keywords:
 - `when`: used to specify a binary selector. _It may only be used when defining integrity constraints_:
   - [bus integrity constraints](./buses.md#bus-integrity-constraints).
   - [conditional constraints and conditional evaluators](./convenience.md#when-keyword).
+- `with`: used to specify multiplicity in a [LogUp bus operations](./buses.md#bus-integrity-constraints), . _It may only be used when defining integrity constraints._
 - `$<identifier>`: used to access random values provided by the verifier.
 - `$main`: used to access columns in the main execution trace by index.
 - `$aux`: used to access columns in the auxiliary execution trace by index.

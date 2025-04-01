@@ -535,22 +535,22 @@ macro_rules! lc {
     }};
 
 
-    (($(($binding:ident, $iterable:expr)),*) => $body:expr, for $selector:expr) => {{
+    (($(($binding:ident, $iterable:expr)),*) => $body:expr, with $multiplicity:expr) => {{
         let context = vec![
             $(
                 (ident!($binding), $iterable)
             ),+
         ];
-        ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($selector))
+        ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($multiplicity))
     }};
 
-    (($(($binding:literal, $iterable:expr)),*) => $body:expr, for $selector:expr) => {{
+    (($(($binding:literal, $iterable:expr)),*) => $body:expr, with $multiplicity:expr) => {{
         let context = vec![
             $(
                 (ident!($binding), $iterable)
             ),+
         ];
-        ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($selector))
+        ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($multiplicity))
     }};
 }
 

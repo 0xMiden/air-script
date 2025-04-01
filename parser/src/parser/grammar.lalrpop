@@ -428,7 +428,7 @@ ConstraintExpr: Statement = {
 }
 
 // 1. `p.insert(a, b) when s`
-// 2. `q.insert(a, b) for m`
+// 2. `q.insert(a, b) with m`
 BusConstraintExpr: Statement = {
     <l:@L> <expr: ScalarBusConstraintExpr> <selector: WithSelector> <r:@R> => {
         let generated_name = format!("%{}", *next_var);
@@ -479,7 +479,7 @@ WithSelector: ScalarExpr = {
     "when" <ScalarExpr>,
 }
 WithMultiplicity: ScalarExpr = {
-    "for" <ScalarExpr>,
+    "with" <ScalarExpr>,
 }
 
 Expr: Expr = {
@@ -731,6 +731,7 @@ extern {
         "match" => Token::Match,
         "case" => Token::Case,
         "when" => Token::When,
+        "with" => Token::With,
         "felt" => Token::Felt,
         "'" => Token::Quote,
         "=" => Token::Equal,

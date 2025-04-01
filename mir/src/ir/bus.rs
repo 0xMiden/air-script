@@ -39,7 +39,7 @@ use crate::{
 ///
 /// these constraints:
 /// ```air
-/// q.insert(a, b, c) for d;
+/// q.insert(a, b, c) with d;
 /// q.remove(e, f, g) when s;
 /// ```
 /// translate to this equation:

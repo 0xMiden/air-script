@@ -77,7 +77,7 @@ fn buses_in_integrity_constraints() {
         p.remove(1) when 1;
         q.insert(1, 2) when 1;
         q.insert(1, 2) when 1;
-        q.remove(1, 2) for 2;
+        q.remove(1, 2) with 2;
     }";
 
     expect_diagnostic(
