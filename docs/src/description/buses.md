@@ -57,8 +57,8 @@ $$
 
 ```
 integrity_constraints {
-    q.remove(e, f, g) when s
-    q.insert(a, b, c) for d
+    q.remove(e, f, g) when s;
+    q.insert(a, b, c) for d;
 }
 ```
 

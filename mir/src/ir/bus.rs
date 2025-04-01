@@ -16,8 +16,8 @@ use crate::{
 ///
 /// these constraints:
 /// ```air
-/// p.insert(a, b) when s
-/// p.remove(c, d) when (1 - s)
+/// p.insert(a, b) when s;
+/// p.remove(c, d) when (1 - s);
 /// ```
 /// translate to this equation:
 /// ```tex
@@ -39,8 +39,8 @@ use crate::{
 ///
 /// these constraints:
 /// ```air
-/// q.insert(a, b, c) for d
-/// q.remove(e, f, g) when s
+/// q.insert(a, b, c) for d;
+/// q.remove(e, f, g) when s;
 /// ```
 /// translate to this equation:
 /// ```tex
