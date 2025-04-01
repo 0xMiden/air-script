@@ -3,16 +3,11 @@
 def FunctionsAir
 
 trace_columns {
-    main: [t, s0, s1, v, b[4]],
-    aux: [b_range],
+    main: [t, s0, s1, v, b[4], b_range],
 }
 
 public_inputs {
     stack_inputs: [16],
-}
-
-random_values {
-    alpha: [16],
 }
 
 boundary_constraints {

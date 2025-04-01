@@ -65,7 +65,7 @@ end # END PROC compute_integrity_constraint_divisor
 
 # Procedure to evaluate numerators of all integrity constraints.
 #
-# All the 3 main and 2 auxiliary constraints are evaluated.
+# All the 5 main and 0 auxiliary constraints are evaluated.
 # The result of each evaluation is kept on the stack, with the top of the stack
 # containing the evaluations for the auxiliary trace (if any) followed by the main trace.
 #
@@ -86,12 +86,12 @@ proc.compute_integrity_constraints
     padw mem_loadw.4294900002 drop drop push.1 push.0 padw mem_loadw.4294900002 movdn.3 movdn.3 drop drop ext2mul ext2sub
     # Multiply by the composition coefficient
     padw mem_loadw.4294900201 movdn.3 movdn.3 drop drop ext2mul
-    # integrity constraint 0 for aux
-    padw mem_loadw.4294900072 drop drop padw mem_loadw.4294900072 movdn.3 movdn.3 drop drop push.1 push.0 ext2add push.0 push.0 ext2add ext2sub
+    # integrity constraint 3 for main
+    padw mem_loadw.4294900004 drop drop padw mem_loadw.4294900004 movdn.3 movdn.3 drop drop push.1 push.0 ext2add push.0 push.0 ext2add ext2sub
     # Multiply by the composition coefficient
     padw mem_loadw.4294900201 drop drop ext2mul
-    # integrity constraint 1 for aux
-    padw mem_loadw.4294900072 movdn.3 movdn.3 drop drop push.1 push.0 ext2sub
+    # integrity constraint 4 for main
+    padw mem_loadw.4294900004 movdn.3 movdn.3 drop drop push.1 push.0 ext2sub
     # Multiply by the composition coefficient
     padw mem_loadw.4294900202 movdn.3 movdn.3 drop drop ext2mul
 end # END PROC compute_integrity_constraints
@@ -118,31 +118,23 @@ proc.compute_boundary_constraints_main_first
     padw mem_loadw.4294900003 movdn.3 movdn.3 drop drop push.1 push.0 push.2 push.0 ext2sub push.2 push.0 ext2add push.0 push.0 ext2sub ext2sub
     # Multiply by the composition coefficient
     padw mem_loadw.4294900204 movdn.3 movdn.3 drop drop ext2mul
-end # END PROC compute_boundary_constraints_main_first
-
-# Procedure to evaluate the boundary constraint numerator for the first row of the auxiliary trace
-#
-# Input: [...]
-# Output: [(r_1, r_0)*, ...]
-# Where: (r_1, r_0) is one quadratic extension field element for each constraint
-proc.compute_boundary_constraints_aux_first
-    # boundary constraint 4 for aux
-    padw mem_loadw.4294900072 movdn.3 movdn.3 drop drop push.1 push.0 ext2sub
+    # boundary constraint 4 for main
+    padw mem_loadw.4294900004 movdn.3 movdn.3 drop drop push.1 push.0 ext2sub
     # Multiply by the composition coefficient
     padw mem_loadw.4294900204 drop drop ext2mul
-end # END PROC compute_boundary_constraints_aux_first
+end # END PROC compute_boundary_constraints_main_first
 
-# Procedure to evaluate the boundary constraint numerator for the last row of the auxiliary trace
+# Procedure to evaluate the boundary constraint numerator for the last row of the main trace
 #
 # Input: [...]
 # Output: [(r_1, r_0)*, ...]
 # Where: (r_1, r_0) is one quadratic extension field element for each constraint
-proc.compute_boundary_constraints_aux_last
-    # boundary constraint 5 for aux
-    padw mem_loadw.4294900072 movdn.3 movdn.3 drop drop push.0 push.0 ext2sub
+proc.compute_boundary_constraints_main_last
+    # boundary constraint 5 for main
+    padw mem_loadw.4294900004 movdn.3 movdn.3 drop drop push.0 push.0 ext2sub
     # Multiply by the composition coefficient
     padw mem_loadw.4294900205 movdn.3 movdn.3 drop drop ext2mul
-end # END PROC compute_boundary_constraints_aux_last
+end # END PROC compute_boundary_constraints_main_last
 
 # Procedure to evaluate all integrity constraints.
 #
@@ -164,20 +156,16 @@ end # END PROC evaluate_integrity_constraints
 # Output: [(r_1, r_0), ...]
 # Where: (r_1, r_0) is the final result with the divisor applied
 proc.evaluate_boundary_constraints
-    exec.compute_boundary_constraints_aux_last
-    # => [(aux_last1, aux_last0), ...]
+    exec.compute_boundary_constraints_main_last
+    # => [(last1, last0), ...]
     # Compute the denominator for domain LastRow
     padw mem_loadw.4294903304 drop drop # load z
     mem_load.500000101 push.0 ext2sub
     # Compute numerator/denominator for last row
     ext2div
-    exec.compute_boundary_constraints_aux_first
-    # => [(aux_first1, aux_first0), ...]
     exec.compute_boundary_constraints_main_first
     # Accumulate the numerator for segment 0 FirstRow
-    ext2add ext2add ext2add ext2add
-    # => [(main_first1, main_first0), (aux_first1, aux_first0), ...]
-    ext2add
+    ext2add ext2add ext2add ext2add ext2add
     # => [(first1, first0), ...]
     # Compute the denominator for domain FirstRow
     padw mem_loadw.4294903304 drop drop # load z

@@ -42,8 +42,8 @@ impl Air for TraceColGroupAir {
     fn new(trace_info: TraceInfo, public_inputs: PublicInputs, options: WinterProofOptions) -> Self {
         let main_degrees = vec![TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(1)];
         let aux_degrees = vec![];
-        let num_main_assertions = 0;
-        let num_aux_assertions = 1;
+        let num_main_assertions = 1;
+        let num_aux_assertions = 0;
 
         let context = AirContext::new_multi_segment(
             trace_info,
@@ -63,12 +63,12 @@ impl Air for TraceColGroupAir {
 
     fn get_assertions(&self) -> Vec<Assertion<Felt>> {
         let mut result = Vec::new();
+        result.push(Assertion::single(8, 0, Felt::ZERO));
         result
     }
 
     fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
-        result.push(Assertion::single(4, 0, E::ZERO));
         result
     }
 

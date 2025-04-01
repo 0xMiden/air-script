@@ -40,10 +40,10 @@ impl Air for ListFoldingAir {
     }
 
     fn new(trace_info: TraceInfo, public_inputs: PublicInputs, options: WinterProofOptions) -> Self {
-        let main_degrees = vec![];
-        let aux_degrees = vec![TransitionConstraintDegree::new(4), TransitionConstraintDegree::new(4), TransitionConstraintDegree::new(4), TransitionConstraintDegree::new(2)];
-        let num_main_assertions = 0;
-        let num_aux_assertions = 1;
+        let main_degrees = vec![TransitionConstraintDegree::new(4), TransitionConstraintDegree::new(4), TransitionConstraintDegree::new(4), TransitionConstraintDegree::new(2)];
+        let aux_degrees = vec![];
+        let num_main_assertions = 1;
+        let num_aux_assertions = 0;
 
         let context = AirContext::new_multi_segment(
             trace_info,
@@ -63,18 +63,22 @@ impl Air for ListFoldingAir {
 
     fn get_assertions(&self) -> Vec<Assertion<Felt>> {
         let mut result = Vec::new();
+        result.push(Assertion::single(11, 0, Felt::ZERO));
         result
     }
 
     fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
-        result.push(Assertion::single(7, 0, E::ZERO));
         result
     }
 
     fn evaluate_transition<E: FieldElement<BaseField = Felt>>(&self, frame: &EvaluationFrame<E>, periodic_values: &[E], result: &mut [E]) {
         let main_current = frame.current();
         let main_next = frame.next();
+        result[0] = main_next[5] - (E::ZERO + main_current[9] + main_current[10] + main_current[11] + main_current[12] + E::ONE * main_current[13] * main_current[14] * main_current[15] * main_current[16]);
+        result[1] = main_next[6] - (E::ZERO + main_current[9] + main_current[10] + main_current[11] + main_current[12] + E::ONE * main_current[13] * main_current[14] * main_current[15] * main_current[16]);
+        result[2] = main_next[7] - (E::ZERO + main_current[9] * main_current[13] + main_current[10] * main_current[14] + main_current[11] * main_current[15] + main_current[12] * main_current[16] + E::ONE * (main_current[9] + main_current[13]) * (main_current[10] + main_current[14]) * (main_current[11] + main_current[15]) * (main_current[12] + main_current[16]));
+        result[3] = main_next[8] - (main_current[1] + E::ZERO + main_current[9] * main_current[13] + main_current[10] * main_current[14] + main_current[11] * main_current[15] + main_current[12] * main_current[16] + E::ZERO + main_current[9] * main_current[13] + main_current[10] * main_current[14] + main_current[11] * main_current[15] + main_current[12] * main_current[16]);
     }
 
     fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxTraceRandElements<E>, result: &mut [E])
@@ -85,9 +89,5 @@ impl Air for ListFoldingAir {
         let main_next = main_frame.next();
         let aux_current = aux_frame.current();
         let aux_next = aux_frame.next();
-        result[0] = aux_next[1] - (E::ZERO + aux_current[5] + aux_current[6] + aux_current[7] + aux_current[8] + E::ONE * aux_current[9] * aux_current[10] * aux_current[11] * aux_current[12]);
-        result[1] = aux_next[2] - (E::ZERO + aux_current[5] + aux_current[6] + aux_current[7] + aux_current[8] + E::ONE * aux_current[9] * aux_current[10] * aux_current[11] * aux_current[12]);
-        result[2] = aux_next[3] - (E::ZERO + aux_current[5] * aux_current[9] + aux_current[6] * aux_current[10] + aux_current[7] * aux_current[11] + aux_current[8] * aux_current[12] + E::ONE * (aux_current[5] + aux_current[9]) * (aux_current[6] + aux_current[10]) * (aux_current[7] + aux_current[11]) * (aux_current[8] + aux_current[12]));
-        result[3] = aux_next[4] - (E::from(main_current[1]) + E::ZERO + aux_current[5] * aux_current[9] + aux_current[6] * aux_current[10] + aux_current[7] * aux_current[11] + aux_current[8] * aux_current[12] + E::ZERO + aux_current[5] * aux_current[9] + aux_current[6] * aux_current[10] + aux_current[7] * aux_current[11] + aux_current[8] * aux_current[12]);
     }
 }

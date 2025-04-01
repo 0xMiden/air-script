@@ -1,8 +1,7 @@
 def ListComprehensionAir
 
 trace_columns {
-    main: [clk, fmp[2], ctx],
-    aux: [a, b[3], c[4], d[4]],
+    main: [clk, fmp[2], ctx, a, b[3], c[4], d[4]],
 }
 
 public_inputs {
