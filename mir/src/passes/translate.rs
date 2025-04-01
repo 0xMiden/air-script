@@ -57,7 +57,6 @@ pub struct MirBuilder<'a> {
     program: &'a ast::Program,
     diagnostics: &'a DiagnosticsHandler,
     mir: Mir,
-    random_values: Option<&'a ast::RandomValues>,
     trace_columns: &'a Vec<ast::TraceSegment>,
     bindings: LexicalScope<&'a ast::Identifier, Link<Op>>,
     root: Link<Root>,
@@ -71,7 +70,6 @@ impl<'a> MirBuilder<'a> {
             program,
             diagnostics,
             mir: Mir::default(),
-            random_values: program.random_values.as_ref(),
             trace_columns: program.trace_columns.as_ref(),
             bindings: LexicalScope::default(),
             root: Link::default(),
@@ -82,14 +80,12 @@ impl<'a> MirBuilder<'a> {
 
     pub fn translate_program(&mut self) -> Result<(), CompileError> {
         self.mir = Mir::new(self.program.name);
-        let random_values = &self.program.random_values;
         let trace_columns = &self.program.trace_columns;
         let boundary_constraints = &self.program.boundary_constraints;
         let integrity_constraints = &self.program.integrity_constraints;
         let buses = &self.program.buses;
 
         self.mir.trace_columns.clone_from(trace_columns);
-        self.mir.num_random_values = random_values.as_ref().map(|rv| rv.size as u16).unwrap_or(0);
         self.mir.periodic_columns = self.program.periodic_columns.clone();
         self.mir.public_inputs = self.program.public_inputs.clone();
         for (qual_ident, ast_bus) in buses.iter() {
@@ -1109,18 +1105,8 @@ impl<'a> MirBuilder<'a> {
         ident: &ast::Identifier,
         access: &ast::SymbolAccess,
     ) -> Result<Link<Op>, CompileError> {
-        // Special identifiers are those which are `$`-prefixed, and must refer to
-        // the random values array (generally the case), or the names of trace segments (e.g. `$main`)
+        // Special identifiers are those which are `$`-prefixed, and must refer to the names of trace segments (e.g. `$main`)
         if ident.is_special() {
-            if let Some(rv) = self.random_value_access(access) {
-                return Ok(Value::builder()
-                    .value(SpannedMirValue {
-                        span: access.span(),
-                        value: MirValue::RandomValue(rv),
-                    })
-                    .build());
-            }
-
             // Must be a trace segment name
             if let Some(trace_access) = self.trace_access(access) {
                 return Ok(Value::builder()
@@ -1169,21 +1155,12 @@ impl<'a> MirBuilder<'a> {
                 .build());
         }
 
-        // Otherwise, we check bindings, trace bindings, random value bindings, and public inputs, in that order
+        // Otherwise, we check bindings, trace bindings, and public inputs, in that order
         if let Some(tab) = self.trace_access_binding(access) {
             return Ok(Value::builder()
                 .value(SpannedMirValue {
                     span: access.span(),
                     value: MirValue::TraceAccessBinding(tab),
-                })
-                .build());
-        }
-
-        if let Some(random_value) = self.random_value_access(access) {
-            return Ok(Value::builder()
-                .value(SpannedMirValue {
-                    span: access.span(),
-                    value: MirValue::RandomValue(random_value),
                 })
                 .build());
         }
@@ -1212,34 +1189,6 @@ impl<'a> MirBuilder<'a> {
                     access
                 )
             }
-        }
-    }
-
-    // Check assumptions, probably this assumed that the inlining pass did some work
-    fn random_value_access(&self, access: &ast::SymbolAccess) -> Option<usize> {
-        let rv = self.random_values.as_ref()?;
-        let id = access.name.as_ref();
-        if rv.name == id {
-            if let AccessType::Index(index) = access.access_type {
-                assert!(index < rv.size);
-                return Some(index);
-            } else {
-                // This should have been caught earlier during compilation
-                unreachable!("invalid access to random values array: {:#?}", access);
-            }
-        }
-
-        // This must be a reference to a binding, if it is a random value access
-        let binding = rv.bindings.iter().find(|rb| rb.name == id)?;
-
-        match access.access_type {
-            AccessType::Default if binding.size == 1 => Some(binding.offset),
-            AccessType::Index(extra) if binding.size > 1 => Some(binding.offset + extra),
-            // This should have been caught earlier during compilation
-            _ => unreachable!(
-                "unexpected random value access type encountered during lowering: {:#?}",
-                access
-            ),
         }
     }
 

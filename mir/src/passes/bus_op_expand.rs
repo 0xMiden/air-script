@@ -24,7 +24,7 @@ impl Pass for BusOpExpand<'_> {
     type Error = CompileError;
 
     fn run<'a>(&mut self, mut ir: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
-        let mut max_num_random_values = ir.num_random_values as usize;
+        let mut max_num_random_values = 0;
 
         let graph = ir.constraint_graph_mut();
 

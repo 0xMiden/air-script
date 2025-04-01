@@ -116,8 +116,6 @@ impl Pass for Inlining<'_> {
 
         // We'll be referencing the trace configuration during inlining, so keep a copy of it
         self.trace.clone_from(&program.trace_columns);
-        // Same with the random values
-        self.random_values.clone_from(&program.random_values);
         // And the public inputs
         self.public_inputs.clone_from(&program.public_inputs);
 
@@ -151,23 +149,6 @@ impl Pass for Inlining<'_> {
                         ty: binding.ty,
                     }),
                 );
-            }
-        }
-        // Random values..
-        if let Some(rv) = program.random_values.as_ref() {
-            self.bindings.insert(
-                rv.name,
-                BindingType::RandomValue(RandBinding::new(
-                    rv.name.span(),
-                    rv.name,
-                    rv.size,
-                    0,
-                    Type::Vector(rv.size),
-                )),
-            );
-            for binding in rv.bindings.iter().copied() {
-                self.bindings
-                    .insert(binding.name, BindingType::RandomValue(binding));
             }
         }
         // Public inputs..

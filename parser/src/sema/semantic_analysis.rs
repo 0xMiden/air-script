@@ -148,37 +148,6 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
                 .map(|(id, c)| (*id, c.value.clone())),
         );
 
-        // Register all globals implicitly defined in the module before all locally bound names
-        //
-        // Currently this consists only of the `random_values` declarations.
-        //
-        // Because a module is guaranteed to have no top-level name conflicts when parsed successfully,
-        // we know that all of the globally visible declarations from the root module cannot conflict
-        // with each other, but we assert that this is so to catch any potentially invalid modules that
-        // bypassed that validation somehow.
-        if let Some(rv) = self.program.random_values.as_ref() {
-            assert_eq!(
-                self.globals.insert(
-                    rv.name,
-                    BindingType::RandomValue(RandBinding::new(
-                        rv.name.span(),
-                        rv.name,
-                        rv.size,
-                        0,
-                        Type::Vector(rv.size)
-                    ))
-                ),
-                None
-            );
-            for binding in rv.bindings.iter().copied() {
-                assert_eq!(
-                    self.globals
-                        .insert(binding.name, BindingType::RandomValue(binding)),
-                    None
-                );
-            }
-        }
-
         // Next, add all the top-level root module declarations as locals, if this is the root module
         //
         // As above, we are guaranteed that these names have no conflicts, but we assert that anyway
