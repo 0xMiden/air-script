@@ -59,6 +59,7 @@ pub struct Module {
     pub public_inputs: BTreeMap<Identifier, PublicInput>,
     pub random_values: Option<RandomValues>,
     pub trace_columns: Vec<TraceSegment>,
+    pub buses: BTreeMap<Identifier, Bus>,
     pub boundary_constraints: Option<Span<Vec<Statement>>>,
     pub integrity_constraints: Option<Span<Vec<Statement>>>,
 }
@@ -81,6 +82,7 @@ impl Module {
             constants: Default::default(),
             evaluators: Default::default(),
             functions: Default::default(),
+            buses: Default::default(),
             periodic_columns: Default::default(),
             public_inputs: Default::default(),
             random_values: None,
@@ -151,6 +153,11 @@ impl Module {
                 }
                 Declaration::IntegrityConstraints(statements) => {
                     module.declare_integrity_constraints(diagnostics, statements)?;
+                }
+                Declaration::Buses(mut buses) => {
+                    for bus in buses.drain(..) {
+                        module.declare_bus(diagnostics, &mut names, bus)?;
+                    }
                 }
             }
         }
@@ -412,6 +419,22 @@ impl Module {
         }
 
         self.functions.insert(function.name, function);
+
+        Ok(())
+    }
+
+    fn declare_bus(
+        &mut self,
+        diagnostics: &DiagnosticsHandler,
+        names: &mut HashSet<NamespacedIdentifier>,
+        bus: Bus,
+    ) -> Result<(), SemanticAnalysisError> {
+        if let Some(prev) = names.replace(NamespacedIdentifier::Binding(bus.name)) {
+            conflicting_declaration(diagnostics, "bus", prev.span(), bus.name.span());
+            return Err(SemanticAnalysisError::NameConflict(bus.name.span()));
+        }
+
+        self.buses.insert(bus.name, bus);
 
         Ok(())
     }

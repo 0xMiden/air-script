@@ -1,4 +1,6 @@
-use crate::ast::{AccessType, FunctionType, InvalidAccessError, RandBinding, TraceBinding, Type};
+use crate::ast::{
+    AccessType, BusType, FunctionType, InvalidAccessError, RandBinding, TraceBinding, Type,
+};
 use std::fmt;
 
 /// This type provides type and contextual information about a binding,
@@ -19,6 +21,8 @@ pub enum BindingType {
     ///
     /// The result type is None if the function is an evaluator
     Function(FunctionType),
+    /// A binding to a bus definition
+    Bus(BusType),
     /// A function parameter corresponding to trace columns
     TraceParam(TraceBinding),
     /// A direct reference to one or more contiguous trace columns
@@ -43,6 +47,7 @@ impl BindingType {
             Self::Local(ty) | Self::Constant(ty) | Self::PublicInput(ty) => Some(*ty),
             Self::PeriodicColumn(_) => Some(Type::Felt),
             Self::Function(ty) => ty.result(),
+            Self::Bus(_) => Some(Type::Felt),
         }
     }
 
@@ -218,6 +223,7 @@ impl BindingType {
                 _ => Err(InvalidAccessError::IndexIntoScalar),
             },
             Self::Function(_) => Err(InvalidAccessError::InvalidBinding),
+            Self::Bus(bus) => Ok(Self::Bus(bus.clone())),
         }
     }
 }
@@ -233,6 +239,7 @@ impl fmt::Display for BindingType {
             Self::RandomValue(_) => f.write_str("random value(s)"),
             Self::PublicInput(_) => f.write_str("public input(s)"),
             Self::PeriodicColumn(_) => f.write_str("periodic column(s)"),
+            Self::Bus(_) => f.write_str("bus"),
         }
     }
 }

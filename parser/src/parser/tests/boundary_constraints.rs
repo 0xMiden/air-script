@@ -14,6 +14,11 @@ trace_columns {
     main: [clk],
 }
 
+buses {
+    multiset p,
+    logup q,
+}
+
 public_inputs {
     inputs: [2],
 }
@@ -30,6 +35,11 @@ integrity_constraints {
 ///
 /// trace_columns {
 ///     main: [clk]
+/// }
+///
+/// buses {
+///     multiset p,
+///     logup q,
 /// }
 ///
 /// public_inputs {
@@ -50,6 +60,14 @@ fn test_module() -> Module {
     expected.public_inputs.insert(
         ident!(inputs),
         PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+    );
+    expected.buses.insert(
+        ident!(p),
+        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset),
+    );
+    expected.buses.insert(
+        ident!(q),
+        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup),
     );
     expected.integrity_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -98,6 +116,29 @@ fn boundary_constraint_at_last() {
             bounded_access!(clk, Boundary::Last),
             int!(15)
         ))],
+    ));
+    ParseTest::new().expect_module_ast(&source, expected);
+}
+
+#[test]
+fn boundary_constraint_with_buses() {
+    let source = format!(
+        "
+    {BASE_MODULE}
+
+    boundary_constraints {{
+        enf p.first = null;
+        enf q.last = null;
+    }}"
+    );
+
+    let mut expected = test_module();
+    expected.boundary_constraints = Some(Span::new(
+        SourceSpan::UNKNOWN,
+        vec![
+            enforce!(eq!(bounded_access!(p, Boundary::First), null!())),
+            enforce!(eq!(bounded_access!(q, Boundary::Last), null!())),
+        ],
     ));
     ParseTest::new().expect_module_ast(&source, expected);
 }

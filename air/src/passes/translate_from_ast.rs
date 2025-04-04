@@ -297,7 +297,8 @@ impl AirBuilder<'_> {
                 }
                 ast::Statement::Enforce(_)
                 | ast::Statement::EnforceIf(_, _)
-                | ast::Statement::EnforceAll(_) => {
+                | ast::Statement::EnforceAll(_)
+                | ast::Statement::BusEnforce(_) => {
                     unreachable!()
                 }
             }
@@ -431,6 +432,13 @@ impl AirBuilder<'_> {
             ast::Expr::Let(ref let_expr) => self.eval_let_expr(let_expr),
             // These node types should not exist at this point
             ast::Expr::Call(_) | ast::Expr::ListComprehension(_) => unreachable!(),
+            ast::Expr::BusOperation(_) | ast::Expr::Null(_) => {
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_message("buses are not implemented for this Pipeline")
+                    .emit();
+                Err(CompileError::Failed)
+            }
         }
     }
 
@@ -447,7 +455,10 @@ impl AirBuilder<'_> {
                     panic!("expected scalar expression to produce scalar value, got: {invalid:?}")
                 }
             },
-            ast::ScalarExpr::Call(_) | ast::ScalarExpr::BoundedSymbolAccess(_) => unreachable!(),
+            ast::ScalarExpr::Call(_)
+            | ast::ScalarExpr::BoundedSymbolAccess(_)
+            | ast::ScalarExpr::BusOperation(_)
+            | ast::ScalarExpr::Null(_) => unreachable!(),
         }
     }
 

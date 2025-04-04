@@ -1,5 +1,5 @@
 use super::MirType;
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 use std::hash::{Hash, Hasher};
 
@@ -15,9 +15,9 @@ pub struct Parameter {
     pub position: usize,
     /// The type of the `Parameter`
     pub ty: MirType,
-    pub _node: Option<Link<Node>>,
+    pub _node: Singleton<Node>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl Parameter {
@@ -27,7 +27,7 @@ impl Parameter {
             ref_node: BackLink::none(),
             position,
             ty,
-            _node: None,
+            _node: Singleton::none(),
             span,
         })
         .into()
@@ -50,6 +50,11 @@ impl PartialEq for Parameter {
     fn eq(&self, other: &Self) -> bool {
         self.position == other.position
             && self.ty == other.ty
+            // TODO: This always returns true.
+            // fix this by inserting unique ids in the nodes in a
+            // linearized order in place of the hash.
+            // See the relationship between [crate::ir::Bus] and [crate::ir::BusOp]
+            // and their use in [crate::ir::Graph::insert_bus] for an example.
             && get_hash(&self.ref_node) == get_hash(&other.ref_node)
     }
 }
@@ -58,6 +63,11 @@ impl Hash for Parameter {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.position.hash(state);
         self.ty.hash(state);
+        // TODO: This always returns true.
+        // fix this by inserting unique ids in the nodes in a
+        // linearized order in place of the hash.
+        // See the relationship between [crate::ir::Bus] and [crate::ir::BusOp]
+        // and their use in [crate::ir::Graph::insert_bus] for an example.
         self.ref_node.hash(state);
     }
 }

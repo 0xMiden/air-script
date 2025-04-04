@@ -1,6 +1,5 @@
+use crate::ir::{Builder, Link, Node, Op, Owner, Parent, Root, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
-
-use crate::ir::{Builder, Link, Node, Op, Owner, Parent, Root};
 
 /// A MIR Root to represent a Evaluator definition
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Builder, Spanned)]
@@ -11,10 +10,10 @@ pub struct Evaluator {
     pub parameters: Vec<Vec<Link<Op>>>,
     // Operations contained in the Evaluator
     pub body: Link<Vec<Link<Op>>>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl Evaluator {

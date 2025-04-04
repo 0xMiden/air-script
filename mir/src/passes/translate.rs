@@ -6,11 +6,13 @@ use air_parser::{ast, symbols, LexicalScope};
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 
-use crate::ir::{Accessor, Add, Boundary, Enf, Evaluator, Exp, Matrix, Mul, Owner, Root, Sub};
+use crate::ir::BusAccess;
+//use crate::ir::PublicInputBinding;
 use crate::{
     ir::{
-        Builder, Call, ConstantValue, Fold, FoldOperator, For, Function, Link, Mir, MirType,
-        MirValue, Op, Parameter, PublicInputAccess, SpannedMirValue, TraceAccess,
+        Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, Call, ConstantValue, Enf,
+        Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir, MirType, MirValue,
+        Mul, Op, Owner, Parameter, PublicInputAccess, Root, SpannedMirValue, Sub, TraceAccess,
         TraceAccessBinding, Value, Vector,
     },
     passes::duplicate_node,
@@ -84,11 +86,18 @@ impl<'a> MirBuilder<'a> {
         let trace_columns = &self.program.trace_columns;
         let boundary_constraints = &self.program.boundary_constraints;
         let integrity_constraints = &self.program.integrity_constraints;
+        let buses = &self.program.buses;
 
         self.mir.trace_columns.clone_from(trace_columns);
         self.mir.num_random_values = random_values.as_ref().map(|rv| rv.size as u16).unwrap_or(0);
         self.mir.periodic_columns = self.program.periodic_columns.clone();
         self.mir.public_inputs = self.program.public_inputs.clone();
+        for (qual_ident, ast_bus) in buses.iter() {
+            let bus = self.translate_bus_definition(ast_bus)?;
+            self.mir
+                .constraint_graph_mut()
+                .insert_bus(*qual_ident, bus)?;
+        }
 
         for (ident, function) in &self.program.functions {
             self.translate_function_signature(ident, function)?;
@@ -114,6 +123,10 @@ impl<'a> MirBuilder<'a> {
         Ok(())
     }
 
+    fn translate_bus_definition(&mut self, bus: &'a ast::Bus) -> Result<Link<Bus>, CompileError> {
+        Ok(Bus::create(bus.name, bus.bus_type.clone(), bus.span()))
+    }
+
     fn translate_evaluator_signature(
         &mut self,
         ident: &'a ast::QualifiedIdentifier,
@@ -128,9 +141,7 @@ impl<'a> MirBuilder<'a> {
         for trace_segment in &ast_eval.params {
             let mut all_params_flatten_for_trace_segment = Vec::new();
 
-            //        println!("trace_segment: {:#?}", trace_segment);
             for binding in &trace_segment.bindings {
-                //            println!("binding: {:#?}", binding);
                 let span = binding.name.map_or(SourceSpan::UNKNOWN, |n| n.span());
                 let params =
                     self.translate_params_ev(span, binding.name.as_ref(), &binding.ty, &mut i)?;
@@ -342,9 +353,6 @@ impl<'a> MirBuilder<'a> {
         let func = func;
         for stmt in body {
             let op = self.translate_statement(stmt)?;
-            //println!("statement: {:#?}", stmt);
-            //println!("op: {:#?}", op);
-            //println!();
             match func.clone().borrow().deref() {
                 Root::Function(f) => f.body.borrow_mut().push(op.clone()),
                 Root::Evaluator(e) => e.body.borrow_mut().push(op.clone()),
@@ -373,6 +381,7 @@ impl<'a> MirBuilder<'a> {
             ast::Statement::Enforce(enf) => self.translate_enforce(enf),
             ast::Statement::EnforceIf(enf, cond) => self.translate_enforce_if(enf, cond),
             ast::Statement::EnforceAll(list_comp) => self.translate_enforce_all(list_comp),
+            ast::Statement::BusEnforce(list_comp) => self.translate_bus_enforce(list_comp),
         }
     }
     fn translate_let(&mut self, let_stmt: &'a ast::Let) -> Result<Link<Op>, CompileError> {
@@ -398,6 +407,11 @@ impl<'a> MirBuilder<'a> {
             ast::Expr::Call(c) => self.translate_call(c),
             ast::Expr::ListComprehension(lc) => self.translate_list_comprehension(lc),
             ast::Expr::Let(l) => self.translate_let(l),
+            ast::Expr::Null(_) => Ok(Value::create(SpannedMirValue {
+                span: expr.span(),
+                value: MirValue::Null,
+            })),
+            ast::Expr::BusOperation(bo) => self.translate_bus_operation(bo),
         }
     }
 
@@ -464,6 +478,87 @@ impl<'a> MirBuilder<'a> {
         let node = self.insert_enforce(enf_node);
         self.bindings.exit();
         node
+    }
+
+    fn translate_bus_enforce(
+        &mut self,
+        list_comp: &'a ast::ListComprehension,
+    ) -> Result<Link<Op>, CompileError> {
+        let bus_op = self.translate_scalar_expr(&list_comp.body)?;
+        if list_comp.iterables.len() != 1 {
+            self.diagnostics
+                .diagnostic(Severity::Error)
+                .with_message("expected a single iterable in bus enforce")
+                .with_primary_label(
+                    list_comp.span(),
+                    format!(
+                        "expected a single iterable in bus enforce, got this instead: \n{:#?}",
+                        list_comp.iterables
+                    ),
+                )
+                .emit();
+            return Err(CompileError::Failed);
+        }
+        // Note: safe to unwrap because we checked the length above
+        let ast_iterables = list_comp.iterables.first().unwrap();
+        // sanity check
+        match ast_iterables {
+            ast::Expr::Range(ast::RangeExpr { start, end, .. }) => {
+                let start = match start {
+                    ast::RangeBound::Const(Span { item: val, .. }) => val,
+                    _ => unimplemented!(),
+                };
+                let end = match end {
+                    ast::RangeBound::Const(Span { item: val, .. }) => val,
+                    _ => unimplemented!(),
+                };
+                if *start != 0 || *end != 1 {
+                    self.diagnostics
+                        .diagnostic(Severity::Error)
+                        .with_message("Bus comprehensions can only target a single latch")
+                        .with_primary_label(
+                            list_comp.span(),
+                            format!(
+                                "expected a range with a single value, got this instead: \n{:#?}",
+                                list_comp.iterables
+                            ),
+                        )
+                        .emit();
+                    return Err(CompileError::Failed);
+                };
+            }
+            _ => unimplemented!(),
+        };
+        let sel = match list_comp.selector.as_ref() {
+            Some(selector) => self.translate_scalar_expr(selector)?,
+            None => {
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_message("Bus operations should always have a selector or a multiplicity")
+                    .with_primary_label(
+                        list_comp.span(),
+                        format!(
+                            "expected a non-empty selector or multiplicity, got: \n{:#?}",
+                            list_comp.selector
+                        ),
+                    )
+                    .emit();
+                return Err(CompileError::Failed);
+            }
+        };
+        bus_op
+            .as_bus_op_mut()
+            .unwrap()
+            .latch
+            .borrow_mut()
+            .clone_from(&sel.borrow());
+        let bus_op_clone = bus_op.clone();
+        let bus_op_ref = bus_op_clone.as_bus_op_mut().unwrap();
+        let bus_link = bus_op_ref.bus.to_link().unwrap();
+        let mut bus = bus_link.borrow_mut();
+        bus.latches.push(sel.clone());
+        bus.columns.push(bus_op.clone());
+        Ok(bus_op)
     }
 
     fn insert_enforce(&mut self, node: Link<Op>) -> Result<Link<Op>, CompileError> {
@@ -564,13 +659,35 @@ impl<'a> MirBuilder<'a> {
                         })
                         .build();
                     Ok(node)
+                } else if let Some(bus) = self.mir.constraint_graph().get_bus_link(&qual_ident) {
+                    let node = Value::builder()
+                        .value(SpannedMirValue {
+                            span: access.span(),
+                            value: MirValue::BusAccess(BusAccess::new(bus.clone(), access.offset)),
+                        })
+                        .build();
+                    Ok(node)
                 } else {
                     // This is a qualified reference that should have been eliminated
                     // during inlining or constant propagation, but somehow slipped through.
-                    unreachable!(
-                        "expected reference to periodic column, got `{:?}` instead",
-                        qual_ident
-                    );
+                    self.diagnostics
+                        .diagnostic(Severity::Error)
+                        //", got `{:#?}` of {:#?} instead.",
+                        .with_message("expected reference to periodic column")
+                        .with_primary_label(
+                            qual_ident.span(),
+                            format!(
+                                "expected reference to periodic column, got `{:#?}`",
+                                qual_ident
+                            ),
+                        )
+                        .with_secondary_label(
+                            access.span(),
+                            format!("in this access expression `{:#?}`", access),
+                        )
+                        .emit();
+                    //unreachable!("expected reference to periodic column in `{:#?}`", access);
+                    Err(CompileError::Failed)
                 }
             }
             // This must be one of public inputs, random values, or trace columns
@@ -593,6 +710,49 @@ impl<'a> MirBuilder<'a> {
     ) -> Result<Link<Op>, CompileError> {
         let lhs = self.translate_scalar_expr(&bin_op.lhs)?;
         let rhs = self.translate_scalar_expr(&bin_op.rhs)?;
+
+        // Check if bin_op is a bus constraint, if so, add it to the Link<Bus>
+        if let (Op::Boundary(lhs_boundary), true) = (lhs.borrow().deref(), self.in_boundary) {
+            let lhs_child = lhs_boundary.expr.clone();
+            let kind = lhs_boundary.kind;
+
+            let lhs_child_as_value_ref = lhs_child.as_value();
+            if let Some(val_ref) = lhs_child_as_value_ref {
+                let SpannedMirValue { span: _span, value } = val_ref.value.clone();
+                if let MirValue::BusAccess(bus_access) = value {
+                    let bus = bus_access.bus;
+                    match kind {
+                        ast::Boundary::First => {
+                            bus.borrow_mut().set_first(rhs.clone()).map_err(|_| {
+                                self.diagnostics
+                                    .diagnostic(Severity::Error)
+                                    .with_message("bus boundary constraint already set")
+                                    .with_primary_label(
+                                        bin_op.span(),
+                                        "bus boundary constraint already set",
+                                    )
+                                    .emit();
+                                CompileError::Failed
+                            })?;
+                        }
+                        ast::Boundary::Last => {
+                            bus.borrow_mut().set_last(rhs.clone()).map_err(|_| {
+                                self.diagnostics
+                                    .diagnostic(Severity::Error)
+                                    .with_message("bus boundary constraint already set")
+                                    .with_primary_label(
+                                        bin_op.span(),
+                                        "bus boundary constraint already set",
+                                    )
+                                    .emit();
+                                CompileError::Failed
+                            })?;
+                        }
+                    }
+                }
+            }
+        }
+
         match bin_op.op {
             ast::BinaryOp::Add => {
                 let node = Add::builder().lhs(lhs).rhs(rhs).span(bin_op.span()).build();
@@ -618,8 +778,6 @@ impl<'a> MirBuilder<'a> {
     }
 
     fn translate_call(&mut self, call: &'a ast::Call) -> Result<Link<Op>, CompileError> {
-        //println!("CALL ARGS: {:#?}", call);
-
         // First, resolve the callee, panic if it's not resolved
         let resolved_callee = call.callee.resolved().unwrap();
 
@@ -807,6 +965,11 @@ impl<'a> MirBuilder<'a> {
             ast::ScalarExpr::Binary(b) => self.translate_binary_op(b),
             ast::ScalarExpr::Call(c) => self.translate_call(c),
             ast::ScalarExpr::Let(l) => self.translate_let(l),
+            ast::ScalarExpr::Null(_) => Ok(Value::create(SpannedMirValue {
+                span: scalar_expr.span(),
+                value: MirValue::Null,
+            })),
+            ast::ScalarExpr::BusOperation(bo) => self.translate_bus_operation(bo),
         }
     }
 
@@ -834,6 +997,72 @@ impl<'a> MirBuilder<'a> {
             .expr(access_node)
             .build();
         Ok(node)
+    }
+
+    fn translate_bus_operation(
+        &mut self,
+        ast_bus_op: &'a ast::BusOperation,
+    ) -> Result<Link<Op>, CompileError> {
+        let Some(bus_ident) = ast_bus_op.bus.resolved() else {
+            self.diagnostics
+                .diagnostic(Severity::Error)
+                .with_message(format!(
+                    "expected a resolved bus identifier, got `{:#?}`",
+                    ast_bus_op.bus
+                ))
+                .with_primary_label(
+                    ast_bus_op.bus.span(),
+                    "expected a resolved bus identifier here",
+                )
+                .emit();
+            return Err(CompileError::Failed);
+        };
+        let Some(bus) = self.mir.constraint_graph().get_bus_link(&bus_ident) else {
+            self.diagnostics
+                .diagnostic(Severity::Error)
+                .with_message(format!(
+                    "expected a known bus identifier here, got `{:#?}`",
+                    ast_bus_op.bus
+                ))
+                .with_primary_label(ast_bus_op.bus.span(), "Unknown bus identifier")
+                .emit();
+            return Err(CompileError::Failed);
+        };
+        let bus_op_kind = match ast_bus_op.op {
+            ast::BusOperator::Insert => BusOpKind::Insert,
+            ast::BusOperator::Remove => BusOpKind::Remove,
+        };
+
+        let mut bus_op = BusOp::builder()
+            .span(ast_bus_op.span())
+            .bus(bus)
+            .kind(bus_op_kind);
+        for arg in ast_bus_op.args.iter() {
+            let mut arg_node = self.translate_expr(arg)?;
+            let accessor_mut = arg_node.clone();
+            if let Some(accessor) = accessor_mut.as_accessor_mut() {
+                match accessor.access_type {
+                    AccessType::Default => {
+                        arg_node = accessor.indexable.clone();
+                    }
+                    _ => {
+                        self.diagnostics
+                            .diagnostic(Severity::Error)
+                            .with_message("expected default access type")
+                            .with_primary_label(
+                                arg.span(),
+                                "expected default access type, got this instead",
+                            )
+                            .emit();
+                        return Err(CompileError::Failed);
+                    }
+                }
+            }
+            bus_op = bus_op.args(arg_node);
+        }
+        // Latch is unknown at this point, will be set later in translate_bus_enforce
+        let bus_op = bus_op.latch(1.into()).build();
+        Ok(bus_op)
     }
 
     fn translate_const(
@@ -974,14 +1203,15 @@ impl<'a> MirBuilder<'a> {
     // Check assumptions, probably this assumed that the inlining pass did some work
     fn public_input_access(&self, access: &ast::SymbolAccess) -> Option<PublicInputAccess> {
         let public_input = self.mir.public_inputs.get(access.name.as_ref())?;
-        if let AccessType::Index(index) = access.access_type {
-            Some(PublicInputAccess::new(public_input.name, index))
-        } else {
-            // This should have been caught earlier during compilation
-            unreachable!(
-                "unexpected public input access type encountered during lowering: {:#?}",
-                access
-            )
+        match access.access_type {
+            AccessType::Index(index) => Some(PublicInputAccess::new(public_input.name, index)),
+            _ => {
+                // This should have been caught earlier during compilation
+                unreachable!(
+                    "unexpected public input access type encountered during lowering: {:#?}",
+                    access
+                )
+            }
         }
     }
 

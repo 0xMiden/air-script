@@ -381,6 +381,15 @@ macro_rules! int {
     };
 }
 
+macro_rules! null {
+    () => {
+        ScalarExpr::Null(miden_diagnostics::Span::new(
+            miden_diagnostics::SourceSpan::UNKNOWN,
+            (),
+        ))
+    };
+}
+
 macro_rules! call {
     ($callee:ident ($($param:expr),+)) => {
         ScalarExpr::Call(Call::new(miden_diagnostics::SourceSpan::UNKNOWN, ident!($callee), vec![$($param),+]))
@@ -482,6 +491,12 @@ macro_rules! enforce_all {
     };
 }
 
+macro_rules! bus_enforce {
+    ($expr:expr) => {
+        Statement::BusEnforce($expr)
+    };
+}
+
 macro_rules! lc {
     (($(($binding:ident, $iterable:expr)),+) => $body:expr) => {{
         let context = vec![
@@ -517,6 +532,25 @@ macro_rules! lc {
             ),+
         ];
         ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($selector))
+    }};
+
+
+    (($(($binding:ident, $iterable:expr)),*) => $body:expr, with $multiplicity:expr) => {{
+        let context = vec![
+            $(
+                (ident!($binding), $iterable)
+            ),+
+        ];
+        ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($multiplicity))
+    }};
+
+    (($(($binding:literal, $iterable:expr)),*) => $body:expr, with $multiplicity:expr) => {{
+        let context = vec![
+            $(
+                (ident!($binding), $iterable)
+            ),+
+        ];
+        ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($multiplicity))
     }};
 }
 
@@ -557,6 +591,28 @@ macro_rules! eq {
             miden_diagnostics::SourceSpan::UNKNOWN,
             BinaryOp::Eq,
             $lhs,
+            $rhs,
+        ))
+    };
+}
+
+macro_rules! bus_insert {
+    ($bus:ident, $expr:expr) => {
+        ScalarExpr::BusOperation(BusOperation::new(
+            miden_diagnostics::SourceSpan::UNKNOWN,
+            ident!($bus),
+            BusOperator::Insert,
+            $expr,
+        ))
+    };
+}
+
+macro_rules! bus_remove {
+    ($bus:ident, $rhs:expr) => {
+        ScalarExpr::BusOperation(BusOperation::new(
+            miden_diagnostics::SourceSpan::UNKNOWN,
+            ident!($bus),
+            BusOperator::Remove,
             $rhs,
         ))
     };
@@ -627,6 +683,7 @@ macro_rules! import {
 
 mod arithmetic_ops;
 mod boundary_constraints;
+mod buses;
 mod calls;
 mod constant_propagation;
 mod constants;

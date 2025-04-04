@@ -90,6 +90,23 @@ Periodic columns can be referenced by [integrity constraints](./constraints.md#i
 
 When constraints are evaluated, these periodic values always refer to the value of the column in the current row. For example, when evaluating an integrity constraint such as `enf k0 * a = 0`, `k0` would be evaluated as `0` in rows `0`, `1`, `2` of the trace and as `1` in row `3`, and then the cycle would repeat. Attempting to refer to the "next" row of a periodic column, such as by `k0'`, is invalid and will cause a `ParseError`.
 
+
+## Buses (`buses`)
+
+A `buses` section contains declarations for buses used in the description and evaluation of integrity constraints.
+
+
+The following is an example of a valid `buses` source section:
+
+```
+buses {
+    multiset p,
+    logup q,
+}
+```
+
+In the above example, we declare two buses: `p` of type `multiset`, and `q` of type `logup`. They respectively correspond to a multiset-based bus and a LogUp-based bus, that expand to different constraints. More information on bus types can be found in the [buses](./buses.md) section. 
+
 ## Random values (`random_values`)
 
 A `random_values` section contains declarations for random values provided by the verifier. Random values can be accessed by the named identifier for the whole array or by named bindings to single or grouped random values within the array.

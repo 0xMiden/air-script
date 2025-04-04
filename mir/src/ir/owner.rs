@@ -17,6 +17,7 @@ pub enum Owner {
     Function(BackLink<Root>),
     Evaluator(BackLink<Root>),
     Accessor(BackLink<Op>),
+    BusOp(BackLink<Op>),
     Boundary(BackLink<Op>),
     Vector(BackLink<Op>),
     Matrix(BackLink<Op>),
@@ -51,6 +52,7 @@ impl Parent for Owner {
             Owner::Vector(v) => v.children(),
             Owner::Matrix(m) => m.children(),
             Owner::Accessor(a) => a.children(),
+            Owner::BusOp(b) => b.children(),
             Owner::None(_) => Link::default(),
         }
     }
@@ -75,6 +77,7 @@ impl Child for Owner {
             Owner::Vector(v) => v.get_parents(),
             Owner::Matrix(m) => m.get_parents(),
             Owner::Accessor(a) => a.get_parents(),
+            Owner::BusOp(b) => b.get_parents(),
             Owner::None(_) => Vec::default(),
         }
     }
@@ -95,6 +98,7 @@ impl Child for Owner {
             Owner::Vector(v) => v.add_parent(parent),
             Owner::Matrix(m) => m.add_parent(parent),
             Owner::Accessor(a) => a.add_parent(parent),
+            Owner::BusOp(b) => b.add_parent(parent),
             Owner::None(_) => (),
         }
     }
@@ -115,6 +119,7 @@ impl Child for Owner {
             Owner::Vector(v) => v.remove_parent(parent),
             Owner::Matrix(m) => m.remove_parent(parent),
             Owner::Accessor(a) => a.remove_parent(parent),
+            Owner::BusOp(b) => b.remove_parent(parent),
             Owner::None(_) => (),
         }
     }
@@ -139,6 +144,7 @@ impl PartialEq for Owner {
             (Owner::Vector(lhs), Owner::Vector(rhs)) => lhs.to_link() == rhs.to_link(),
             (Owner::Matrix(lhs), Owner::Matrix(rhs)) => lhs.to_link() == rhs.to_link(),
             (Owner::Accessor(lhs), Owner::Accessor(rhs)) => lhs.to_link() == rhs.to_link(),
+            (Owner::BusOp(lhs), Owner::BusOp(rhs)) => lhs.to_link() == rhs.to_link(),
             (Owner::None(_), Owner::None(_)) => true,
             _ => false,
         }
@@ -164,6 +170,7 @@ impl std::hash::Hash for Owner {
             Owner::Vector(v) => v.to_link().hash(state),
             Owner::Matrix(m) => m.to_link().hash(state),
             Owner::Accessor(a) => a.to_link().hash(state),
+            Owner::BusOp(b) => b.to_link().hash(state),
             Owner::None(s) => s.hash(state),
         }
     }
@@ -189,6 +196,7 @@ impl Link<Owner> {
                 Op::Vector(_) => Owner::Vector(BackLink::from(op_inner_val)),
                 Op::Matrix(_) => Owner::Matrix(BackLink::from(op_inner_val)),
                 Op::Accessor(_) => Owner::Accessor(BackLink::from(op_inner_val)),
+                Op::BusOp(_) => Owner::BusOp(BackLink::from(op_inner_val)),
                 Op::Parameter(_) => unreachable!(),
                 Op::Value(_) => unreachable!(),
                 Op::None(span) => Owner::None(*span),
@@ -221,6 +229,7 @@ impl Link<Owner> {
             Owner::Function(f) => f.to_link(),
             Owner::Evaluator(e) => e.to_link(),
             Owner::Accessor(_) => None,
+            Owner::BusOp(_) => None,
             Owner::Boundary(_) => None,
             Owner::Vector(_) => None,
             Owner::Matrix(_) => None,
@@ -243,6 +252,7 @@ impl Link<Owner> {
             Owner::Function(_) => None,
             Owner::Evaluator(_) => None,
             Owner::Accessor(back) => back.to_link(),
+            Owner::BusOp(back) => back.to_link(),
             Owner::Boundary(back) => back.to_link(),
             Owner::Vector(back) => back.to_link(),
             Owner::Matrix(back) => back.to_link(),
@@ -277,6 +287,7 @@ impl BackLink<Owner> {
                 Owner::Function(back) => back.to_link().map(|l| l.get_ptr()).unwrap_or(0),
                 Owner::Evaluator(back) => back.to_link().map(|l| l.get_ptr()).unwrap_or(0),
                 Owner::Accessor(back) => back.to_link().map(|l| l.get_ptr()).unwrap_or(0),
+                Owner::BusOp(back) => back.to_link().map(|l| l.get_ptr()).unwrap_or(0),
                 Owner::Boundary(back) => back.to_link().map(|l| l.get_ptr()).unwrap_or(0),
                 Owner::Vector(back) => back.to_link().map(|l| l.get_ptr()).unwrap_or(0),
                 Owner::Matrix(back) => back.to_link().map(|l| l.get_ptr()).unwrap_or(0),

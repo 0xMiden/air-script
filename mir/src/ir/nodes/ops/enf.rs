@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 /// A MIR operation to enforce that a given MIR op, `expr` equals zero
@@ -8,10 +8,10 @@ use miden_diagnostics::{SourceSpan, Spanned};
 pub struct Enf {
     pub parents: Vec<BackLink<Owner>>,
     pub expr: Link<Op>,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
+    pub span: SourceSpan,
 }
 
 impl Enf {

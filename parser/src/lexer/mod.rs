@@ -116,6 +116,21 @@ pub enum Token {
     /// Keyword to declare the function section in the AIR constraints module.
     Fn,
 
+    // BUSES KEYWORDS
+    // --------------------------------------------------------------------------------------------
+    /// Marks the beginning of buses section in the constraints file.
+    Buses,
+    /// Used to represent a multiset bus declaration.
+    Multiset,
+    /// Used to represent a logup bus declaration.
+    Logup,
+    /// Used to represent an empty bus
+    Null,
+    /// Used to represent the insertion of a given tuple into a bus
+    Insert,
+    /// Used to represent the removal of a given tuple from a bus
+    Remove,
+
     // BOUNDARY CONSTRAINT KEYWORDS
     // --------------------------------------------------------------------------------------------
     /// Marks the beginning of boundary constraints section in the constraints file.
@@ -144,6 +159,7 @@ pub enum Token {
     Case,
     When,
     Felt,
+    With,
 
     // PUNCTUATION
     // --------------------------------------------------------------------------------------------
@@ -187,6 +203,12 @@ impl Token {
             "ev" => Self::Ev,
             "fn" => Self::Fn,
             "felt" => Self::Felt,
+            "buses" => Self::Buses,
+            "multiset" => Self::Multiset,
+            "logup" => Self::Logup,
+            "null" => Self::Null,
+            "insert" => Self::Insert,
+            "remove" => Self::Remove,
             "boundary_constraints" => Self::BoundaryConstraints,
             "integrity_constraints" => Self::IntegrityConstraints,
             "first" => Self::First,
@@ -198,6 +220,7 @@ impl Token {
             "match" => Self::Match,
             "case" => Self::Case,
             "when" => Self::When,
+            "with" => Self::With,
             other => Self::Ident(Symbol::intern(other)),
         }
     }
@@ -260,6 +283,12 @@ impl fmt::Display for Token {
             Self::Ev => write!(f, "ev"),
             Self::Fn => write!(f, "fn"),
             Self::Felt => write!(f, "felt"),
+            Self::Buses => write!(f, "buses"),
+            Self::Multiset => write!(f, "multiset"),
+            Self::Logup => write!(f, "logup"),
+            Self::Null => write!(f, "null"),
+            Self::Insert => write!(f, "insert"),
+            Self::Remove => write!(f, "remove"),
             Self::BoundaryConstraints => write!(f, "boundary_constraints"),
             Self::First => write!(f, "first"),
             Self::Last => write!(f, "last"),
@@ -271,6 +300,7 @@ impl fmt::Display for Token {
             Self::Match => write!(f, "match"),
             Self::Case => write!(f, "case"),
             Self::When => write!(f, "when"),
+            Self::With => write!(f, "with"),
             Self::Quote => write!(f, "'"),
             Self::Colon => write!(f, ":"),
             Self::ColonColon => write!(f, "::"),

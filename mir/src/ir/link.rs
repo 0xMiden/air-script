@@ -72,6 +72,15 @@ impl<T: PartialEq> PartialEq for Link<T> {
 
 impl<T> Eq for Link<T> where T: Eq {}
 
+impl<T> Hash for Link<T>
+where
+    T: Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.link.borrow().hash(state)
+    }
+}
+
 impl<T> From<T> for Link<T> {
     fn from(value: T) -> Self {
         Self::new(value)
@@ -99,15 +108,6 @@ where
 {
     fn span(&self) -> SourceSpan {
         self.borrow().span()
-    }
-}
-
-impl<T> Hash for Link<T>
-where
-    T: Hash,
-{
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.link.borrow().hash(state)
     }
 }
 
@@ -195,5 +195,100 @@ where
             Some(link) => link.span(),
             None => SourceSpan::default(),
         }
+    }
+}
+
+/// A wrapper around a [Link<T>] to block recursive implementations of [PartialEq] and [Hash].
+/// A [Singleton] is used when the following properties are desired:
+/// - The reference count of the field needs to be kept at >1 once instantiated.
+/// - The field should be ignored in comparisons and hashing.
+///
+/// It is especially useful when converting between variants of an enum,
+/// as it allows mutating all instances of all existing wrappers by updating
+/// a constant number of pointers.
+/// This is possible because we store a strong reference to the original instance,
+/// not letting the reference count drop to 0.
+/// In this case, we also need Hash and PartialEq to be implemented as no-ops,
+/// as the presence of those instances does not matter for comparisons.
+///
+/// Example:
+/// ```ignore
+/// struct A {
+///     w: Singleton<Wrap>,
+/// }
+/// struct B {
+///     w: Singleton<Wrap>,
+/// }
+/// enum Op {
+///    A(A),
+///    B(B),
+/// }
+/// enum Wrap {
+///     A(BackLink<A>),
+///     B(BackLink<B>),
+/// }
+/// ```
+///
+/// In the above example, `Op::A` and `Op::B` can be converted to each other.
+/// Since we prevent the reference count from dropping to 0, we can also update
+/// all instances of `Wrap` by updating the `Singleton` field only once.
+///
+/// NOTE: Without the Singleton field, we have no reference to the `Wrap` field in `A` and `B`
+/// which means we cannot update them without iterating over the complete graph.
+///
+/// NOTE: parents are not stored properly at this point in time, this would lessen the need for
+/// the `Singleton` field. However, it can still be regarded as a performance optimization,
+/// as the number of updates is the number of Singletons instead of the number of instances.
+///
+/// NOTE: An alternative would be to run optimizations once per `Wrap` instance,
+/// which is fairly inefficient and adds a lot of duplicated expressions.
+#[derive(Clone)]
+pub struct Singleton<T>(pub Option<Link<T>>);
+
+impl<T> Singleton<T> {
+    pub fn new(value: Link<T>) -> Self {
+        Self(Some(value))
+    }
+    pub fn none() -> Self {
+        Self(None)
+    }
+    pub fn to_link(&self) -> Option<Link<T>> {
+        self.0.clone()
+    }
+}
+
+impl<T: Debug> Debug for Singleton<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl<T: PartialEq> PartialEq for Singleton<T> {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl<T: Eq> Eq for Singleton<T> {}
+
+impl<T: Hash> Hash for Singleton<T> {
+    fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {}
+}
+
+impl<T> Default for Singleton<T> {
+    fn default() -> Self {
+        Self::none()
+    }
+}
+
+impl<T> From<T> for Singleton<T> {
+    fn from(value: T) -> Self {
+        Self::from(Link::from(value))
+    }
+}
+
+impl<T> From<Link<T>> for Singleton<T> {
+    fn from(value: Link<T>) -> Self {
+        Self(Some(value))
     }
 }

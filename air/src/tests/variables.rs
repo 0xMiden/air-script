@@ -198,8 +198,8 @@ fn invalid_matrix_literal_with_leading_vector_binding() {
         enf clk' = d[0][0];
     }";
 
-    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithoutMIR);
-    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithMIR);
+    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', '\"null\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', '\"null\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithMIR);
 }
 
 #[test]
@@ -248,8 +248,16 @@ fn invalid_variable_access_before_declaration() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(source, "this variable is not defined", Pipeline::WithoutMIR);
-    expect_diagnostic(source, "this variable is not defined", Pipeline::WithMIR);
+    expect_diagnostic(
+        source,
+        "this variable / bus is not defined",
+        Pipeline::WithoutMIR,
+    );
+    expect_diagnostic(
+        source,
+        "this variable / bus is not defined",
+        Pipeline::WithMIR,
+    );
 }
 
 #[test]
@@ -304,8 +312,16 @@ fn invalid_reference_to_variable_defined_in_other_section() {
         enf clk' = clk + a;
     }";
 
-    expect_diagnostic(source, "this variable is not defined", Pipeline::WithoutMIR);
-    expect_diagnostic(source, "this variable is not defined", Pipeline::WithMIR);
+    expect_diagnostic(
+        source,
+        "this variable / bus is not defined",
+        Pipeline::WithoutMIR,
+    );
+    expect_diagnostic(
+        source,
+        "this variable / bus is not defined",
+        Pipeline::WithMIR,
+    );
 }
 
 #[test]

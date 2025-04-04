@@ -1,10 +1,13 @@
+mod bus_op_expand;
 mod inlining;
 mod translate;
 mod unrolling;
 mod visitor;
+pub use bus_op_expand::BusOpExpand;
 pub use inlining::Inlining;
 pub use translate::AstToMir;
 pub use unrolling::Unrolling;
+pub use visitor::Visitor;
 // Note: ConstantPropagation and ValueNumbering are not implemented yet in the MIR
 //mod constant_propagation;
 //mod value_numbering;
@@ -17,8 +20,8 @@ use std::ops::Deref;
 use miden_diagnostics::Spanned;
 
 use crate::ir::{
-    Accessor, Add, Boundary, Call, Enf, Exp, Fold, For, If, Link, Matrix, Mul, Node, Op, Owner,
-    Parameter, Parent, Sub, Value, Vector,
+    Accessor, Add, Boundary, BusOp, Call, Enf, Exp, Fold, For, If, Link, Matrix, Mul, Node, Op,
+    Owner, Parameter, Parent, Sub, Value, Vector,
 };
 
 /// Helper to duplicate a MIR node and its children recursively
@@ -172,6 +175,16 @@ pub fn duplicate_node(
             let offset = accessor.offset;
             let new_indexable = duplicate_node(indexable, current_replace_map);
             Accessor::create(new_indexable, access_type, offset, accessor.span())
+        }
+        Op::BusOp(bus_op) => {
+            let bus = bus_op.bus.clone();
+            let kind = bus_op.kind.clone();
+            let args: Vec<Link<Op>> = bus_op
+                .args
+                .iter()
+                .map(|x| duplicate_node(x.clone(), current_replace_map))
+                .collect();
+            BusOp::create(bus, kind, args, bus_op.span())
         }
         Op::Parameter(parameter) => {
             let owner_ref = parameter
@@ -413,6 +426,13 @@ pub fn duplicate_node_or_replace(
                 .1
                 .clone();
             let new_node = Accessor::create(new_indexable, access_type, offset, accessor.span());
+            current_replace_map.insert(node.get_ptr(), (node.clone(), new_node));
+        }
+        Op::BusOp(bus_op) => {
+            let bus = bus_op.bus.clone();
+            let kind = bus_op.kind.clone();
+            let args = bus_op.args.clone();
+            let new_node = BusOp::create(bus, kind, args, bus_op.span());
             current_replace_map.insert(node.get_ptr(), (node.clone(), new_node));
         }
         Op::Parameter(parameter) => {

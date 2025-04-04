@@ -204,6 +204,11 @@ impl Visitor for InliningFirstPass<'_> {
         let evaluators = graph.get_evaluator_nodes();
         let boundary_constraints_roots_ref = graph.boundary_constraints_roots.borrow();
         let integrity_constraints_roots_ref = graph.integrity_constraints_roots.borrow();
+        let bus_roots: Vec<_> = graph
+            .buses
+            .values()
+            .flat_map(|b| b.borrow().clone().columns.into_iter().collect::<Vec<_>>())
+            .collect();
 
         let combined_roots = boundary_constraints_roots_ref
             .clone()
@@ -215,6 +220,7 @@ impl Visitor for InliningFirstPass<'_> {
                     .into_iter()
                     .map(|ic| ic.as_node()),
             )
+            .chain(bus_roots.into_iter().map(|b| b.as_node()))
             .chain(evaluators.into_iter().map(|e| e.as_node()))
             .chain(functions.into_iter().map(|f| f.as_node()));
         combined_roots.collect()
@@ -333,7 +339,6 @@ impl Visitor for InliningSecondPass<'_> {
                         .unwrap()
                         .clone();
                     updated_op = Some(new_node);
-                    //println!("Updating call node of function: {:?}", updated_op);
                 } else {
                     // We have finished inlining the body, we can now replace the Call node with all the body
                     let mut new_nodes = Vec::new();
@@ -359,7 +364,6 @@ impl Visitor for InliningSecondPass<'_> {
                     let new_nodes_vector = Vector::create(new_nodes, span);
 
                     updated_op = Some(new_nodes_vector);
-                    //println!("Updating call node of evaluator: {:?}", updated_op);
                 }
 
                 // Reset context to None

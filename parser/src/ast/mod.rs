@@ -73,6 +73,8 @@ pub struct Program {
     pub evaluators: BTreeMap<QualifiedIdentifier, EvaluatorFunction>,
     /// The set of used pure functions referenced in this program.
     pub functions: BTreeMap<QualifiedIdentifier, Function>,
+    /// The set of used buses referenced in this program.
+    pub buses: BTreeMap<QualifiedIdentifier, Bus>,
     /// The set of used periodic columns referenced in this program.
     pub periodic_columns: BTreeMap<QualifiedIdentifier, PeriodicColumn>,
     /// The set of public inputs defined in the root module
@@ -118,6 +120,7 @@ impl Program {
             constants: Default::default(),
             evaluators: Default::default(),
             functions: Default::default(),
+            buses: Default::default(),
             periodic_columns: Default::default(),
             public_inputs: Default::default(),
             random_values: None,
@@ -233,6 +236,15 @@ impl Program {
             // Make sure we move the integrity_constraints into the program
             if let Some(ic) = root_module.integrity_constraints.as_ref() {
                 program.integrity_constraints = ic.to_vec();
+            }
+            // Make sure we move the buses into the program
+            if !root_module.buses.is_empty() {
+                program.buses = BTreeMap::from_iter(root_module.buses.iter().map(|(k, v)| {
+                    (
+                        QualifiedIdentifier::new(root, NamespacedIdentifier::Binding(*k)),
+                        v.clone(),
+                    )
+                }));
             }
             for evaluator in root_module.evaluators.values() {
                 root_nodes.push_back(QualifiedIdentifier::new(

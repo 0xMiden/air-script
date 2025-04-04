@@ -7,8 +7,8 @@ edition = "2021"
 syn = { version = "2.0", features = ["extra-traits"] }
 quote = "1.0"
 proc-macro2 = "1.0"
-pretty_assertions = "1.4.1"
-prettyplease = "0.2.27"
+pretty_assertions = "1.4"
+prettyplease = "0.2"
 
 [lib]
 proc-macro = true

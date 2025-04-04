@@ -22,7 +22,7 @@ pub type Range = std::ops::Range<usize>;
 
 /// Represents any type of identifier in AirScript
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Spanned)]
-pub struct Identifier(Span<Symbol>);
+pub struct Identifier(pub Span<Symbol>);
 impl Identifier {
     pub fn new(span: SourceSpan, name: Symbol) -> Self {
         Self(Span::new(span, name))
@@ -91,11 +91,12 @@ impl From<ResolvableIdentifier> for Identifier {
 /// Represents an identifier qualified with its namespace.
 ///
 /// Identifiers in AirScript are separated into two namespaces: one for functions,
-/// and one for bindings. This is because functions cannot be bound, and bindings
-/// cannot be called, so we can always disambiguate identifiers based on its usage.
+/// and one for buses and bindings. This is because functions cannot be bound, added to or remove from,
+/// while buses and bindings cannot be called.
+/// So we can always disambiguate identifiers based on its usage.
 ///
-/// It is still probably best practice to avoid having name conflicts between functions
-/// and bindings, but that is a matter of style rather than one of necessity.
+/// It is still probably best practice to avoid having name conflicts between functions,
+/// buses and bindings, but that is a matter of style rather than one of necessity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Spanned)]
 pub enum NamespacedIdentifier {
     Function(#[span] Identifier),
@@ -301,6 +302,10 @@ pub enum Expr {
     /// NOTE: The AirScript syntax only permits `let` in statement position, so this variant
     /// is only present in the AST as the result of an explicit transformation.
     Let(Box<Let>),
+    /// A bus operation (`p.insert(...)` or `p.remove(...)`)
+    BusOperation(BusOperation),
+    /// An empty bus
+    Null(Span<()>),
 }
 impl Expr {
     /// Returns true if this expression is constant
@@ -335,6 +340,7 @@ impl Expr {
             Self::Call(ref call) => call.ty,
             Self::ListComprehension(ref lc) => lc.ty,
             Self::Let(ref let_expr) => let_expr.ty(),
+            Self::BusOperation(_) | Self::Null(_) => Some(Type::Felt),
         }
     }
 }
@@ -352,6 +358,8 @@ impl fmt::Debug for Expr {
                 f.debug_tuple("ListComprehension").field(expr).finish()
             }
             Self::Let(ref let_expr) => write!(f, "{let_expr:#?}"),
+            Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
+            Self::Null(ref expr) => f.debug_tuple("Null").field(expr).finish(),
         }
     }
 }
@@ -383,6 +391,8 @@ impl fmt::Display for Expr {
                 };
                 write!(f, "{display}")
             }
+            Self::BusOperation(ref expr) => write!(f, "{}", expr),
+            Self::Null(ref _expr) => write!(f, "null"),
         }
     }
 }
@@ -402,6 +412,12 @@ impl From<Call> for Expr {
     #[inline]
     fn from(expr: Call) -> Self {
         Self::Call(expr)
+    }
+}
+impl From<BusOperation> for Expr {
+    #[inline]
+    fn from(expr: BusOperation) -> Self {
+        Self::BusOperation(expr)
     }
 }
 impl From<ListComprehension> for Expr {
@@ -438,6 +454,8 @@ impl TryFrom<ScalarExpr> for Expr {
                 Err(InvalidExprError::BoundedSymbolAccess(expr.span()))
             }
             ScalarExpr::Let(expr) => Ok(Self::Let(expr)),
+            ScalarExpr::BusOperation(expr) => Ok(Self::BusOperation(expr)),
+            ScalarExpr::Null(spanned) => Ok(Self::Null(spanned)),
         }
     }
 }
@@ -486,6 +504,10 @@ pub enum ScalarExpr {
     /// binary expressions or function calls to a block of statements, and only when the result
     /// of evaluating the `let` produces a valid scalar expression.
     Let(Box<Let>),
+    /// A bus operation
+    BusOperation(BusOperation),
+    /// An empty bus
+    Null(Span<()>),
 }
 impl ScalarExpr {
     /// Returns true if this is a constant value
@@ -520,6 +542,7 @@ impl ScalarExpr {
             },
             Self::Call(ref expr) => Ok(expr.ty),
             Self::Let(ref expr) => Ok(expr.ty()),
+            Self::BusOperation(_) | ScalarExpr::Null(_) => Ok(Some(Type::Felt)),
         }
     }
 }
@@ -576,6 +599,8 @@ impl fmt::Debug for ScalarExpr {
             Self::Binary(ref expr) => f.debug_tuple("Binary").field(expr).finish(),
             Self::Call(ref expr) => f.debug_tuple("Call").field(expr).finish(),
             Self::Let(ref expr) => write!(f, "{:#?}", expr),
+            Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
+            Self::Null(ref expr) => f.debug_tuple("Null").field(expr).finish(),
         }
     }
 }
@@ -595,6 +620,8 @@ impl fmt::Display for ScalarExpr {
                 };
                 write!(f, "{display}")
             }
+            Self::BusOperation(ref expr) => write!(f, "{}", expr),
+            Self::Null(ref _value) => write!(f, "null"),
         }
     }
 }
@@ -821,9 +848,10 @@ impl fmt::Display for Boundary {
 }
 
 /// Represents the way an identifier is accessed/referenced in the source.
-#[derive(Hash, Debug, Clone, Eq, PartialEq)]
+#[derive(Hash, Debug, Clone, Eq, PartialEq, Default)]
 pub enum AccessType {
     /// Access refers to the entire bound value
+    #[default]
     Default,
     /// Access binds a sub-slice of a vector
     Slice(RangeExpr),
@@ -1250,6 +1278,53 @@ impl fmt::Display for ListComprehension {
         } else {
             Ok(())
         }
+    }
+}
+
+#[derive(Clone, Spanned)]
+pub struct BusOperation {
+    #[span]
+    pub span: SourceSpan,
+    pub bus: ResolvableIdentifier,
+    pub op: BusOperator,
+    pub args: Vec<Expr>,
+}
+
+impl BusOperation {
+    pub fn new(span: SourceSpan, bus: Identifier, op: BusOperator, args: Vec<Expr>) -> Self {
+        Self {
+            span,
+            bus: ResolvableIdentifier::Unresolved(NamespacedIdentifier::Binding(bus)),
+            op,
+            args,
+        }
+    }
+}
+
+impl Eq for BusOperation {}
+impl PartialEq for BusOperation {
+    fn eq(&self, other: &Self) -> bool {
+        self.bus == other.bus && self.args == other.args && self.op == other.op
+    }
+}
+impl fmt::Debug for BusOperation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("BusOperation")
+            .field("bus", &self.bus)
+            .field("op", &self.op)
+            .field("args", &self.args)
+            .finish()
+    }
+}
+impl fmt::Display for BusOperation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}{}{}",
+            self.bus,
+            self.op,
+            DisplayTuple(self.args.as_slice())
+        )
     }
 }
 

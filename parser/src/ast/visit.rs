@@ -125,6 +125,9 @@ pub trait VisitMut<T> {
     fn visit_mut_function(&mut self, expr: &mut ast::Function) -> ControlFlow<T> {
         visit_mut_function(self, expr)
     }
+    fn visit_mut_bus(&mut self, expr: &mut ast::Bus) -> ControlFlow<T> {
+        visit_mut_bus(self, expr)
+    }
     fn visit_mut_periodic_column(&mut self, expr: &mut ast::PeriodicColumn) -> ControlFlow<T> {
         visit_mut_periodic_column(self, expr)
     }
@@ -184,6 +187,9 @@ pub trait VisitMut<T> {
     fn visit_mut_enforce_all(&mut self, expr: &mut ast::ListComprehension) -> ControlFlow<T> {
         self.visit_mut_list_comprehension(expr)
     }
+    fn visit_mut_bus_enforce(&mut self, expr: &mut ast::ListComprehension) -> ControlFlow<T> {
+        self.visit_mut_list_comprehension(expr)
+    }
     fn visit_mut_integrity_constraints(
         &mut self,
         exprs: &mut Vec<ast::Statement>,
@@ -207,6 +213,9 @@ pub trait VisitMut<T> {
     }
     fn visit_mut_call(&mut self, expr: &mut ast::Call) -> ControlFlow<T> {
         visit_mut_call(self, expr)
+    }
+    fn visit_mut_bus_operation(&mut self, expr: &mut ast::BusOperation) -> ControlFlow<T> {
+        visit_mut_bus_operation(self, expr)
     }
     fn visit_mut_range_bound(&mut self, expr: &mut ast::RangeBound) -> ControlFlow<T> {
         visit_mut_range_bound(self, expr)
@@ -267,6 +276,9 @@ where
     }
     fn visit_mut_function(&mut self, expr: &mut ast::Function) -> ControlFlow<T> {
         (**self).visit_mut_function(expr)
+    }
+    fn visit_mut_bus(&mut self, expr: &mut ast::Bus) -> ControlFlow<T> {
+        (**self).visit_mut_bus(expr)
     }
     fn visit_mut_periodic_column(&mut self, expr: &mut ast::PeriodicColumn) -> ControlFlow<T> {
         (**self).visit_mut_periodic_column(expr)
@@ -332,6 +344,9 @@ where
     fn visit_mut_enforce_all(&mut self, expr: &mut ast::ListComprehension) -> ControlFlow<T> {
         (**self).visit_mut_enforce_all(expr)
     }
+    fn visit_mut_bus_enforce(&mut self, expr: &mut ast::ListComprehension) -> ControlFlow<T> {
+        (**self).visit_mut_bus_enforce(expr)
+    }
     fn visit_mut_expr(&mut self, expr: &mut ast::Expr) -> ControlFlow<T> {
         (**self).visit_mut_expr(expr)
     }
@@ -349,6 +364,9 @@ where
     }
     fn visit_mut_call(&mut self, expr: &mut ast::Call) -> ControlFlow<T> {
         (**self).visit_mut_call(expr)
+    }
+    fn visit_mut_bus_operation(&mut self, expr: &mut ast::BusOperation) -> ControlFlow<T> {
+        (**self).visit_mut_bus_operation(expr)
     }
     fn visit_mut_range_bound(&mut self, expr: &mut ast::RangeBound) -> ControlFlow<T> {
         (**self).visit_mut_range_bound(expr)
@@ -403,6 +421,9 @@ where
     }
     for function in module.functions.values_mut() {
         visitor.visit_mut_function(function)?;
+    }
+    for bus in module.buses.values_mut() {
+        visitor.visit_mut_bus(bus)?;
     }
     for column in module.periodic_columns.values_mut() {
         visitor.visit_mut_periodic_column(column)?;
@@ -493,6 +514,13 @@ where
         visitor.visit_mut_typed_identifier(param)?;
     }
     visitor.visit_mut_statement_block(&mut expr.body)
+}
+
+pub fn visit_mut_bus<V, T>(visitor: &mut V, expr: &mut ast::Bus) -> ControlFlow<T>
+where
+    V: ?Sized + VisitMut<T>,
+{
+    visitor.visit_mut_identifier(&mut expr.name)
 }
 
 pub fn visit_mut_evaluator_trace_segment<V, T>(
@@ -586,6 +614,7 @@ where
         }
         ast::Statement::EnforceAll(ref mut expr) => visitor.visit_mut_enforce_all(expr),
         ast::Statement::Expr(ref mut expr) => visitor.visit_mut_expr(expr),
+        ast::Statement::BusEnforce(ref mut expr) => visitor.visit_mut_bus_enforce(expr),
     }
 }
 
@@ -631,6 +660,8 @@ where
         ast::Expr::Call(ref mut expr) => visitor.visit_mut_call(expr),
         ast::Expr::ListComprehension(ref mut expr) => visitor.visit_mut_list_comprehension(expr),
         ast::Expr::Let(ref mut expr) => visitor.visit_mut_let(expr),
+        ast::Expr::BusOperation(ref mut expr) => visitor.visit_mut_bus_operation(expr),
+        ast::Expr::Null(_) => ControlFlow::Continue(()),
     }
 }
 
@@ -639,7 +670,7 @@ where
     V: ?Sized + VisitMut<T>,
 {
     match expr {
-        ast::ScalarExpr::Const(_) => ControlFlow::Continue(()),
+        ast::ScalarExpr::Const(_) | ast::ScalarExpr::Null(_) => ControlFlow::Continue(()),
         ast::ScalarExpr::SymbolAccess(ref mut expr) => visitor.visit_mut_symbol_access(expr),
         ast::ScalarExpr::BoundedSymbolAccess(ref mut expr) => {
             visitor.visit_mut_bounded_symbol_access(expr)
@@ -647,6 +678,7 @@ where
         ast::ScalarExpr::Binary(ref mut expr) => visitor.visit_mut_binary_expr(expr),
         ast::ScalarExpr::Call(ref mut expr) => visitor.visit_mut_call(expr),
         ast::ScalarExpr::Let(ref mut expr) => visitor.visit_mut_let(expr),
+        ast::ScalarExpr::BusOperation(ref mut expr) => visitor.visit_mut_bus_operation(expr),
     }
 }
 
@@ -682,6 +714,20 @@ where
     V: ?Sized + VisitMut<T>,
 {
     visitor.visit_mut_resolvable_identifier(&mut expr.callee)?;
+    for arg in expr.args.iter_mut() {
+        visitor.visit_mut_expr(arg)?;
+    }
+    ControlFlow::Continue(())
+}
+
+pub fn visit_mut_bus_operation<V, T>(
+    visitor: &mut V,
+    expr: &mut ast::BusOperation,
+) -> ControlFlow<T>
+where
+    V: ?Sized + VisitMut<T>,
+{
+    visitor.visit_mut_resolvable_identifier(&mut expr.bus)?;
     for arg in expr.args.iter_mut() {
         visitor.visit_mut_expr(arg)?;
     }

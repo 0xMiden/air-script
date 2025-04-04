@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 use air_parser::{
     ast::{self, TraceSegment},
@@ -6,7 +6,7 @@ use air_parser::{
 };
 use air_pass::Pass;
 
-use miden_diagnostics::{DiagnosticsHandler, Severity, Spanned};
+use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 use mir::ir::{ConstantValue, Link, Mir, MirValue, Op, Parent, SpannedMirValue};
 
 use crate::{graph::NodeIndex, ir::*, CompileError};
@@ -33,7 +33,52 @@ impl Pass for MirToAir<'_> {
     fn run<'a>(&mut self, mir: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
         let mut air = Air::new(mir.name);
 
-        air.trace_segment_widths = mir.trace_columns.iter().map(|ts| ts.size as u16).collect();
+        let buses = mir.constraint_graph().buses.clone();
+
+        let mut trace_columns = mir.trace_columns.clone();
+
+        let mut bus_bindings_map = HashMap::new();
+        if !buses.is_empty() {
+            let existing_aux_segment: Vec<_> = trace_columns
+                .get(1)
+                .map(|ts| {
+                    ts.bindings
+                        .iter()
+                        .map(|binding| {
+                            Span::new(binding.span(), (binding.name.unwrap(), binding.size))
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            let bus_raw_bindings: Vec<_> = buses
+                .keys()
+                .map(|k| Span::new(k.span(), (Identifier::new(k.span(), k.name()), AUX_SEGMENT)))
+                .collect();
+
+            // Add buses as `aux` trace columns
+            let aux_trace_segment = TraceSegment::new(
+                SourceSpan::default(),
+                AUX_SEGMENT,
+                Identifier::new(SourceSpan::default(), Symbol::new(AUX_SEGMENT as u32)),
+                existing_aux_segment
+                    .into_iter()
+                    .chain(bus_raw_bindings)
+                    .collect(),
+            );
+            for binding in aux_trace_segment.bindings.iter() {
+                // Also contains non-bus identifiers
+                bus_bindings_map.insert(binding.name.unwrap(), binding.offset);
+            }
+            if trace_columns.len() == 1 {
+                trace_columns.push(aux_trace_segment);
+            } else {
+                let aux = trace_columns.get_mut(1).unwrap();
+                *aux = aux_trace_segment;
+            }
+        }
+
+        air.trace_segment_widths = trace_columns.iter().map(|ts| ts.size as u16).collect();
         air.num_random_values = mir.num_random_values;
         air.periodic_columns = mir.periodic_columns.clone();
         air.public_inputs = mir.public_inputs.clone();
@@ -41,7 +86,8 @@ impl Pass for MirToAir<'_> {
         let mut builder = AirBuilder {
             diagnostics: self.diagnostics,
             air: &mut air,
-            trace_columns: mir.trace_columns.clone(),
+            trace_columns: trace_columns.clone(),
+            bus_bindings_map,
         };
 
         let graph = mir.constraint_graph();
@@ -62,6 +108,7 @@ struct AirBuilder<'a> {
     diagnostics: &'a DiagnosticsHandler,
     air: &'a mut Air,
     trace_columns: Vec<TraceSegment>,
+    bus_bindings_map: HashMap<Identifier, usize>,
 }
 
 /// Helper function to remove the vector wrapper from a scalar operation
@@ -196,6 +243,15 @@ impl AirBuilder<'_> {
                             row_offset: trace_access.row_offset,
                         })
                     }
+                    MirValue::BusAccess(bus_access) => {
+                        let name = bus_access.bus.borrow().deref().name.unwrap();
+                        let column = self.bus_bindings_map.get(&name).unwrap();
+                        crate::ir::Value::TraceAccess(crate::ir::TraceAccess {
+                            segment: AUX_SEGMENT,
+                            column: *column,
+                            row_offset: bus_access.row_offset,
+                        })
+                    }
                     MirValue::PeriodicColumn(periodic_column_access) => {
                         crate::ir::Value::PeriodicColumn(crate::ir::PeriodicColumnAccess {
                             name: periodic_column_access.name,
@@ -209,7 +265,7 @@ impl AirBuilder<'_> {
                         })
                     }
                     MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
-                    _ => unreachable!(),
+                    _ => unreachable!("Unexpected MirValue: {:?}", mir_value),
                 };
 
                 Ok(self.insert_op(Operation::Value(value)))
@@ -240,6 +296,15 @@ impl AirBuilder<'_> {
                         crate::ir::Value::TraceAccess(crate::ir::TraceAccess {
                             segment: trace_access.segment,
                             column: trace_access.column,
+                            row_offset: offset,
+                        })
+                    }
+                    MirValue::BusAccess(bus_access) => {
+                        let name = bus_access.bus.borrow().deref().name.unwrap();
+                        let column = self.bus_bindings_map.get(&name).unwrap();
+                        crate::ir::Value::TraceAccess(crate::ir::TraceAccess {
+                            segment: AUX_SEGMENT,
+                            column: *column,
                             row_offset: offset,
                         })
                     }
@@ -331,7 +396,21 @@ impl AirBuilder<'_> {
                         };
                         (trace_access, lhs_span)
                     }
-                    _ => unreachable!("Expected TraceAccess, received {:?}", value.value), // Raise diag
+                    SpannedMirValue {
+                        value: MirValue::BusAccess(bus_access),
+                        span: lhs_span,
+                    } => {
+                        let bus = bus_access.bus;
+                        let name = bus.borrow().deref().name.unwrap();
+                        let column = self.bus_bindings_map.get(&name).unwrap();
+                        let trace_access =
+                            mir::ir::TraceAccess::new(AUX_SEGMENT, *column, bus_access.row_offset);
+                        (trace_access, lhs_span)
+                    }
+                    _ => unreachable!(
+                        "Expected TraceAccess or BusAccess, received {:?}",
+                        value.value
+                    ), // Raise diag
                 };
 
                 if let Some(prev) = self.trace_columns[trace_access.segment].mark_constrained(

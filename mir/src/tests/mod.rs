@@ -1,5 +1,6 @@
 mod access;
 mod boundary_constraints;
+mod buses;
 mod constant;
 mod evaluators;
 mod functions;
@@ -43,6 +44,19 @@ pub fn translate(source: &str) -> Result<Mir, ()> {
     let compiler = Compiler::default();
     match compiler.translate(source) {
         Ok(mir) => Ok(mir),
+        Err(err) => {
+            compiler.diagnostics.emit(err);
+            compiler.emitter.print_captured_to_stderr();
+            Err(())
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub fn parse(source: &str) -> Result<air_parser::ast::Program, ()> {
+    let compiler = Compiler::default();
+    match compiler.parse(source) {
+        Ok(ast) => Ok(ast),
         Err(err) => {
             compiler.diagnostics.emit(err);
             compiler.emitter.print_captured_to_stderr();
@@ -112,7 +126,8 @@ impl Compiler {
                     air_parser::transforms::ConstantPropagation::new(&self.diagnostics)
                         .chain(crate::passes::AstToMir::new(&self.diagnostics))
                         .chain(crate::passes::Inlining::new(&self.diagnostics))
-                        .chain(crate::passes::Unrolling::new(&self.diagnostics));
+                        .chain(crate::passes::Unrolling::new(&self.diagnostics))
+                        .chain(crate::passes::BusOpExpand::new(&self.diagnostics));
                 pipeline.run(ast)
             })
     }
@@ -125,6 +140,11 @@ impl Compiler {
                         .chain(crate::passes::AstToMir::new(&self.diagnostics));
                 pipeline.run(ast)
             })
+    }
+    #[allow(dead_code)]
+    pub fn parse(&self, source: &str) -> Result<air_parser::ast::Program, CompileError> {
+        air_parser::parse(&self.diagnostics, self.codemap.clone(), source)
+            .map_err(CompileError::Parse)
     }
 }
 

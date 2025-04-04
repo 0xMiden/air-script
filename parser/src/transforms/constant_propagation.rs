@@ -75,6 +75,11 @@ impl<'a> ConstantPropagation<'a> {
             self.visit_mut_function(function)?;
         }
 
+        // Visit all of the buses
+        for bus in program.buses.values_mut() {
+            self.visit_mut_bus(bus)?;
+        }
+
         // Visit all of the constraints
         self.visit_mut_boundary_constraints(&mut program.boundary_constraints)?;
         self.visit_mut_integrity_constraints(&mut program.integrity_constraints)
@@ -176,7 +181,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
     ) -> ControlFlow<SemanticAnalysisError> {
         match expr {
             // Expression is already folded
-            ScalarExpr::Const(_) => ControlFlow::Continue(()),
+            ScalarExpr::Const(_) | ScalarExpr::Null(_) => ControlFlow::Continue(()),
             // Need to check if this access is to a constant value, and transform to a constant if so
             ScalarExpr::SymbolAccess(sym) => {
                 let constant_value = match sym.name {
@@ -275,12 +280,14 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                         }
                         Statement::Enforce(_)
                         | Statement::EnforceIf(_, _)
-                        | Statement::EnforceAll(_) => unreachable!(),
+                        | Statement::EnforceAll(_)
+                        | Statement::BusEnforce(_) => unreachable!(),
                     },
                     Err(err) => return ControlFlow::Break(err),
                 }
                 ControlFlow::Continue(())
             }
+            ScalarExpr::BusOperation(ref mut expr) => self.visit_mut_bus_operation(expr),
         }
     }
 
@@ -591,12 +598,15 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                         }
                         Statement::Enforce(_)
                         | Statement::EnforceIf(_, _)
-                        | Statement::EnforceAll(_) => unreachable!(),
+                        | Statement::EnforceAll(_)
+                        | Statement::BusEnforce(_) => unreachable!(),
                     },
                     Err(err) => return ControlFlow::Break(err),
                 }
                 ControlFlow::Continue(())
             }
+            Expr::BusOperation(ref mut expr) => self.visit_mut_bus_operation(expr),
+            Expr::Null(_) => ControlFlow::Continue(()),
         }
     }
 
@@ -639,6 +649,11 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 }
                 Statement::Expr(ref mut expr) => {
                     self.visit_mut_expr(expr)?;
+                }
+                Statement::BusEnforce(ref mut expr) => {
+                    self.in_constraint_comprehension = true;
+                    self.visit_mut_list_comprehension(expr)?;
+                    self.in_constraint_comprehension = false;
                 }
                 // This statement type is only present in the AST after inlining
                 Statement::EnforceIf(_, _) => unreachable!(),

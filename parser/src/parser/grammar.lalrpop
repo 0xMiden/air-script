@@ -76,6 +76,7 @@ Declaration: Declaration = {
     RandomValues => Declaration::RandomValues(<>),
     EvaluatorFunction => Declaration::EvaluatorFunction(<>),
     Function => Declaration::Function(<>),
+    Buses => Declaration::Buses(<>),
     <l:@L> <trace:Trace> <r:@R> => Declaration::Trace(Span::new(span!(l, r), trace)),
     <PublicInputs> => Declaration::PublicInputs(<>),
     <BoundaryConstraints> => Declaration::BoundaryConstraints(<>),
@@ -178,6 +179,26 @@ PeriodicColumns: Span<Vec<PeriodicColumn>> = {
 PeriodicColumn: PeriodicColumn = {
     <l:@L> <name: Identifier> ":" <values: Vector<Num_u64>> "," <r:@R>
         => PeriodicColumn::new(span!(l, r), name, values),
+}
+
+
+// BUSES
+// ================================================================================================
+
+// Buses are not required, but if the section is specified at least one Bus declaration is required.
+Buses: Span<Vec<Bus>> = {
+    <l:@L> "buses" "{" <bus:Bus+> "}" <r:@R>
+        => Span::new(span!(l, r), bus)
+}
+
+Bus: Bus = {
+    <l:@L> <bus_type: BusType> <name: Identifier> "," <r:@R>
+        => Bus::new(span!(l, r), name, bus_type),
+}
+
+BusType: BusType = {
+    "multiset" => BusType::Multiset,
+    "logup" => BusType::Logup,
 }
 
 // RANDOM VALUES
@@ -340,6 +361,7 @@ ConstraintStatements: Vec<Statement> = {
 ConstraintStatement: Vec<Statement> = {
     "enf" "match" "{" <MatchArm+> "}" ";" => <>,
     "enf" <ConstraintExpr> ";" => vec![<>],
+    <BusConstraintExpr> ";" => vec![<>],
 }
 
 ReturnStatement: Expr = {
@@ -405,14 +427,59 @@ ConstraintExpr: Statement = {
     }
 }
 
+// 1. `p.insert(a, b) when s`
+// 2. `q.insert(a, b) with m`
+BusConstraintExpr: Statement = {
+    <l:@L> <expr: ScalarBusConstraintExpr> <selector: WithSelector> <r:@R> => {
+        let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, Some(selector)))
+    },
+    <l:@L> <expr: ScalarBusConstraintExpr> <multiplicity: WithMultiplicity> <r:@R> => {
+        let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, Some(multiplicity)))
+    }
+}
+
+// 1. `p.first = null`
+// 2. `q.first = ???` To define
+BoundaryBusConstraintExpr: Statement = {
+    <l:@L> <expr: ScalarBusConstraintExpr> <r:@R> => {
+        let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, None))
+    }
+}
+
 ScalarConstraintExpr: ScalarExpr = {
     FunctionCall,
     <l:@L> <lhs: ScalarExpr> "=" <rhs: ScalarExpr> <r:@R>
         => ScalarExpr::Binary(BinaryExpr::new(span!(l, r), BinaryOp::Eq, lhs, rhs)),
 }
 
+ScalarBusConstraintExpr: ScalarExpr = {
+    <l:@L> <bus: Identifier> "." <bus_operator: BusOperator> "(" <args: Comma<Expr>> ")" <r:@R> => {
+        ScalarExpr::BusOperation(BusOperation::new(span!(l, r), bus, bus_operator, args))
+    }
+}
+
+BusOperator: BusOperator = {
+    "insert" => BusOperator::Insert,
+    "remove" => BusOperator::Remove
+}
+
 WithSelector: ScalarExpr = {
     "when" <ScalarExpr>,
+}
+WithMultiplicity: ScalarExpr = {
+    "with" <ScalarExpr>,
 }
 
 Expr: Expr = {
@@ -450,6 +517,7 @@ ScalarExprBase: ScalarExpr = {
     #[precedence(level="0")]
     SymbolAccess,
     <Int> => ScalarExpr::Const(<>),
+    <l:@L> "null" <r:@R> => ScalarExpr::Null(Span::new(span!(l, r), ())),
     "(" <ScalarExpr> ")",
 
     #[precedence(level="1")]
@@ -646,6 +714,12 @@ extern {
         "public_inputs" => Token::PublicInputs,
         "periodic_columns" => Token::PeriodicColumns,
         "random_values" => Token::RandomValues,
+        "buses" => Token::Buses,
+        "multiset" => Token::Multiset,
+        "logup" => Token::Logup,
+        "null" => Token::Null,
+        "insert" => Token::Insert,
+        "remove" => Token::Remove,
         "boundary_constraints" => Token::BoundaryConstraints,
         "first" => Token::First,
         "last" => Token::Last,
@@ -657,6 +731,7 @@ extern {
         "match" => Token::Match,
         "case" => Token::Case,
         "when" => Token::When,
+        "with" => Token::With,
         "felt" => Token::Felt,
         "'" => Token::Quote,
         "=" => Token::Equal,

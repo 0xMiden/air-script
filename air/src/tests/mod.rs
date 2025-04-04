@@ -1,5 +1,6 @@
 mod access;
 mod boundary_constraints;
+mod buses;
 mod constant;
 mod evaluators;
 mod integrity_constraints;
@@ -99,6 +100,7 @@ impl Compiler {
                             .chain(mir::passes::AstToMir::new(&self.diagnostics))
                             .chain(mir::passes::Inlining::new(&self.diagnostics))
                             .chain(mir::passes::Unrolling::new(&self.diagnostics))
+                            .chain(mir::passes::BusOpExpand::new(&self.diagnostics))
                             .chain(crate::passes::MirToAir::new(&self.diagnostics));
                     pipeline.run(ast)
                 }),

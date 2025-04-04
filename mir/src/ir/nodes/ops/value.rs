@@ -1,7 +1,7 @@
 use air_parser::ast::{self, Identifier, QualifiedIdentifier, TraceColumnIndex, TraceSegmentId};
 use miden_diagnostics::{SourceSpan, Spanned};
 
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner};
+use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner, Singleton};
 
 /// A MIR operation to represent a known value, [Value]
 /// Wraps a [SpannedMirValue] to represent a known value in the [MIR]
@@ -11,7 +11,7 @@ pub struct Value {
     pub parents: Vec<BackLink<Owner>>,
     #[span]
     pub value: SpannedMirValue,
-    pub _node: Option<Link<Node>>,
+    pub _node: Singleton<Node>,
 }
 
 impl Value {
@@ -21,6 +21,18 @@ impl Value {
             ..Default::default()
         })
         .into()
+    }
+}
+
+impl From<i64> for Value {
+    fn from(value: i64) -> Self {
+        Self {
+            value: SpannedMirValue {
+                value: MirValue::Constant(ConstantValue::Felt(value as u64)),
+                span: Default::default(),
+            },
+            ..Default::default()
+        }
     }
 }
 
@@ -59,6 +71,30 @@ pub enum MirValue {
     TraceAccessBinding(TraceAccessBinding),
     /// A binding to a range of random values
     RandomValueBinding(RandomValueBinding),
+    /// A binding to a [Bus].
+    BusAccess(BusAccess),
+    Null,
+}
+
+/// [BusAccess] is like [SymbolAccess], but is used to describe an access to a specific bus.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BusAccess {
+    /// The trace segment being accessed
+    pub bus: Link<Bus>,
+    /// The offset from the current row.
+    ///
+    /// Defaults to 0, which indicates no offset/the current row.
+    ///
+    /// For example, if accessing a trace column with `a'`, where `a` is bound to a single column,
+    /// the row offset would be `1`, as the `'` modifier indicates the "next" row.
+    pub row_offset: usize,
+}
+
+impl BusAccess {
+    /// Creates a new [BusAccess].
+    pub const fn new(bus: Link<Bus>, row_offset: usize) -> Self {
+        Self { bus, row_offset }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

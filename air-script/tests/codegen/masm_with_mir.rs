@@ -65,6 +65,26 @@ fn bitwise() {
 }
 
 #[test]
+fn buses_simple() {
+    let generated_masm = Test::new("tests/buses/buses_simple.air".to_string())
+        .transpile(Target::Masm, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_simple.masm"];
+    expected.assert_eq(&generated_masm);
+}
+
+#[test]
+fn buses_complex() {
+    let generated_masm = Test::new("tests/buses/buses_complex.air".to_string())
+        .transpile(Target::Masm, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_complex.masm"];
+    expected.assert_eq(&generated_masm);
+}
+
+#[test]
 fn constants() {
     let generated_masm = Test::new("tests/constants/constants.air".to_string())
         .transpile(Target::Masm, Pipeline::WithMIR)

@@ -25,6 +25,20 @@ fn binary() {
 }
 
 #[test]
+fn buses_simple() {
+    Test::new("tests/buses/buses_simple.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithoutMIR)
+        .expect_err("Buses should not be supported in the WithoutMIR pipeline");
+}
+
+#[test]
+fn buses_complex() {
+    Test::new("tests/buses/buses_complex.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithoutMIR)
+        .expect_err("Buses should not be supported in the WithoutMIR pipeline");
+}
+
+#[test]
 fn periodic_columns() {
     let generated_air = Test::new("tests/periodic_columns/periodic_columns.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithoutMIR)

@@ -1,4 +1,4 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent};
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use air_parser::ast::AccessType;
 use miden_diagnostics::{SourceSpan, Spanned};
 use std::hash::Hash;
@@ -7,31 +7,17 @@ use std::hash::Hash;
 /// - access_type: AccessType, which describes for example how to access a given index for a Vector (e.g. `v[0]`)
 /// - offset: usize, which describes the row offset for a trace column access (e.g. `a'`)
 ///
-#[derive(Hash, Clone, PartialEq, Eq, Debug, Builder, Spanned)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug, Builder, Spanned, Default)]
 #[enum_wrapper(Op)]
 pub struct Accessor {
     pub parents: Vec<BackLink<Owner>>,
     pub indexable: Link<Op>,
     pub access_type: AccessType,
     pub offset: usize,
-    pub _node: Option<Link<Node>>,
-    pub _owner: Option<Link<Owner>>,
+    pub _node: Singleton<Node>,
+    pub _owner: Singleton<Owner>,
     #[span]
-    span: SourceSpan,
-}
-
-impl Default for Accessor {
-    fn default() -> Self {
-        Self {
-            parents: Vec::default(),
-            indexable: Link::default(),
-            access_type: AccessType::Default,
-            offset: 0,
-            _node: None,
-            _owner: None,
-            span: SourceSpan::default(),
-        }
-    }
+    pub span: SourceSpan,
 }
 
 impl Accessor {

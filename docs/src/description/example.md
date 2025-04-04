@@ -19,6 +19,10 @@ periodic_columns {
     k0: [1, 1, 1, 1, 1, 1, 1, 0],
 }
 
+buses {
+    logup: q,
+}
+
 boundary_constraints {
     # define boundary constraints against the main trace at the first row of the trace.
     enf a.first = stack_inputs[0];
@@ -32,6 +36,9 @@ boundary_constraints {
 
     # set the first row of the auxiliary column p to 1
     enf p.first = 1;
+
+    # set the bus q to be initially empty
+    enf q.first = null;
 }
 
 integrity_constraints {
@@ -49,5 +56,8 @@ integrity_constraints {
 
     # the auxiliary column contains the product of values of c offset by a random value.
     enf p' = p * (c + $rand[0]);
+
+    # insert p to the q bus when s = 1
+    q.insert(p) when s;
 }
 ```
