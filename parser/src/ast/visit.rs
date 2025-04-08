@@ -431,9 +431,6 @@ where
     for input in module.public_inputs.values_mut() {
         visitor.visit_mut_public_input(input)?;
     }
-    if let Some(rv) = module.random_values.as_mut() {
-        visitor.visit_mut_random_values(rv)?;
-    }
     for segment in module.trace_columns.iter_mut() {
         visitor.visit_mut_trace_segment(segment)?;
     }

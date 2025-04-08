@@ -68,7 +68,6 @@ pub struct SemanticAnalysis<'a> {
     referenced: HashMap<QualifiedIdentifier, DependencyType>,
     current_module: Option<ModuleId>,
     constraint_mode: ConstraintMode,
-    saw_random_values: bool,
     has_undefined_variables: bool,
     has_type_errors: bool,
     in_constraint_comprehension: bool,
@@ -94,7 +93,6 @@ impl<'a> SemanticAnalysis<'a> {
             referenced: Default::default(),
             current_module: None,
             constraint_mode: ConstraintMode::None,
-            saw_random_values: false,
             has_undefined_variables: false,
             has_type_errors: false,
             in_constraint_comprehension: false,
@@ -433,7 +431,6 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
     ) -> ControlFlow<SemanticAnalysisError> {
         // Only allow boundary constraints in this context
         self.constraint_mode = ConstraintMode::Boundary;
-        self.saw_random_values = false;
         // Save the current bindings set, as we're entering a new lexical scope
         self.locals.enter();
         // Visit all of the statements, check variable usage, and track referenced imports
@@ -442,7 +439,6 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
         self.locals.exit();
         // Disallow any constraints
         self.constraint_mode = ConstraintMode::None;
-        self.saw_random_values = false;
 
         ControlFlow::Continue(())
     }
@@ -1344,7 +1340,7 @@ impl SemanticAnalysis<'_> {
                         self.visit_mut_symbol_access(&mut access.column)?;
 
                         // Ensure the referenced symbol was a trace column, and that it produces a scalar value, or a bus
-                        let (found, segment) =
+                        let (found, _segment) =
                             match self.resolvable_binding_type(&access.column.name) {
                                 Ok(ty) => match ty.item.access(access.column.access_type.clone()) {
                                     Ok(BindingType::TraceColumn(tb))
@@ -1468,16 +1464,6 @@ impl SemanticAnalysis<'_> {
                                     }
                                 }
                             }
-                        }
-
-                        // If we observed a random value and this constraint is
-                        // against the main trace segment, raise a validation error
-                        if segment == 0 && self.saw_random_values {
-                            self.has_type_errors = true;
-                            self.invalid_constraint(expr.lhs.span(), "this constrains a column in the main trace segment")
-                                .with_secondary_label(expr.rhs.span(), "but this expression references random values")
-                                .with_note("Constraints involving random values are only valid with auxiliary trace segments")
-                                .emit();
                         }
 
                         ControlFlow::Continue(())
