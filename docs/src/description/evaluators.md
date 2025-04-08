@@ -13,7 +13,7 @@ Evaluator name must:
 - Start with a letter.
 - Be unique among the evaluators declared in and imported by a module.
 
-Evaluator parameters define an evaluator's view into the execution trace. Specifically, they define the set of columns in the main and the auxiliary trace segments the evaluator can access. For example, the evaluator declared above can access 3 columns of the main trace segment (which can be referenced as `a`, `b`, and `c`).
+Evaluator parameters define an evaluator's view into the execution trace. Specifically, they define the set of columns in the main trace segment the evaluator can access. For example, the evaluator declared above can access 3 columns of the main trace segment (which can be referenced as `a`, `b`, and `c`).
 
 An evaluator body must contain at least one integrity constraint. For example:
 ```

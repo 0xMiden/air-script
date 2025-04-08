@@ -16,7 +16,7 @@ In the above example, `FOO` is a constant of type scalar with value `123`, BAR i
 
 ## Execution trace (`trace_columns`)
 
-A `trace_columns` section contains declarations for `main` trace columns or `aux` (auxiliary) trace columns.
+A `trace_columns` section contains declarations for `main` trace columns.
 
 The `main` declarations define the shape of the main execution trace and define identifiers which can be used to refer to each of the columns or a group of columns in that trace. The columns can also be referred using the built-in variable `$main` and the index of the column in the trace.
 

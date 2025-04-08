@@ -29,11 +29,11 @@ let mir = pipeline.run(ast)
 Although generation of an `AirIR` uses a symbol table while processing the source AST, the internal representation only consists of the following:
 
 - **Name** of the AIR definition represented by the `AirIR`.
-- **Segment Widths**, represented by a vector that contains the width of each trace segment (currently `main` and `auxiliary`).
+- **Segment Widths**, represented by a vector that contains the width of each trace segment (currently only `main`).
 - **Constants**, represented by a vector that maps an identifier to a constant value.
 - **Public inputs**, represented by a vector that maps an identifier to a size for each public input that was declared. (Currently, public inputs can only be declared as fixed-size arrays.)
 - **Periodic columns**, represented by an ordered vector that contains each periodic column's repeating pattern (as a vector).
 - **Constraints**, represented by the combination of:
   - a directed acyclic graph (DAG) without duplicate nodes.
-  - a vector of `ConstraintRoot` for each trace segment (e.g. main or auxiliary), where `ConstraintRoot` contains the node index in the graph where each of the constraint starts and the constraint domain which specifies the row(s) accessed by each of the constraints.
+  - a vector of `ConstraintRoot` for each trace segment (e.g. main), where `ConstraintRoot` contains the node index in the graph where each of the constraint starts and the constraint domain which specifies the row(s) accessed by each of the constraints.
   - contains both boundary and integrity constraints.

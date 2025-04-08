@@ -82,11 +82,7 @@ pub struct Program {
     /// NOTE: Public inputs are only visible in the root module, so we do
     /// not use [QualifiedIdentifier] as a key into this collection.
     pub public_inputs: BTreeMap<Identifier, PublicInput>,
-    /// The set of trace columns defined in the root module
-    ///
-    /// NOTE: It is guaranteed that at least a `main` trace column set
-    /// will be present here. If `random_values` has a value, then it is
-    /// further guaranteed that an `aux` trace column set will be present.
+    /// The set of trace columns of the main trace defined in the root module
     pub trace_columns: Vec<TraceSegment>,
     /// The boundary_constraints block defined in the root module
     ///

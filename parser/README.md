@@ -27,9 +27,9 @@ The `SourceSection` types are:
 
 - `AirDef`, which holds the name of the AIR.
 - `Constant`, which holds a named constant to be used to write constraints.
-- `Trace`, which contains the parsed trace column information for the main and auxiliary execution traces. Each column or group of columns is represented by its identifier and can be accessed in constraints using this identifier. These columns can also be accessed using the built-in variables `$main[idx]` and `$aux[idx]`, where `idx` is the index of the column in the trace.
+- `Buses`, which holds the name and type (`multiset` or `logup`) of buses used in the program.
+- `Trace`, which contains the parsed trace column information for the main execution trace. Each column or group of columns is represented by its identifier and can be accessed in constraints using this identifier. These columns can also be accessed using the built-in variables `$main[idx]`, where `idx` is the index of the column in the trace.
 - `PublicInputs`, which is a vector of all of the public inputs defined in the module. Each public input is represented by its identifier and a fixed size.
 - `PeriodicColumns`, which is a vector of all of the periodic columns defined in the module. Each periodic column is represented by its identifier and a vector containing the pattern of its repeated (periodic) values.
-- `RandomValues`, which is a vector of all of the random values provided by the verifier. Each random value or group of random values is represented by its identifier and can be accessed in constraints using this identifier. These random values can also be accessed using `$rand[idx]`, where `rand` is the name of the random values array and `idx` is the index of the random value in that array.
 - `BoundaryConstraints`, which contains a vector of `BoundaryStmt` statements, each of which can be either a boundary constraint or an intermediate variable. Each boundary constraint is represented as an expression tree. Variables can be scalars, vectors or matrices containing expression trees.
 - `IntegrityConstraints`, which contains a vector of `IntegrityStmt` statements, each of which can be either an integrity constraint or an intermediate variable. Each integrity constraint is represented as an expression tree. Variables can be scalars, vectors or matrices containing expression trees.

@@ -94,11 +94,10 @@ Here is an example of usage of the Next Row operator within an integrity constra
 
 ```
 trace_columns {
-  main: [a],
-  aux: [p],
+  main: [a, b],
 }
 
 integrity_constraints {
-  enf p' = p * a;
+  enf b' = b * a;
 }
 ```

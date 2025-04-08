@@ -19,9 +19,9 @@ AirScript includes the following features:
   - `logup`: more complex LogUp based bus.
 (e.g. `multiset p,`, or `logup q,`)
 
-- **Boundary Constraints**: Users can enforce boundary constraints on main and auxiliary trace columns using public inputs, random values, constants and variables.
+- **Boundary Constraints**: Users can enforce boundary constraints on main trace columns using public inputs, constants and variables, and on buses using `null`.
 
-- **Integrity Constraints**: Users can enforce integrity constraints on main and auxiliary trace columns using trace columns, periodic columns, random values, constants and variables.
+- **Integrity Constraints**: Users can enforce integrity constraints on main trace columns and buses using trace columns, periodic columns, constants and variables.
 
 - **Constants**: Users can declare module level constants. Constants can be scalars, vectors or matrices.
   (e.g. `const A = 123;`, `const B = [1, 2, 3];`, `const C = [[1, 2, 3], [4, 5, 6]];`)

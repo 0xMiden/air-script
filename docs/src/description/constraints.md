@@ -2,7 +2,7 @@
 
 ## Boundary constraints (`boundary_constraints`)
 
-The `boundary_constraints` section consists of expressions describing the expected value of columns in the main or auxiliary traces at the specified boundary. Column boundaries can be selected using boundary accessors. Valid boundary accessors are `.first`, which selects the first cell of the column to which it is applied, and `.last`, which selects the last cell of the column column to which it is applied.
+The `boundary_constraints` section consists of expressions describing the expected value of columns in the main trace at the specified boundary. Column boundaries can be selected using boundary accessors. Valid boundary accessors are `.first`, which selects the first cell of the column to which it is applied, and `.last`, which selects the last cell of the column column to which it is applied.
 
 **Boundary constraints are required.** The `boundary_constraints` section must be defined and contain at least one boundary constraint.
 
@@ -133,7 +133,7 @@ Integrity constraints have access to values in the "current" row of the trace to
 
 ### Simple example of integrity constraints
 
-The following is a simple example of a valid `integrity_constraints` source section using values from the current and next rows of the main and auxiliary traces:
+The following is a simple example of a valid `integrity_constraints` source section using values from the current and next rows of the main trace:
 
 ```
 def IntegrityConstraintsExample
@@ -220,7 +220,7 @@ boundary_constraints {
 }
 
 integrity_constraints {
-    # this is an auxiliary constraint that uses intermediate variables.
+    # this is a main constraint that uses intermediate variables.
     let x = a + 2
     let y = b + 5
     enf b' = k * x * y

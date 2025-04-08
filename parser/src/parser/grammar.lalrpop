@@ -520,7 +520,7 @@ SymbolAccessBase: (Identifier, AccessType) = {
     <ident: Identifier> <idx: Index> =>  (ident, AccessType::Index(idx)),
     <ident: Identifier> <row: Index> <col: Index> => (ident, AccessType::Matrix(row, col)),
     // accessing an identifier used in a section declaration, like the full random values array or
-    // a named trace segment, e.g. $main, $aux, $rand
+    // a named trace segment, e.g. $main
     <ident: DeclIdentifier> => (ident, AccessType::Default),
     <ident: DeclIdentifier> <idx: Index> => (ident, AccessType::Index(idx))
 
