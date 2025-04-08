@@ -79,8 +79,7 @@ pub enum Token {
     /// Identifiers should start with alphabet followed by one or more alpha numeric characters
     /// or an underscore.
     Ident(Symbol),
-    /// A reference to an identifier used for a section declaration, such as the random values
-    /// array or a trace segment like "main" or "aux".
+    /// A reference to an identifier used for a section declaration, such as "main".
     DeclIdentRef(Symbol),
     /// A function identifier
     FunctionIdent(Symbol),
