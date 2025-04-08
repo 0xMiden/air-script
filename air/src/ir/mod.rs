@@ -5,7 +5,7 @@ mod operation;
 mod trace;
 mod value;
 
-pub use self::bus::Bus;
+pub use self::bus::{Bus, BusType};
 pub use self::constraints::{ConstraintDomain, ConstraintError, ConstraintRoot, Constraints};
 pub use self::degree::IntegrityConstraintDegree;
 pub use self::operation::Operation;
@@ -29,7 +29,7 @@ pub const CURRENT_ROW: usize = 0;
 /// The minimum cycle length of a periodic column
 pub const MIN_CYCLE_LENGTH: usize = 2;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use miden_diagnostics::{SourceSpan, Spanned};
 
@@ -62,6 +62,7 @@ pub struct Air {
     pub num_random_values: u16,
     /// The constraints enforced by this program, in their algebraic graph representation.
     pub constraints: Constraints,
+    pub buses: HashMap<Identifier, Bus>,
 }
 impl Default for Air {
     fn default() -> Self {
@@ -86,6 +87,7 @@ impl Air {
             public_inputs: Default::default(),
             num_random_values: 0,
             constraints: Default::default(),
+            buses: Default::default(),
         }
     }
 

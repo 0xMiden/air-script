@@ -163,7 +163,7 @@ fn buses_table_in_boundary_constraints() {
     }
 
     buses {
-        unit p,
+        multiset p,
     }
 
     boundary_constraints {

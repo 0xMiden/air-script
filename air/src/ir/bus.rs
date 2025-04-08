@@ -1,4 +1,5 @@
 use air_parser::ast;
+pub use air_parser::ast::BusType;
 
 use crate::NodeIndex;
 

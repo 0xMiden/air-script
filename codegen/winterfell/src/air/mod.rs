@@ -13,7 +13,7 @@ use boundary_constraints::{add_fn_get_assertions, add_fn_get_aux_assertions};
 mod transition_constraints;
 use transition_constraints::{add_fn_evaluate_aux_transition, add_fn_evaluate_transition};
 
-use air_ir::{Air, TraceSegmentId};
+use air_ir::{Air, BusType, Node, Operation, TraceSegmentId, Value};
 
 use super::{Impl, Scope};
 
@@ -69,6 +69,119 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
         .vis("pub")
         .ret("usize")
         .line("self.trace_length() - self.context().num_transition_exemptions()");
+    // add a method to get the variable length public inputs bus boundary constraints.
+    eprintln!("HERE");
+    println!("Buses: {:?}", ir.buses);
+    let (mut add_bus_multiset_boundary_varlen, mut add_bus_logup_boundary_varlen) = (false, false);
+    for bus in ir.buses.values() {
+        // Check which bus type is refering to variable length public inputs
+        let bus_constraints = [
+            ir.constraint_graph().node(&bus.first),
+            ir.constraint_graph().node(&bus.last),
+        ];
+        for fl in bus_constraints {
+            eprintln!("fl: {:?}", fl);
+            if let Operation::Value(Value::PublicInputBinding(bvb)) = fl.op() {
+                match bus.bus_type {
+                    BusType::Multiset => {
+                        add_bus_multiset_boundary_varlen = true;
+                    }
+                    BusType::Logup => {
+                        add_bus_logup_boundary_varlen = true;
+                    }
+                }
+            }
+        }
+    }
+    if add_bus_multiset_boundary_varlen {
+        impl_bus_multiset_boundary_varlen(base_impl);
+    }
+    if add_bus_logup_boundary_varlen {
+        impl_bus_logup_boundary_varlen(base_impl);
+    }
+}
+
+/// Build the Unit bus constraint based on the public input
+///
+/// p: the constraint to be built
+/// v: the public input
+/// r: the random elements
+/// n: the number of rows in v
+/// c: the number of columns in v
+/// p = prod(
+///     r[0] + sum(p[i][j] * r[j+1] for j in 0..c)
+///     for i in 0..n)
+/// when n = 3, c = 2, the constraint is
+/// p = ((r[0] + v[0][0] * r[1] + v[0][1] * r[2])
+///    * (r[0] + v[1][0] * r[1] + v[1][1] * r[2])
+///    * (r[0] + v[2][0] * r[1] + v[2][1] * r[2]))
+///
+/// denoting vi_j as v[i][j], and ri as r[i] for readability
+/// p = ((r0 + v0_0 * r1 + v0_1 * r2)
+///    * (r0 + v1_0 * r1 + v1_1 * r2)
+///    * (r0 + v2_0 * r1 + v2_1 * r2))
+fn impl_bus_multiset_boundary_varlen(base_impl: &mut Impl) {
+    base_impl
+        .new_fn("bus_multiset_boundary_varlen")
+        .generic("E: FieldElement<BaseField = Felt>")
+        .arg_ref_self()
+        .arg("aux_rand_elements", "&AuxTraceRandElements<E>")
+        .ret("E")
+        .vis("pub")
+        .line("let mut bus_p_last: E = E::ONE;")
+        .line("let rand = aux_rand_elements.get_segment_elements(0);")
+        .line("let public_inputs = self.inputs.as_slice();")
+        .line("for row in public_inputs.iter() {")
+        .line("    let mut p_last = rand[0];")
+        .line("    for (c, p_i) in row.iter().enumerate() {")
+        .line("        p_last += E::from(*p_i) * rand[c + 1];")
+        .line("    }")
+        .line("    bus_p_last *= p_last;")
+        .line("}")
+        .line("bus_p_last");
+}
+
+/// Build the Multiplicity bus constraint based on the public input
+/// q: the constraint to be built
+/// v: the public input
+/// r: the random elements
+/// n: the number of rows in v
+/// c: the number of columns in v
+/// q = sum(
+///     1 / (r[0] + sum(p[i][j] * r[j+1] for j in 0..c))
+///     for i in 0..n)
+/// when n = 3, c = 2, the constraint is
+/// q = (1 / (r[0] + v[0][0] * r[1] + v[0][1] * r[2])
+///    + 1 / (r[0] + v[1][0] * r[1] + v[1][1] * r[2])
+///    + 1 / (r[0] + v[2][0] * r[1] + v[2][1] * r[2]))
+///
+/// denoting vi_j as v[i][j], and ri as r[i] for readability
+/// q = (1 / (r0 + v0_0 * r1 + v0_1 * r2)
+///    + 1 / (r0 + v1_0 * r1 + v1_1 * r2)
+///    + 1 / (r0 + v2_0 * r1 + v2_1 * r2))
+///
+/// Because this operation is not part of the Air, and is repeated by the Verifier,
+/// we can divide in this scenario!
+fn impl_bus_logup_boundary_varlen(base_impl: &mut Impl) {
+    base_impl
+        .new_fn("bus_logup_boundary_varlen")
+        .generic("E: FieldElement<BaseField = Felt>")
+        .arg_ref_self()
+        .arg("aux_rand_elements", "&AuxTraceRandElements<E>")
+        .ret("E")
+        .vis("pub")
+        .line("let mut bus_q_last = E::ZERO;")
+        .line("let public_inputs = self.inputs.as_slice();")
+        .line("let rand = aux_rand_elements.get_segment_elements(0);")
+        .line("for row in public_inputs.iter() {")
+        .line("    let mut q_last = rand[0];")
+        .line("    for (c, p_i) in row.iter().enumerate() {")
+        .line("        let p_i = *p_i;")
+        .line("        q_last += E::from(p_i) * rand[c + 1];")
+        .line("    }")
+        .line("    bus_q_last += q_last.inv();")
+        .line("}")
+        .line("bus_q_last");
 }
 
 /// Updates the provided scope with the custom Air struct and an Air trait implementation based on

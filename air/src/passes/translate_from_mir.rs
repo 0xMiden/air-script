@@ -90,6 +90,7 @@ impl Pass for MirToAir<'_> {
         for bus in buses.values() {
             builder.build_bus(bus)?;
         }
+        air.buses = builder.buses;
 
         Ok(air)
     }
@@ -534,11 +535,8 @@ impl AirBuilder<'_> {
 
     fn build_bus(&mut self, mir_bus: &Link<mir::ir::Bus>) -> Result<(), CompileError> {
         let mir_bus = mir_bus.borrow();
-        eprintln!("bus: {:#?}", mir_bus);
         let first = self.insert_mir_operation(&mir_bus.get_first())?;
-        eprintln!("first: {:#?}", first);
         let last = self.insert_mir_operation(&mir_bus.get_last())?;
-        eprintln!("last: {:#?}", last);
         self.buses.insert(
             mir_bus.name.unwrap(),
             Bus::new(mir_bus.name, mir_bus.bus_type, first, last),

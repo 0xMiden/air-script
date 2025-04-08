@@ -1,4 +1,5 @@
 use core::fmt;
+use std::collections::HashMap;
 
 use crate::graph::{AlgebraicGraph, NodeIndex};
 
