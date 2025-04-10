@@ -35,6 +35,16 @@ fn buses_complex() {
 }
 
 #[test]
+fn buses_varlen_boundary() {
+    let generated_masm = Test::new("tests/buses/buses_varlen_boundary.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_varlen_boundary.rs"];
+    expected.assert_eq(&generated_masm);
+}
+
+#[test]
 fn periodic_columns() {
     let generated_air = Test::new("tests/periodic_columns/periodic_columns.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithMIR)
