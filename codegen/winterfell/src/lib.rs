@@ -15,7 +15,6 @@ impl air_ir::CodeGenerator for CodeGenerator {
     type Output = String;
 
     fn generate(&self, ir: &Air) -> anyhow::Result<Self::Output> {
-        eprintln!("Generating Winterfell Air code...");
         let mut scope = Scope::new();
 
         // add winterfell imports.

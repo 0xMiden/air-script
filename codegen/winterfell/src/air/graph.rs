@@ -1,6 +1,6 @@
 use air_ir::{
-    Air, Identifier, IntegrityConstraintDegree, NodeIndex, Operation, TraceAccess, TraceSegmentId,
-    Value,
+    Air, BusType, Identifier, IntegrityConstraintDegree, NodeIndex, Operation, TraceAccess,
+    TraceSegmentId, Value,
 };
 
 use super::ElemType;
@@ -103,11 +103,9 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             }
-            Value::PublicInputBinding(air_ir::BusVariableBoundary {
-                table_name,
-                bus_name,
-                num_cols,
-            }) => generate_bus_varlen_pubinput(*table_name, *bus_name, *num_cols),
+            Value::PublicInputBinding(air_ir::BusVariableBoundary { bus_name, .. }) => {
+                call_bus_boundary_varlen_pubinput(ir, *bus_name)
+            }
             Value::RandomValue(idx) => {
                 format!("aux_rand_elements.get_segment_elements(0)[{idx}]")
             }
@@ -154,19 +152,10 @@ fn binary_op_to_string(
     }
 }
 
-fn generate_bus_varlen_pubinput(
-    table_name: Identifier,
-    bus_name: Identifier,
-    num_cols: usize,
-) -> String {
-    eprintln!("TODO: generate_bus_varlen_pubinput");
-    eprintln!("name: {:?}", table_name);
-    eprintln!("bus_name: {:?}", bus_name);
-    eprintln!("num_cols: {:?}", num_cols);
-    let expr = "".to_string();
-    format!(
-        "/*BUSVARLENPUBINPUT: {} {} {}*/",
-        table_name, bus_name, num_cols
-    )
-    //todo!()
+fn call_bus_boundary_varlen_pubinput(ir: &Air, bus_name: Identifier) -> String {
+    let bus = ir.buses.get(&bus_name).expect("bus not found");
+    match bus.bus_type {
+        BusType::Multiset => "self.bus_multiset_boundary_varlen(aux_rand_elements)".to_string(),
+        BusType::Logup => "self.bus_logup_boundary_varlen(aux_rand_elements)".to_string(),
+    }
 }

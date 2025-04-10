@@ -13,7 +13,7 @@ use boundary_constraints::{add_fn_get_assertions, add_fn_get_aux_assertions};
 mod transition_constraints;
 use transition_constraints::{add_fn_evaluate_aux_transition, add_fn_evaluate_transition};
 
-use air_ir::{Air, BusType, Node, Operation, TraceSegmentId, Value};
+use air_ir::{Air, BusType, Operation, TraceSegmentId, Value};
 
 use super::{Impl, Scope};
 
@@ -70,8 +70,6 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
         .ret("usize")
         .line("self.trace_length() - self.context().num_transition_exemptions()");
     // add a method to get the variable length public inputs bus boundary constraints.
-    eprintln!("HERE");
-    println!("Buses: {:?}", ir.buses);
     let (mut add_bus_multiset_boundary_varlen, mut add_bus_logup_boundary_varlen) = (false, false);
     for bus in ir.buses.values() {
         // Check which bus type is refering to variable length public inputs
@@ -80,8 +78,7 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
             ir.constraint_graph().node(&bus.last),
         ];
         for fl in bus_constraints {
-            eprintln!("fl: {:?}", fl);
-            if let Operation::Value(Value::PublicInputBinding(bvb)) = fl.op() {
+            if let Operation::Value(Value::PublicInputBinding(_)) = fl.op() {
                 match bus.bus_type {
                     BusType::Multiset => {
                         add_bus_multiset_boundary_varlen = true;
