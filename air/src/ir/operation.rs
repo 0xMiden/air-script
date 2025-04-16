@@ -4,7 +4,7 @@ use super::*;
 
 /// [Operation] defines the various node types represented
 /// in the [AlgebraicGraph].
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
 pub enum Operation {
     /// Evaluates to a [Value]
     ///

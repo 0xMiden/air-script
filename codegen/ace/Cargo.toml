@@ -1,0 +1,23 @@
+[package]
+name = "air-codegen-ace"
+version = "0.4.0"
+description = "Code generator from AirScript to the ACE chiplet of Miden's recursive verifier."
+authors = ["miden contributors"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/0xPolygonMiden/air-script"
+categories = ["compilers", "cryptography"]
+keywords = ["air", "stark", "winterfell", "zero-knowledge", "zkp"]
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+air-ir = { package = "air-ir", path = "../../air", version = "0.4" }
+anyhow = "1.0"
+miden-core = { package = "miden-core", version = "0.6", default-features = false }
+winter-math = { package = "winter-math", version = "0.6", default-features = false }
+
+[dev-dependencies]
+air-parser = { path = "../../parser" }
+air-pass = { path = "../../pass" }
+miden-diagnostics = "0.1"
