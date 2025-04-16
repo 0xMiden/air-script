@@ -684,7 +684,6 @@ mod list_comprehension;
 mod modules;
 mod periodic_columns;
 mod pub_inputs;
-mod random_values;
 mod sections;
 mod selectors;
 mod trace_columns;

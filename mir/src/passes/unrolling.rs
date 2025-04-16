@@ -202,18 +202,6 @@ impl UnrollingFirstPass<'_> {
                         updated_value = Some(Vector::create(vec, value_ref.span()));
                     }
                 }
-                MirValue::RandomValueBinding(random_value_binding) => {
-                    let mut vec = vec![];
-                    for index in 0..random_value_binding.size {
-                        let val = Value::create(SpannedMirValue {
-                            span: value_ref.value.span,
-                            value: MirValue::RandomValue(random_value_binding.offset + index),
-                        });
-                        vec.push(val);
-                    }
-
-                    updated_value = Some(Vector::create(vec, value_ref.span()));
-                }
                 MirValue::BusAccess(_) => {}
                 MirValue::Null => {}
             }

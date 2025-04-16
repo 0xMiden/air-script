@@ -40,9 +40,9 @@ integrity_constraints {
 }
 ```
 
-### Public inputs and random values
+### Public inputs
 
-Boundary constraints can access public input values and random values provided by the verifier in their value expressions.
+Boundary constraints can access public input values provided by the verifier in their value expressions.
 
 To use public inputs, the public input must be declared in the `public_inputs` source section. They can be accessed using array indexing syntax, as described by the [accessor syntax rules](./syntax.md#section-specific-accessors).
 

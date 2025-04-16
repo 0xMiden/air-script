@@ -1,6 +1,4 @@
-use crate::ast::{
-    AccessType, BusType, FunctionType, InvalidAccessError, RandBinding, TraceBinding, Type,
-};
+use crate::ast::{AccessType, BusType, FunctionType, InvalidAccessError, TraceBinding, Type};
 use std::fmt;
 
 /// This type provides type and contextual information about a binding,
@@ -29,8 +27,6 @@ pub enum BindingType {
     TraceColumn(TraceBinding),
     /// A potentially non-contiguous set of trace columns
     Vector(Vec<BindingType>),
-    /// A direct reference to a random value binding
-    RandomValue(RandBinding),
     /// A direct reference to a public input
     PublicInput(Type),
     /// A direct reference to a periodic column
@@ -42,7 +38,6 @@ impl BindingType {
         match self {
             Self::TraceColumn(tb) | Self::TraceParam(tb) => Some(tb.ty()),
             Self::Vector(elems) => Some(Type::Vector(elems.len())),
-            Self::RandomValue(rb) => Some(rb.ty()),
             Self::Alias(aliased) => aliased.ty(),
             Self::Local(ty) | Self::Constant(ty) | Self::PublicInput(ty) => Some(*ty),
             Self::PeriodicColumn(_) => Some(Type::Felt),
@@ -214,9 +209,6 @@ impl BindingType {
                 }
                 AccessType::Matrix(row, col) => elems[row].access(AccessType::Index(col)),
             },
-            Self::RandomValue(tb) => tb
-                .access(access_type)
-                .map(|tb| Self::Alias(Box::new(Self::RandomValue(tb)))),
             Self::PublicInput(ty) => ty.access(access_type).map(Self::PublicInput),
             Self::PeriodicColumn(period) => match access_type {
                 AccessType::Default => Ok(Self::PeriodicColumn(*period)),
@@ -236,7 +228,6 @@ impl fmt::Display for BindingType {
             Self::Vector(_) => f.write_str("vector"),
             Self::Function(_) => f.write_str("function"),
             Self::TraceColumn(_) | Self::TraceParam(_) => f.write_str("trace column(s)"),
-            Self::RandomValue(_) => f.write_str("random value(s)"),
             Self::PublicInput(_) => f.write_str("public input(s)"),
             Self::PeriodicColumn(_) => f.write_str("periodic column(s)"),
             Self::Bus(_) => f.write_str("bus"),

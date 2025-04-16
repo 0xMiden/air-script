@@ -686,7 +686,7 @@ impl<'a> MirBuilder<'a> {
                     Err(CompileError::Failed)
                 }
             }
-            // This must be one of public inputs, random values, or trace columns
+            // This must be one of public inputs or trace columns
             ast::ResolvableIdentifier::Global(ident) | ast::ResolvableIdentifier::Local(ident) => {
                 self.translate_symbol_access_global_or_local(&ident, access)
             }

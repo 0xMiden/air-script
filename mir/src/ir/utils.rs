@@ -255,7 +255,6 @@ impl Visitor for StripSpansVisitor {
             }*/
             MirValue::RandomValue(_) => {}
             MirValue::TraceAccessBinding(_) => {}
-            MirValue::RandomValueBinding(_) => {}
             MirValue::BusAccess(_) => {}
             MirValue::Null => {}
         }

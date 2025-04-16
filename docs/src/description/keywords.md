@@ -30,5 +30,4 @@ AirScript defines the following keywords:
   - [bus integrity constraints](./buses.md#bus-integrity-constraints).
   - [conditional constraints and conditional evaluators](./convenience.md#when-keyword).
 - `with`: used to specify multiplicity in a [LogUp bus operations](./buses.md#bus-integrity-constraints), . _It may only be used when defining integrity constraints._
-- `$<identifier>`: used to access random values provided by the verifier.
 - `$main`: used to access columns in the main execution trace by index.

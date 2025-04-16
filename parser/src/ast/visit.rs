@@ -134,12 +134,6 @@ pub trait VisitMut<T> {
     fn visit_mut_public_input(&mut self, expr: &mut ast::PublicInput) -> ControlFlow<T> {
         visit_mut_public_input(self, expr)
     }
-    fn visit_mut_random_values(&mut self, expr: &mut ast::RandomValues) -> ControlFlow<T> {
-        visit_mut_random_values(self, expr)
-    }
-    fn visit_mut_random_binding(&mut self, expr: &mut ast::RandBinding) -> ControlFlow<T> {
-        visit_mut_random_binding(self, expr)
-    }
     fn visit_mut_trace_segment(&mut self, expr: &mut ast::TraceSegment) -> ControlFlow<T> {
         visit_mut_trace_segment(self, expr)
     }
@@ -285,12 +279,6 @@ where
     }
     fn visit_mut_public_input(&mut self, expr: &mut ast::PublicInput) -> ControlFlow<T> {
         (**self).visit_mut_public_input(expr)
-    }
-    fn visit_mut_random_values(&mut self, expr: &mut ast::RandomValues) -> ControlFlow<T> {
-        (**self).visit_mut_random_values(expr)
-    }
-    fn visit_mut_random_binding(&mut self, expr: &mut ast::RandBinding) -> ControlFlow<T> {
-        (**self).visit_mut_random_binding(expr)
     }
     fn visit_mut_trace_segment(&mut self, expr: &mut ast::TraceSegment) -> ControlFlow<T> {
         (**self).visit_mut_trace_segment(expr)
@@ -557,29 +545,6 @@ where
 }
 
 pub fn visit_mut_public_input<V, T>(visitor: &mut V, expr: &mut ast::PublicInput) -> ControlFlow<T>
-where
-    V: ?Sized + VisitMut<T>,
-{
-    visitor.visit_mut_identifier(&mut expr.name)
-}
-
-pub fn visit_mut_random_values<V, T>(
-    visitor: &mut V,
-    expr: &mut ast::RandomValues,
-) -> ControlFlow<T>
-where
-    V: ?Sized + VisitMut<T>,
-{
-    for binding in expr.bindings.iter_mut() {
-        visitor.visit_mut_random_binding(binding)?;
-    }
-    ControlFlow::Continue(())
-}
-
-pub fn visit_mut_random_binding<V, T>(
-    visitor: &mut V,
-    expr: &mut ast::RandBinding,
-) -> ControlFlow<T>
 where
     V: ?Sized + VisitMut<T>,
 {

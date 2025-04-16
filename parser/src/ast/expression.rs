@@ -189,7 +189,7 @@ impl fmt::Display for QualifiedIdentifier {
 pub enum ResolvableIdentifier {
     /// This identifier is resolved to a local binding (i.e. function parameter or let-bound var)
     Local(#[span] Identifier),
-    /// This identifier is resolved to a global binding (e.g. random values)
+    /// This identifier is resolved to a global binding
     Global(#[span] Identifier),
     /// This identifier is resolved to a non-local item (i.e. module-level declaration or imported item)
     Resolved(#[span] QualifiedIdentifier),
@@ -895,7 +895,7 @@ pub enum InvalidAccessError {
 
 /// [SymbolAccess] represents access to a named item in the source code; one of the following:
 ///
-/// * A global name associated with trace columns, public inputs, or random values
+/// * A global name associated with trace columns or public inputs
 /// * A named constant
 /// * A module-local name associated with periodic columns
 /// * A evaluator/function parameter

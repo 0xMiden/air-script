@@ -197,7 +197,7 @@ EvaluatorBindings: Vec<TraceSegment> = {
 
         for (segment, (span, bindings)) in trace.into_iter().enumerate() {
             // We generate a name for these segments to distinguish them from direct references
-            // to the actual main/aux columns. This is useful during the inlining phase
+            // to the actual main columns. This is useful during the inlining phase
             let segment_name = Identifier::new(span, Symbol::intern(format!("%{}", *next_var)));
             *next_var += 1;
             segments.push(TraceSegment::new(span, segment, segment_name, bindings));
@@ -519,8 +519,7 @@ SymbolAccessBase: (Identifier, AccessType) = {
     <ident: Identifier> "[" <range: Range> "]" => (ident, AccessType::Slice(range)),
     <ident: Identifier> <idx: Index> =>  (ident, AccessType::Index(idx)),
     <ident: Identifier> <row: Index> <col: Index> => (ident, AccessType::Matrix(row, col)),
-    // accessing an identifier used in a section declaration, like the full random values array or
-    // a named trace segment, e.g. $main
+    // accessing an identifier used in a section declaration, like a named trace segment, e.g. $main
     <ident: DeclIdentifier> => (ident, AccessType::Default),
     <ident: DeclIdentifier> <idx: Index> => (ident, AccessType::Index(idx))
 

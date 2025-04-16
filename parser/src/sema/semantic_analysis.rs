@@ -1001,9 +1001,6 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
                                 namespaced_id,
                             ));
                         }
-                        // Locals never hold these binding types, which represent global declarations,
-                        // they use Alias instead
-                        BindingType::RandomValue(_) => unreachable!(),
                     }
                     return ControlFlow::Continue(());
                 }

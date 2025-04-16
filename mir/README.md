@@ -8,7 +8,7 @@ The purpose of the `MIR` is to provide a representation of an AirScript program 
 
 Generate an `MIR` from an AirScript AST (the output of the AirScript parser) using the `new` method. The `new` method will return a new `MIR` or an `Error` of type `SemanticError` if it encounters any errors while processing the AST.
 
-The `new` method will first iterate through the source sections that contain declarations to build a symbol table with constants, trace columns, public inputs, periodic columns and random values. It will return a `SemanticError` if it encounters a duplicate, incorrect, or missing declaration. Once the symbol table is built, the constraints and intermediate variables in the `boundary_constraints` and `integrity_constraints` sections of the AST are processed. Finally, `new` returns a Result containing the `AirIR` or a `SemanticError`.
+The `new` method will first iterate through the source sections that contain declarations to build a symbol table with constants, trace columns, public inputs and periodic columns. It will return a `SemanticError` if it encounters a duplicate, incorrect, or missing declaration. Once the symbol table is built, the constraints and intermediate variables in the `boundary_constraints` and `integrity_constraints` sections of the AST are processed. Finally, `new` returns a Result containing the `AirIR` or a `SemanticError`.
 
 Example usage:
 
