@@ -6,7 +6,7 @@ use crate::ir::*;
 ///
 /// The raw value of this identifier is an index in the `nodes` vector
 /// of the [AlgebraicGraph] struct.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NodeIndex(usize);
 impl core::ops::Add<usize> for NodeIndex {
     type Output = NodeIndex;
@@ -20,6 +20,18 @@ impl core::ops::Add<usize> for &NodeIndex {
 
     fn add(self, rhs: usize) -> Self::Output {
         NodeIndex(self.0 + rhs)
+    }
+}
+
+impl From<usize> for NodeIndex {
+    fn from(u: usize) -> Self {
+        Self(u)
+    }
+}
+
+impl From<NodeIndex> for usize {
+    fn from(val: NodeIndex) -> usize {
+        val.0
     }
 }
 
