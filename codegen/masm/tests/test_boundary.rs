@@ -113,7 +113,10 @@ const C = [[1, 2], [2, 0]];
 
 trace_columns {
     main: [a, b, c, d, e[2]],
-    aux: [f],
+}
+
+buses {
+    multiset f,
 }
 
 public_inputs {
@@ -121,9 +124,6 @@ public_inputs {
     stack_outputs: [2],
 }
 
-random_values {
-    rand: [2],
-}
 
 boundary_constraints {
     enf a.first = stack_inputs[0];
@@ -137,17 +137,15 @@ boundary_constraints {
     enf e[0].first = 0;
     enf e[1].first = 1;
 
-    enf f.first = $rand[0];
-    enf f.last = 1;
+    enf f.first = null;
+    enf f.last = null;
 }
 
 integrity_constraints {
     enf a + b = 0;
 }";
 
-// ignore `aux` tests
 #[test]
-#[ignore]
 fn test_complex_boundary() {
     let code = codegen(COMPLEX_BOUNDARY_AIR);
 
@@ -208,7 +206,7 @@ fn test_complex_boundary() {
                 descriptor: "public_inputs",
             },
             Data {
-                data: to_stack_order(&[one; 11]),
+                data: to_stack_order(&[one; 12]),
                 address: constants::COMPOSITION_COEF_ADDRESS,
                 descriptor: "composition_coefficients",
             },
@@ -249,10 +247,10 @@ fn test_complex_boundary() {
     #[rustfmt::skip]
     let expected = to_stack_order(&[
         // last row aux trace
-        f - one,              // enf f.last = 1
+        f - one,          // enf f.last = null
 
         // first row aux trace
-        f - rand[0],          // enf f.first = $rand[0]
+        f - one,          // enf f.first = null
 
         // last row main trace
         b - public_inputs[3], // enf b.last = stack_outputs[1]
