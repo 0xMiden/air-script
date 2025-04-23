@@ -55,6 +55,16 @@ fn buses_varlen_boundary_last() {
 }
 
 #[test]
+fn buses_varlen_boundary_both() {
+    let generated_air = Test::new("tests/buses/buses_varlen_boundary_both.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_varlen_boundary_both.rs"];
+    expected.assert_eq(&generated_air);
+}
+
+#[test]
 fn periodic_columns() {
     let generated_air = Test::new("tests/periodic_columns/periodic_columns.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithMIR)
