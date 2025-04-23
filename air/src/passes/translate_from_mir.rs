@@ -257,7 +257,6 @@ impl AirBuilder<'_> {
                             index: public_input_access.index,
                         })
                     }
-                    // TODO: Add support for PublicInputBinding of [ast::Table]
                     MirValue::PublicInputBinding(public_input_binding) => {
                         crate::ir::Value::PublicInputBinding(crate::ir::BusVariableBoundary::new(
                             public_input_binding.table_name,
