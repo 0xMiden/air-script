@@ -9,7 +9,7 @@ pub(super) fn public_input_type_to_string(public_input: &air_ir::PublicInput) ->
     }
 }
 
-/// Updates the provided scope with a public inputs.
+/// Updates the provided scope with a public input.
 pub(super) fn add_public_inputs_struct(scope: &mut Scope, ir: &Air) {
     let name = "PublicInputs";
     // define the PublicInputs struct.

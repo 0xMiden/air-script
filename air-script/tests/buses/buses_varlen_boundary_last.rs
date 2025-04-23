@@ -5,24 +5,24 @@ use winter_utils::collections::Vec;
 use winter_utils::{ByteWriter, Serializable};
 
 pub struct PublicInputs {
-    inputs: Vec<[Felt; 2]>,
+    outputs: Vec<[Felt; 2]>,
 }
 
 impl PublicInputs {
-    pub fn new(inputs: Vec<[Felt; 2]>) -> Self {
-        Self { inputs }
+    pub fn new(outputs: Vec<[Felt; 2]>) -> Self {
+        Self { outputs }
     }
 }
 
 impl Serializable for PublicInputs {
     fn write_into<W: ByteWriter>(&self, target: &mut W) {
-        target.write(self.inputs.as_slice());
+        target.write(self.outputs.as_slice());
     }
 }
 
 pub struct BusesAir {
     context: AirContext<Felt>,
-    inputs: Vec<[Felt; 2]>,
+    outputs: Vec<[Felt; 2]>,
 }
 
 impl BusesAir {
@@ -30,11 +30,10 @@ impl BusesAir {
         self.trace_length() - self.context().num_transition_exemptions()
     }
 
-    pub fn bus_multiset_boundary_varlen<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> E {
+    pub fn bus_multiset_boundary_varlen<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &PublicInputs) -> E {
         let mut bus_p_last: E = E::ONE;
         let rand = aux_rand_elements.get_segment_elements(0);
-        let public_inputs = self.inputs.as_slice();
-        for row in public_inputs.iter() {
+        for row in public_inputs.as_slice().iter() {
             let mut p_last = rand[0];
             for (c, p_i) in row.iter().enumerate() {
                 p_last += E::from(*p_i) * rand[c + 1];
@@ -44,9 +43,8 @@ impl BusesAir {
         bus_p_last
     }
 
-    pub fn bus_logup_boundary_varlen<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> E {
+    pub fn bus_logup_boundary_varlen<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &PublicInputs) -> E {
         let mut bus_q_last = E::ZERO;
-        let public_inputs = self.inputs.as_slice();
         let rand = aux_rand_elements.get_segment_elements(0);
         for row in public_inputs.iter() {
             let mut q_last = rand[0];
@@ -83,7 +81,7 @@ impl Air for BusesAir {
             options,
         )
         .set_num_transition_exemptions(2);
-        Self { context, inputs: public_inputs.inputs }
+        Self { context, outputs: public_inputs.outputs }
     }
 
     fn get_periodic_column_values(&self) -> Vec<Vec<Felt>> {
@@ -99,8 +97,8 @@ impl Air for BusesAir {
         let mut result = Vec::new();
         result.push(Assertion::single(0, 0, E::ONE));
         result.push(Assertion::single(1, 0, E::ZERO));
-        result.push(Assertion::single(0, self.last_step(), self.bus_multiset_boundary_varlen(aux_rand_elements)));
-        result.push(Assertion::single(1, self.last_step(), self.bus_logup_boundary_varlen(aux_rand_elements)));
+        result.push(Assertion::single(0, self.last_step(), self.bus_multiset_boundary_varlen(aux_rand_elements, self.outputs)));
+        result.push(Assertion::single(1, self.last_step(), self.bus_logup_boundary_varlen(aux_rand_elements, self.outputs)));
         result
     }
 

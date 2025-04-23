@@ -103,9 +103,11 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             }
-            Value::PublicInputBinding(air_ir::BusVariableBoundary { bus_name, .. }) => {
-                call_bus_boundary_varlen_pubinput(ir, *bus_name)
-            }
+            Value::PublicInputBinding(air_ir::BusVariableBoundary {
+                bus_name,
+                table_name,
+                ..
+            }) => call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name),
             Value::RandomValue(idx) => {
                 format!("aux_rand_elements.get_segment_elements(0)[{idx}]")
             }
@@ -152,10 +154,20 @@ fn binary_op_to_string(
     }
 }
 
-fn call_bus_boundary_varlen_pubinput(ir: &Air, bus_name: Identifier) -> String {
+fn call_bus_boundary_varlen_pubinput(
+    ir: &Air,
+    bus_name: Identifier,
+    table_name: Identifier,
+) -> String {
     let bus = ir.buses.get(&bus_name).expect("bus not found");
     match bus.bus_type {
-        BusType::Multiset => "self.bus_multiset_boundary_varlen(aux_rand_elements)".to_string(),
-        BusType::Logup => "self.bus_logup_boundary_varlen(aux_rand_elements)".to_string(),
+        BusType::Multiset => format!(
+            "self.bus_multiset_boundary_varlen(aux_rand_elements, self.{})",
+            table_name
+        ),
+        BusType::Logup => format!(
+            "self.bus_logup_boundary_varlen(aux_rand_elements, self.{})",
+            table_name
+        ),
     }
 }
