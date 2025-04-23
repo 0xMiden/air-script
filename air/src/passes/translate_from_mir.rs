@@ -533,6 +533,7 @@ impl AirBuilder<'_> {
         Ok(())
     }
 
+    /// Builds the bus boundary constraints.
     fn build_bus(&mut self, mir_bus: &Link<mir::ir::Bus>) -> Result<(), CompileError> {
         let mir_bus = mir_bus.borrow();
         let first = self.insert_mir_operation(&mir_bus.get_first())?;

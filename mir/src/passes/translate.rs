@@ -1215,24 +1215,6 @@ impl<'a> MirBuilder<'a> {
     }
 
     // Check assumptions, probably this assumed that the inlining pass did some work
-    /* fn public_input_access(&self, access: &ast::SymbolAccess) -> Option<PublicInputAccess> {
-        let public_input = self.mir.public_inputs.get(access.name.as_ref())?;
-        match access.access_type {
-            AccessType::Index(index) => Some(PublicInputAccess::new(public_input.name(), index)),
-            // Table Access
-            AccessType::Default => Some(PublicInputBinding::new(public_input.name())),
-            _ => {
-                // This should have been caught earlier during compilation
-                unreachable!(
-                    "unexpected public input access type encountered during lowering: {:#?}",
-                    access
-                )
-            }
-        }
-    } */
-
-    // TODO: Will be used when handling variable-length public inputs
-    // Check assumptions, probably this assumed that the inlining pass did some work
     fn public_input_access(
         &self,
         access: &ast::SymbolAccess,

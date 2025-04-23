@@ -52,11 +52,8 @@ impl Pass for BusOpExpand<'_> {
             );
 
             // Expand bus boundary constraints first
-            self.handle_boundary_constraint(bus_type, first/*, air_parser::ast::Boundary::First, bus_access.clone(), bus.borrow().span()*/);
-            self.handle_boundary_constraint(
-                bus_type,
-                last, /*, air_parser::ast::Boundary::Last, bus_access.clone(), bus.borrow().span()*/
-            );
+            self.handle_boundary_constraint(bus_type, first);
+            self.handle_boundary_constraint(bus_type, last);
 
             // Then, expend bus integrity constraints
             match bus_type {
@@ -336,10 +333,6 @@ impl<'a> BusOpExpand<'a> {
         match link.borrow().deref() {
             Op::Value(value) => {
                 match &value.value.value {
-                    // TODO: Will be used when handling variable-length public inputs
-                    /*MirValue::PublicInputBinding(public_input_binding) => {
-
-                    },*/
                     MirValue::Null => {
                         // Empty bus
 

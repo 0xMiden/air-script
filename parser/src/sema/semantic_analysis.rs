@@ -1388,18 +1388,6 @@ impl SemanticAnalysis<'_> {
                             // Buses boundaries can be constrained by null
                             (BindingType::Bus(_), ScalarExpr::Null(_)) => {}
                             (BindingType::Bus(_), ScalarExpr::SymbolAccess(access)) => {
-                                /* self.has_type_errors = true;
-                                self.invalid_constraint(
-                                    access.span(),
-                                    "public input bus constraints are not yet supported",
-                                )
-                                .with_secondary_label(
-                                    access.name.span(),
-                                    "this a reference to a public input",
-                                )
-                                .emit(); */
-
-                                // TODO: Update when table public inputs are supported
                                 self.visit_mut_resolvable_identifier(&mut access.name)?;
                                 self.visit_mut_access_type(&mut access.access_type)?;
 

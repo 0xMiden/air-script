@@ -26,22 +26,22 @@ fn buses_simple() {
 
 #[test]
 fn buses_complex() {
-    let generated_masm = Test::new("tests/buses/buses_complex.air".to_string())
+    let generated_air = Test::new("tests/buses/buses_complex.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithMIR)
         .unwrap();
 
     let expected = expect_file!["../buses/buses_complex.rs"];
-    expected.assert_eq(&generated_masm);
+    expected.assert_eq(&generated_air);
 }
 
 #[test]
 fn buses_varlen_boundary() {
-    let generated_masm = Test::new("tests/buses/buses_varlen_boundary.air".to_string())
+    let generated_air = Test::new("tests/buses/buses_varlen_boundary.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithMIR)
         .unwrap();
 
     let expected = expect_file!["../buses/buses_varlen_boundary.rs"];
-    expected.assert_eq(&generated_masm);
+    expected.assert_eq(&generated_air);
 }
 
 #[test]
