@@ -2,7 +2,7 @@
 
 ## Boundary constraints (`boundary_constraints`)
 
-The `boundary_constraints` section consists of expressions describing the expected value of columns in the main trace at the specified boundary. Column boundaries can be selected using boundary accessors. Valid boundary accessors are `.first`, which selects the first cell of the column to which it is applied, and `.last`, which selects the last cell of the column column to which it is applied.
+The `boundary_constraints` section consists of expressions describing the expected value of columns in the main trace at the specified boundary. Column boundaries can be selected using boundary accessors. Valid boundary accessors are `.first`, which selects the first cell of the column to which it is applied, and `.last`, which selects the last cell of the column to which it is applied.
 
 **Boundary constraints are required.** The `boundary_constraints` section must be defined and contain at least one boundary constraint.
 
@@ -46,9 +46,9 @@ Boundary constraints can access public input values provided by the verifier in 
 
 To use public inputs, the public input must be declared in the `public_inputs` source section. They can be accessed using array indexing syntax, as described by the [accessor syntax rules](./syntax.md#section-specific-accessors).
 
-### Example of boundary constraints with public inputs and buses
+### Example of bus boundary constraints with public inputs
 
-The following is an example of a valid `boundary_constraints` source section that uses public inputs and buses:
+The following is an example of a valid bus `boundary_constraints` source section that uses public inputs:
 
 ```
 def BoundaryConstraintsExample
@@ -63,8 +63,8 @@ public_inputs {
 }
 
 buses {
-    unit p,
-    mult q,
+    multiset p,
+    logup q,
 }
 
 boundary_constraints {
@@ -157,7 +157,7 @@ integrity_constraints {
 }
 ```
 
-### Periodic columns and buses
+### Periodic columns
 
 Integrity constraints can access the value of any periodic column in the current row.
 
