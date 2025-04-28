@@ -7,7 +7,7 @@ trace_columns {
 }
 
 buses {
-    multiset: p,
+    multiset p,
 }
 
 public_inputs {
@@ -47,6 +47,6 @@ integrity_constraints {
     # c = a * b when s = 1.
     enf s * (c - a * b) = 0;
 
-    # the p bus column has c inserted when s is 1
+    # value c is inserted into bus p while s = 1
     p.insert(c) when s;
 }

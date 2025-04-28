@@ -2,7 +2,7 @@
 
 ## Boundary constraints (`boundary_constraints`)
 
-The `boundary_constraints` section consists of expressions describing the expected value of columns in the main trace at the specified boundary. Column boundaries can be selected using boundary accessors. Valid boundary accessors are `.first`, which selects the first cell of the column to which it is applied, and `.last`, which selects the last cell of the column to which it is applied.
+The `boundary_constraints` section consists of expressions describing the expected value of columns in the main trace or for the buses at the specified boundary. Column boundaries can be selected using boundary accessors. Valid boundary accessors are `.first`, which selects the first cell of the column to which it is applied, and `.last`, which selects the last cell of the column to which it is applied.
 
 **Boundary constraints are required.** The `boundary_constraints` section must be defined and contain at least one boundary constraint.
 
@@ -72,7 +72,7 @@ boundary_constraints {
     enf a.first = stack_inputs[0];
     enf a.last = stack_outputs[0];
 
-    # these are bus constraints that use the `null` identifier to define empty bus constraints
+    # these are bus constraints that specify that buses must be empty at the beginning and the end of the execution trace
     enf p.first = null;
     enf p.last = null;
     enf q.first = null;
@@ -189,6 +189,39 @@ boundary_constraints {
 integrity_constraints {
     # this is a main constraint that uses a periodic column.
     enf a' = k * a;
+}
+```
+
+### Buses
+
+Integrity constraints can constrain insertions and removal of elements into / from a given bus. The bus must first be declared in the `buses` source section. More information on bus types and the associated constraints can be found in the [buses](./buses.md) section.
+
+### Example of integrity constraints with buses
+
+The following is an example of a valid `integrity_constraints` source section that uses buses:
+
+```
+def IntegrityConstraintsExample
+
+trace_columns {
+    main: [a, s],
+}
+
+public_inputs {
+    <omitted for brevity>
+}
+
+buses {
+    multiset p,
+}
+
+boundary_constraints {
+    <omitted for brevity>
+}
+
+integrity_constraints {
+    # this is a bus constraint, inserting a into the bus p while s = 1
+    p.insert(a) when s;
 }
 ```
 
