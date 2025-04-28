@@ -17,8 +17,11 @@ pub fn codegen(source: &str) -> (NodeIndex, Circuit, String) {
         .map_err(air_ir::CompileError::Parse)
         .and_then(|ast| {
             let mut pipeline = air_parser::transforms::ConstantPropagation::new(&diagnostics)
-                .chain(air_parser::transforms::Inlining::new(&diagnostics))
-                .chain(air_ir::passes::AstToAir::new(&diagnostics));
+                .chain(mir::passes::AstToMir::new(&diagnostics))
+                .chain(mir::passes::Inlining::new(&diagnostics))
+                .chain(mir::passes::Unrolling::new(&diagnostics))
+                .chain(mir::passes::BusOpExpand::new(&diagnostics))
+                .chain(air_ir::passes::MirToAir::new(&diagnostics));
             pipeline.run(ast)
         })
         .expect("lowering failed");

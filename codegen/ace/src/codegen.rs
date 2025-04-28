@@ -318,7 +318,6 @@ fn convert_input(ir: &Air, op: Operation) -> NodeIndex {
             assert!(ir.trace_segment_widths.len() <= 2);
             let main_trace_width = ir.trace_segment_widths[0] as usize;
             let aux_trace_width = ir.trace_segment_widths.get(1).copied().unwrap_or(0) as usize;
-
             match (access.segment, access.row_offset) {
                 (0, 0) => idx += access.column,
                 (1, 0) => {
