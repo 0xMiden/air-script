@@ -6,6 +6,7 @@ mod evaluators;
 mod functions;
 mod integrity_constraints;
 mod ir;
+mod list_comprehension;
 mod list_folding;
 mod pub_inputs;
 mod selectors;
