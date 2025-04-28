@@ -6,26 +6,48 @@ use air_ir::{
 use miden_core::Felt;
 use std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 
-/// Air constraints are organized in 3 main groups: integrity roots,
-/// boundary first roots and boundary last roots.
+const NUM_ACE_AUX_INPUTS: usize = 14;
+const NUM_QUOTIENT_SEGMENT_POLY: usize = 8;
+
+const QUOTIENT_SEGMENT_POLY_OFFSETT: usize = 0;
+const ALPHA_OFFSETT: usize = 8;
+const Z_OFFSETT: usize = 9;
+const Z_POW_N_OFFSETT: usize = 10;
+const INV_TRACE_GEN_OFFSETT: usize = 11;
+const Z_MIN_NUM_CYCLES_OFFSETT: usize = 12;
+const INV_TRACE_GEN_SQUARE_OFFSETT: usize = 13;
+
+/// Air constraints are organized in 3 main groups:
+///
+/// 1. integrity roots,
+/// 2. boundary first roots and,
+/// 3. boundary last roots.
+///
 /// The roots in each group are linearly combined with powers of a random challenge `alpha`:
 /// - `int = \sum_i int_roots[i] * alpha^i` with `i` from 0 to |int_roots|
 /// - `bf = \sum_i bf_roots[i] * alpha^{i+offset}` with `i` from 0 to |int_roots| and offset = |int_roots|
 /// - `bl = \sum_i bl_roots[i] * alpha^{i+offset}` with `i` from 0 to |bf_roots| and offset = |int_roots| + |bf_roots|
 ///
 /// This function builds a circuit that computes the following formula:
-/// `z_g^2 * z_1 * int + zn_1 * z_g * bf + zn_1 * z_1 * bl - Qz * zn_1 * z_1 * z_g`
+///
+/// `z_g_2^2 * z_g * z_1 * int + zn_1 * z_g_2 * bf + zn_1 * z_1 * bl - Qz * zn_1 * z_1 * z_g_2`
+///
 /// where
 /// - `z_g = z - g^(-1)`
+/// - `z_g_2 = z - g^(-2)`
 /// - `z_1 = z - 1`
 /// - `zn_1 = z^n -1`
 /// - `Qz = z^{0 * n} * Q_0(z) + z^{1 * n} * Q_1(z) + ... + z^{7 * n} * Q_7(z)`
-/// - n is the length of the trace.
+/// - n is the length of the execution trace.
 ///
-/// which can be checked to be equal to zero.
-/// This is equivalent to the check $$\frac{\mathsf{num}_0 }{\frac{z^n - 1}{z - g^{-1}}} + \frac{\mathsf{num}_1}{z-1} + \frac{\mathsf{num}_2}{z - g^{-1}} = Q(z)$$.
+/// The constraint evaluation check
+///
+/// $$\frac{\mathsf{num}_0 }{\frac{z^n - 1}{z - g^{-1}}} + \frac{\mathsf{num}_1}{z-1} + \frac{\mathsf{num}_2}{z - g^{-1}} = Q(z)$$.
+///
+/// is then equivalent to the circuit evaluating to zero.
 ///
 /// The ACE chiplet expects the inputs of the original AirScript in the following order:
+///
 /// - the public inputs of the AirScript e.g. `public_inputs { stack_inputs[16] }`
 /// - auxiliary randomness of the AirScript e.g. `random_values { rand: [2] }`
 /// - the main segment of trace inputs of the AirScript e.g. `trace_columns { main: [a b] }`
@@ -34,14 +56,16 @@ use std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 /// - the next row aux segment of trace inputs of the AirScript e.g. `f'`
 ///
 /// Additionally the ACE chiplet expects following 13 auxiliary inputs:
+///
 /// - qi(z) with i in [0,8)
 /// - alpha
 /// - z
 /// - z^n
 /// - g^(-1)
 /// - z^min_num_cycles
+/// - g^(-2)
 ///
-/// Where `min_num_cycles = trace_len / max_cycle_len` as described in more details in [`periodic_columns`].
+/// where `min_num_cycles = trace_len / max_cycle_len` as described in more details in [`periodic_columns`].
 pub fn build_ace_circuit(ir: &Air) -> anyhow::Result<(NodeIndex, Circuit)> {
     // All constraints roots are extracted from the Air
     let (integrity_roots, boundary_first_roots, boundary_last_roots) = {
@@ -59,7 +83,7 @@ pub fn build_ace_circuit(ir: &Air) -> anyhow::Result<(NodeIndex, Circuit)> {
                 match root.domain() {
                     ConstraintDomain::FirstRow => boundary_first_roots.push(*root.node_index()),
                     ConstraintDomain::LastRow => boundary_last_roots.push(*root.node_index()),
-                    _ => unreachable!("TODO"),
+                    _ => unreachable!("only boundary constraints against first and last execution trace rows are supported"),
                 };
             }
         }
@@ -75,16 +99,18 @@ pub fn build_ace_circuit(ir: &Air) -> anyhow::Result<(NodeIndex, Circuit)> {
         .chain(boundary_last_roots.clone())
         .collect();
 
-    // A circuit builder is instantiated with the inputs of the circuits plus the 13 needed by the ACE chiplet
+    // A circuit builder is instantiated with the inputs of the circuits plus the `NUM_ACE_AUX_INPUTS` needed by the ACE chiplet
     let airscript_inputs = n_random(ir) + n_public_inputs(ir) + n_trace_accesses(ir);
-    let auxiliary_inputs = 13;
-    let (mut cb, inputs) = CircuitBuilder::new(airscript_inputs + auxiliary_inputs);
-    let qs: Vec<NodeIndex> = inputs[airscript_inputs..airscript_inputs + 8].to_vec();
-    let alpha = inputs[airscript_inputs + 8];
-    let z_point = inputs[airscript_inputs + 9];
-    let z_n = inputs[airscript_inputs + 10];
-    let inverse_generator = inputs[airscript_inputs + 11];
-    let z_min_num_cycles = inputs[airscript_inputs + 12];
+    let (mut cb, inputs) = CircuitBuilder::new(airscript_inputs + NUM_ACE_AUX_INPUTS);
+    let qs: Vec<NodeIndex> = inputs[(airscript_inputs + QUOTIENT_SEGMENT_POLY_OFFSETT)
+        ..(airscript_inputs + QUOTIENT_SEGMENT_POLY_OFFSETT + NUM_QUOTIENT_SEGMENT_POLY)]
+        .to_vec();
+    let alpha = inputs[airscript_inputs + ALPHA_OFFSETT];
+    let z_point = inputs[airscript_inputs + Z_OFFSETT];
+    let z_n = inputs[airscript_inputs + Z_POW_N_OFFSETT];
+    let inverse_generator = inputs[airscript_inputs + INV_TRACE_GEN_OFFSETT];
+    let z_min_num_cycles = inputs[airscript_inputs + Z_MIN_NUM_CYCLES_OFFSETT];
+    let inverse_gen_2 = inputs[airscript_inputs + INV_TRACE_GEN_SQUARE_OFFSETT];
 
     // A mapping is necessary to convert the indexes of the Air to the new indexes of the circuit
     let mut mapping: BTreeMap<NodeIndex, NodeIndex> = BTreeMap::new();
@@ -129,26 +155,27 @@ pub fn build_ace_circuit(ir: &Air) -> anyhow::Result<(NodeIndex, Circuit)> {
     // described above.
 
     let z_minus_g = cb.sub(z_point, inverse_generator);
+    let z_minus_g_2 = cb.sub(z_point, inverse_gen_2);
     let z_minus_one = cb.sub(z_point, cb.one);
     let z_n_minus_one = cb.sub(z_n, cb.one);
 
     let mut lc = LinearCombinationAlpha::new(alpha, cb.one);
     let lhs = {
         let mut els = vec![];
-        // int * z_g^2 * z_1
+        // int * z_g_2^2 * z_g * z_1
         {
             let integrity_roots: Vec<NodeIndex> =
                 integrity_roots.iter().map(|r| mapping[r]).collect();
             let lc = lc.linear_combination_alpha(&mut cb, &integrity_roots);
-            let res = cb.prod(&[lc, z_minus_g, z_minus_g, z_minus_one]);
+            let res = cb.prod(&[lc, z_minus_g, z_minus_one, z_minus_g_2, z_minus_g_2]);
             els.push(res)
         };
-        // bf * zn_1 * z_g
+        // bf * zn_1 * z_g_2
         {
             let boundary_first_roots: Vec<NodeIndex> =
                 boundary_first_roots.iter().map(|r| mapping[r]).collect();
             let lc = lc.linear_combination_alpha(&mut cb, &boundary_first_roots);
-            let res = cb.prod(&[lc, z_n_minus_one, z_minus_g]);
+            let res = cb.prod(&[lc, z_n_minus_one, z_minus_g_2]);
             els.push(res)
         };
         // bl * zn_1 * z_1
@@ -163,7 +190,7 @@ pub fn build_ace_circuit(ir: &Air) -> anyhow::Result<(NodeIndex, Circuit)> {
     };
     let rhs = {
         let qz = cb.horners_method(z_n, &qs);
-        cb.prod(&[qz, z_n_minus_one, z_minus_one, z_minus_g])
+        cb.prod(&[qz, z_n_minus_one, z_minus_one, z_minus_g_2])
     };
     let root = cb.sub(lhs, rhs);
     Ok(cb.normalize(root))
@@ -222,6 +249,7 @@ impl<'a> UniqueOperationIterator<'a> {
         }
     }
 }
+
 impl Iterator for UniqueOperationIterator<'_> {
     type Item = (NodeIndex, Operation);
     fn next(&mut self) -> Option<Self::Item> {
@@ -286,14 +314,26 @@ fn convert_input(ir: &Air, op: Operation) -> NodeIndex {
         Operation::Value(Value::RandomValue(idx)) => (n_public_inputs(ir) + idx).into(),
         Operation::Value(Value::TraceAccess(access)) => {
             let mut idx = n_random(ir) + n_public_inputs(ir);
-            for (n_seg, width) in ir.trace_segment_widths.iter().enumerate() {
-                if access.segment == n_seg {
-                    idx += access.column;
-                    idx += access.row_offset * *width as usize;
-                    break;
-                } else {
-                    idx += *width as usize;
+
+            assert!(ir.trace_segment_widths.len() <= 2);
+            let main_trace_width = ir.trace_segment_widths[0] as usize;
+            let aux_trace_width = ir.trace_segment_widths.get(1).copied().unwrap_or(0) as usize;
+
+            match (access.segment, access.row_offset) {
+                (0, 0) => idx += access.column,
+                (1, 0) => {
+                    idx += main_trace_width;
+                    idx += access.column
                 }
+                (0, 1) => {
+                    idx += main_trace_width + aux_trace_width;
+                    idx += access.column
+                }
+                (1, 1) => {
+                    idx += main_trace_width + main_trace_width + aux_trace_width;
+                    idx += access.column
+                }
+                _ => unreachable!(),
             }
             idx.into()
         }
@@ -356,7 +396,7 @@ fn periodic_columns(
             .iter()
             .map(|(_, pca)| pca.cycle)
             .max()
-            .unwrap(); //TODO proper error
+            .expect("should contain at least one cycle");
 
         // Map from cycle_len to k = max_cycle_len / cycle_len, this step
         // also removes duplicated cycle_len

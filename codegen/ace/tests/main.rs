@@ -1,6 +1,11 @@
 mod utils;
 use miden_core::{Felt, FieldElement, QuadExtension, StarkField};
-use utils::codegen;
+use rand::{distributions::Uniform, thread_rng, Rng, RngCore};
+pub use utils::codegen;
+
+type Quad = QuadExtension<Felt>;
+static ZERO: Quad = QuadExtension::ZERO;
+static ONE: Quad = QuadExtension::ONE;
 
 // These test were copied from the masm backend and modified
 
@@ -385,107 +390,13 @@ fn test_regressions() -> Result<(), std::fmt::Error> {
     Ok(())
 }
 
-type Quad = QuadExtension<Felt>;
-static ZERO: Quad = QuadExtension::ZERO;
-static ONE: Quad = QuadExtension::ONE;
-
-fn to_quad(e: u64) -> Quad {
-    QuadExtension::new(Felt::new(e), Felt::ZERO)
-}
-
-fn horner(point: Quad, coeffs: &[Quad]) -> Quad {
-    coeffs
-        .iter()
-        .rev()
-        .fold(ZERO, |acc, coeff| (point * acc) + *coeff)
-}
-
-fn numerator(
-    alpha: Quad,
-    z: Quad,
-    zn: Quad,
-    inv_g: Quad,
-    int_roots: Vec<Quad>,
-    bf_roots: Vec<Quad>,
-    bl_roots: Vec<Quad>,
-    qs: &[Quad],
-) -> Quad {
-    let z_g = z - inv_g;
-    let z_1 = z - ONE;
-    let zn_1 = zn - ONE;
-    let lhs = {
-        let (int_root, next_alpha) = int_roots
-            .into_iter()
-            .fold((ZERO, ONE), |(sum, next_alpha), root| {
-                (sum + (next_alpha * root), next_alpha * alpha)
-            });
-        let (bf_root, next_alpha) = bf_roots
-            .into_iter()
-            .fold((ZERO, next_alpha), |(sum, next_alpha), root| {
-                (sum + (next_alpha * root), next_alpha * alpha)
-            });
-        let (bl_root, _) = bl_roots
-            .into_iter()
-            .fold((ZERO, next_alpha), |(sum, next_alpha), root| {
-                (sum + (next_alpha * root), next_alpha * alpha)
-            });
-        let int = int_root * z_g * z_g * z_1;
-        let bf = bf_root * zn_1 * z_g;
-        let bl = bl_root * zn_1 * z_1;
-        int + bf + bl
-    };
-    let rhs = {
-        let qz = horner(zn, qs);
-        qz * zn_1 * z_1 * z_g
-    };
-    lhs - rhs
-}
-
-struct Test {
-    code: String,
-    inputs: Vec<Quad>,
-    int_roots: Vec<Quad>,
-    bf_roots: Vec<Quad>,
-    bl_roots: Vec<Quad>,
-}
-
-// This helper function should not be used to test aiscripts with periodic columns.
-fn run_test(test: Test) {
-    let (root, circuit, _) = codegen(&test.code);
-    let n = 2u64 ^ 6;
-    let alpha = to_quad(13u64);
-    let z = to_quad(15u64);
-    let zn = z.exp(n);
-    let inv_g = QuadExtension::new(Felt::GENERATOR.inv(), Felt::ZERO);
-    let z_min_num_cycles = ZERO; // dummy input
-    let qs: Vec<Quad> = (0..=7).map(to_quad).collect(); // TODO
-
-    let expected = numerator(
-        alpha,
-        z,
-        zn,
-        inv_g,
-        test.int_roots,
-        test.bf_roots,
-        test.bl_roots,
-        &qs,
-    );
-
-    let all_inputs = test
-        .inputs
-        .into_iter()
-        .chain(qs)
-        .chain([alpha, z, zn, inv_g, z_min_num_cycles])
-        .collect::<Vec<Quad>>();
-    let res = circuit.eval(root, &all_inputs);
-    assert_eq!(expected, res)
-}
-
 #[test]
 fn test_simple_integrity_air() {
-    let public = ZERO;
-    let a = to_quad(13u64);
-    let a_prime = a;
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let a_prime = to_quad(rng.next_u64(), rng.next_u64());
     let t0 = Test {
         code: SIMPLE_INTEGRITY_AIR.into(),
         inputs: vec![public, a, a_prime],
@@ -498,9 +409,11 @@ fn test_simple_integrity_air() {
 
 #[test]
 fn test_simple_air() {
-    let public = ZERO;
-    let a = to_quad(13u64);
-    let a_prime = a;
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let a_prime = to_quad(rng.next_u64(), rng.next_u64());
     let t0 = Test {
         code: SIMPLE_AIR.into(),
         inputs: vec![public, a, a_prime],
@@ -513,11 +426,13 @@ fn test_simple_air() {
 
 #[test]
 fn test_arith_air() {
-    let public = ZERO;
-    let a = to_quad(3u64);
-    let b = to_quad(7u64);
-    let a_prime = a;
-    let b_prime = b;
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let b = to_quad(rng.next_u64(), rng.next_u64());
+    let a_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let b_prime = to_quad(rng.next_u64(), rng.next_u64());
     let t0 = Test {
         code: ARITH_AIR.into(),
         inputs: vec![public, a, b, a_prime, b_prime],
@@ -530,11 +445,14 @@ fn test_arith_air() {
 
 #[test]
 fn test_exp_air() {
-    let public = ZERO;
-    let a = to_quad(13u64);
-    let b = to_quad(3u64);
-    let a_prime = a;
-    let b_prime = b;
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let b = to_quad(rng.next_u64(), rng.next_u64());
+    let a_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let b_prime = to_quad(rng.next_u64(), rng.next_u64());
+
     let t0 = Test {
         code: EXP_AIR.into(),
         inputs: vec![public, a, b, a_prime, b_prime],
@@ -547,19 +465,29 @@ fn test_exp_air() {
 
 #[test]
 fn test_long_trace() {
-    let public = ZERO;
-    let a = to_quad(2u64);
-    let b = to_quad(3u64);
-    let c = to_quad(5u64);
-    let d = to_quad(7u64);
-    let e = to_quad(11u64);
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let main_cur: Vec<_> = (0..9)
+        .map(|_| to_quad(rng.next_u64(), rng.next_u64()))
+        .collect();
+    let main_nxt: Vec<_> = (0..9)
+        .map(|_| to_quad(rng.next_u64(), rng.next_u64()))
+        .collect();
+
+    let a = main_cur[0];
+    let b = main_cur[1];
+    let c = main_cur[2];
+    let d = main_cur[3];
+    let e = main_cur[4];
+
+    let mut inputs = vec![public];
+    inputs.extend_from_slice(&main_cur);
+    inputs.extend_from_slice(&main_nxt);
+
     let t0 = Test {
         code: LONG_TRACE.into(),
-        inputs: vec![
-            public, // public
-            a, b, c, d, e, ZERO, ZERO, ZERO, ZERO, // main
-            ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, //main'
-        ],
+        inputs,
         int_roots: vec![a * b * c + d - e],
         bf_roots: vec![a],
         bl_roots: vec![ZERO],
@@ -569,15 +497,18 @@ fn test_long_trace() {
 
 #[test]
 fn test_multiple_rows() {
-    let public = ZERO;
-    let a = to_quad(3u64);
-    let b = to_quad(7u64);
-    let a_prime = a * to_quad(2u64);
-    let b_prime = a + b;
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let b = to_quad(rng.next_u64(), rng.next_u64());
+    let a_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let b_prime = to_quad(rng.next_u64(), rng.next_u64());
+
     let t0 = Test {
         code: MULTIPLE_ROWS_AIR.into(),
         inputs: vec![public, a, b, a_prime, b_prime],
-        int_roots: vec![ZERO, ZERO],
+        int_roots: vec![a_prime - a.double(), b_prime - (a + b)],
         bf_roots: vec![a],
         bl_roots: vec![ZERO],
     };
@@ -586,18 +517,21 @@ fn test_multiple_rows() {
 
 #[test]
 fn test_simple_boundary() {
-    let a = to_quad(514229u64);
-    let b = to_quad(317811u64);
-    let len = to_quad(27u64);
-    let target = len;
-    let a_prime = a + b;
-    let b_prime = a;
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let b = to_quad(rng.next_u64(), rng.next_u64());
+    let c = to_quad(rng.next_u64(), rng.next_u64());
+    let a_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let b_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let c_prime = to_quad(rng.next_u64(), rng.next_u64());
     let t0 = Test {
         code: SIMPLE_BOUNDARY_AIR.into(),
-        inputs: vec![target, a, b, len, a_prime, b_prime, ZERO],
-        int_roots: vec![ZERO, ZERO],
-        bf_roots: vec![a - ONE, b - ONE, len],
-        bl_roots: vec![len - target],
+        inputs: vec![public, a, b, c, a_prime, b_prime, c_prime],
+        int_roots: vec![a_prime - (a + b), b_prime - a],
+        bf_roots: vec![a - ONE, b - ONE, c],
+        bl_roots: vec![c - public],
     };
     run_test(t0)
 }
@@ -615,17 +549,23 @@ const C_0_1: Quad = new_quad(11);
 // TODO This airscript fails at translation w/o the passes
 #[test]
 fn test_constants() {
-    let public = ZERO;
-    let a = to_quad(19u64);
-    let b = to_quad(23u64);
-    let c = to_quad(29u64);
-    let a_prime = a + A;
-    let b_prime = B_0 * b;
-    let c_prime = (C_0_0 + B_0) * c;
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let b = to_quad(rng.next_u64(), rng.next_u64());
+    let c = to_quad(rng.next_u64(), rng.next_u64());
+    let a_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let b_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let c_prime = to_quad(rng.next_u64(), rng.next_u64());
     let t0 = Test {
         code: CONSTANTS_AIR.into(),
         inputs: vec![public, a, b, c, a_prime, b_prime, c_prime],
-        int_roots: vec![ZERO, ZERO, ZERO],
+        int_roots: vec![
+            a_prime - a - A,
+            b_prime - B_0 * b,
+            c_prime - (C_0_0 + B_0) * c,
+        ],
         bf_roots: vec![a - A, b - A - B_0 * C_0_1],
         bl_roots: vec![c - A + B_1 * C_0_0],
     };
@@ -634,12 +574,15 @@ fn test_constants() {
 
 #[test]
 fn test_random() {
-    let random = to_quad(23u64);
-    let public = ZERO;
-    let a = to_quad(19u64);
-    let a_prime = a;
-    let b = to_quad(21u64);
-    let b_prime = to_quad(21u64);
+    let mut rng = thread_rng();
+
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let random = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let b = to_quad(rng.next_u64(), rng.next_u64());
+    let a_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let b_prime = to_quad(rng.next_u64(), rng.next_u64());
+
     let t0 = Test {
         code: RANDOM.into(),
         inputs: vec![public, random, a, b, a_prime, b_prime],
@@ -652,14 +595,16 @@ fn test_random() {
 
 #[test]
 fn test_vector() {
-    let public = ZERO;
-    let clk = to_quad(19u64);
-    let clk_prime = clk;
+    let mut rng = thread_rng();
 
-    let fmp0 = to_quad(21u64);
-    let fmp0_prime = fmp0;
-    let fmp1 = to_quad(23u64);
-    let fmp1_prime = fmp1;
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+
+    let clk = to_quad(rng.next_u64(), rng.next_u64());
+    let clk_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let fmp0 = to_quad(rng.next_u64(), rng.next_u64());
+    let fmp0_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let fmp1 = to_quad(rng.next_u64(), rng.next_u64());
+    let fmp1_prime = to_quad(rng.next_u64(), rng.next_u64());
     let t0 = Test {
         code: VECTOR.into(),
         inputs: vec![public, clk, fmp0, fmp1, clk_prime, fmp0_prime, fmp1_prime],
@@ -681,7 +626,7 @@ fn coeffs(evals: &[u64]) -> Vec<Quad> {
         .into_iter()
         .map(|e| {
             let unsigned: u64 = From::from(e);
-            to_quad(unsigned)
+            to_quad(unsigned, 0)
         })
         .collect()
 }
@@ -689,47 +634,58 @@ fn coeffs(evals: &[u64]) -> Vec<Quad> {
 #[test]
 fn test_simple_aux() {
     let (root, circuit, _) = codegen(SIMPLE_AUX_AIR);
-    let n = 2u64 ^ 6;
-    let alpha = to_quad(13u64);
-    let z = to_quad(15u64);
+    let mut rng = thread_rng();
+    let trace_len_log = rng.sample(Uniform::new(10, 20));
+    let n = 1 << trace_len_log;
+    let alpha = to_quad(rng.next_u64(), rng.next_u64());
+    let z = to_quad(rng.next_u64(), rng.next_u64());
     let zn = z.exp(n);
     let inv_g = QuadExtension::new(Felt::GENERATOR.inv(), Felt::ZERO);
-    let qs: Vec<Quad> = (0..=7).map(to_quad).collect(); // TODO
-
+    let inv_g_2 = inv_g.square();
+    let mut qs: Vec<Quad> = (0..=7)
+        .map(|_| to_quad(rng.next_u64(), rng.next_u64()))
+        .collect();
     let max_cycle_len = 2;
     let min_num_cycles = n / max_cycle_len;
     let z_min_num_cycles = z.exp(min_num_cycles);
 
     let k_evals = [1, 1];
     let k = horner(z_min_num_cycles, &coeffs(&k_evals));
-    let public = ZERO;
-    let a = to_quad(19u64);
+    let public = to_quad(rng.next_u64(), rng.next_u64());
+    let a = to_quad(rng.next_u64(), rng.next_u64());
     let a_prime = a;
 
     let int_roots = vec![a * k];
     let bf_roots = vec![a];
     let bl_roots = vec![];
 
-    let expected = numerator(alpha, z, zn, inv_g, int_roots, bf_roots, bl_roots, &qs);
+    compute_modified_quotient(
+        alpha, z, zn, inv_g, &int_roots, &bf_roots, &bl_roots, &mut qs, inv_g_2,
+    );
 
     let all_inputs = [public, a, a_prime]
         .into_iter()
         .chain(qs)
-        .chain([alpha, z, zn, inv_g, z_min_num_cycles])
+        .chain([alpha, z, zn, inv_g, z_min_num_cycles, inv_g_2])
         .collect::<Vec<Quad>>();
     let res = circuit.eval(root, &all_inputs);
-    assert_eq!(expected, res)
+    assert_eq!(Quad::ZERO, res)
 }
 
 #[test]
 fn test_multiple_aux() {
     let (root, circuit, _) = codegen(MULTIPLE_AUX_AIR);
-    let n = 2u64 ^ 6;
-    let alpha = to_quad(13u64);
-    let z = to_quad(15u64);
+    let mut rng = thread_rng();
+    let trace_len_log = rng.sample(Uniform::new(10, 20));
+    let n = 1 << trace_len_log;
+    let alpha = to_quad(rng.next_u64(), rng.next_u64());
+    let z = to_quad(rng.next_u64(), rng.next_u64());
     let zn = z.exp(n);
     let inv_g = QuadExtension::new(Felt::GENERATOR.inv(), Felt::ZERO);
-    let qs: Vec<Quad> = (0..=7).map(to_quad).collect(); // TODO
+    let inv_g_2 = inv_g.square();
+    let mut qs: Vec<Quad> = (0..=7)
+        .map(|_| to_quad(rng.next_u64(), rng.next_u64()))
+        .collect();
 
     let max_cycle_len = 4;
     let min_num_cycles = n / max_cycle_len;
@@ -748,23 +704,130 @@ fn test_multiple_aux() {
     let n = horner(z_ln, &coeffs(&n_evals));
     let o = horner(z_lo, &coeffs(&o_evals));
 
-    let a = to_quad(19u64);
-    let b = to_quad(23u64);
-    let c = to_quad(27u64);
+    let a = to_quad(rng.next_u64(), rng.next_u64());
+    let b = to_quad(rng.next_u64(), rng.next_u64());
+    let c = to_quad(rng.next_u64(), rng.next_u64());
 
     let int_roots = vec![a * m, b * n, c * o];
     let bf_roots = vec![a];
     let bl_roots = vec![];
 
-    let expected = numerator(alpha, z, zn, inv_g, int_roots, bf_roots, bl_roots, &qs);
+    compute_modified_quotient(
+        alpha, z, zn, inv_g, &int_roots, &bf_roots, &bl_roots, &mut qs, inv_g_2,
+    );
 
     let all_inputs = [ZERO; 16] // stack_inputs
         .into_iter()
         .chain([a, b, c]) // main
         .chain([a, b, c]) // main'
         .chain(qs)
-        .chain([alpha, z, zn, inv_g, z_min_num_cycles])
+        .chain([alpha, z, zn, inv_g, z_min_num_cycles, inv_g_2])
         .collect::<Vec<Quad>>();
     let res = circuit.eval(root, &all_inputs);
-    assert_eq!(expected, res)
+    assert_eq!(Quad::ZERO, res)
+}
+
+struct Test {
+    code: String,
+    inputs: Vec<Quad>,
+    int_roots: Vec<Quad>,
+    bf_roots: Vec<Quad>,
+    bl_roots: Vec<Quad>,
+}
+
+// This helper function should not be used to test aiscripts with periodic columns.
+fn run_test(test: Test) {
+    let mut rng = thread_rng();
+    let (root, circuit, _) = codegen(&test.code);
+    let trace_len_log = rng.sample(Uniform::new(10, 20));
+    let n = 1 << trace_len_log;
+    let alpha = to_quad(rng.next_u64(), rng.next_u64());
+    let z = to_quad(rng.next_u64(), rng.next_u64());
+    let zn = z.exp(n);
+    let inv_g = QuadExtension::new(Felt::GENERATOR.inv(), Felt::ZERO);
+    let inv_g_2 = inv_g.square();
+    let z_min_num_cycles = to_quad(rng.next_u64(), rng.next_u64());
+    let mut qs: Vec<Quad> = (0..=7)
+        .map(|_| to_quad(rng.next_u64(), rng.next_u64()))
+        .collect();
+
+    compute_modified_quotient(
+        alpha,
+        z,
+        zn,
+        inv_g,
+        &test.int_roots,
+        &test.bf_roots,
+        &test.bl_roots,
+        &mut qs,
+        inv_g_2,
+    );
+
+    let all_inputs = test
+        .inputs
+        .into_iter()
+        .chain(qs)
+        .chain([alpha, z, zn, inv_g, z_min_num_cycles, inv_g_2])
+        .collect::<Vec<Quad>>();
+    let res = circuit.eval(root, &all_inputs);
+    assert_eq!(Quad::ZERO, res)
+}
+
+fn compute_modified_quotient(
+    alpha: Quad,
+    z: Quad,
+    zn: Quad,
+    inv_g: Quad,
+    int_roots: &[Quad],
+    bf_roots: &[Quad],
+    bl_roots: &[Quad],
+    qs: &mut [Quad],
+    inv_g_2: Quad,
+) -> Quad {
+    let z_g = z - inv_g;
+    let z_g_2 = z - inv_g_2;
+    let z_1 = z - ONE;
+    let zn_1 = zn - ONE;
+    //let mut qs = qs.to_vec();
+    qs[0] = Quad::ZERO;
+
+    let lhs = {
+        let (int_root, next_alpha) = int_roots
+            .into_iter()
+            .fold((ZERO, ONE), |(sum, next_alpha), root| {
+                (sum + (next_alpha * *root), next_alpha * alpha)
+            });
+        let (bf_root, next_alpha) = bf_roots
+            .into_iter()
+            .fold((ZERO, next_alpha), |(sum, next_alpha), root| {
+                (sum + (next_alpha * *root), next_alpha * alpha)
+            });
+        let (bl_root, _) = bl_roots
+            .into_iter()
+            .fold((ZERO, next_alpha), |(sum, next_alpha), root| {
+                (sum + (next_alpha * *root), next_alpha * alpha)
+            });
+        let int = int_root * z_g * z_g_2 / zn_1;
+        let bf = bf_root / z_1;
+        let bl = bl_root / z_g_2;
+        int + bf + bl
+    };
+    let rhs = {
+        let qz = horner(zn, &qs);
+        qz
+    };
+    let res = lhs - rhs;
+    qs[0] = res;
+    res
+}
+
+fn to_quad(a: u64, b: u64) -> Quad {
+    QuadExtension::new(Felt::new(a), Felt::new(b))
+}
+
+fn horner(point: Quad, coeffs: &[Quad]) -> Quad {
+    coeffs
+        .iter()
+        .rev()
+        .fold(ZERO, |acc, coeff| (point * acc) + *coeff)
 }

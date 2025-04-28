@@ -21,3 +21,4 @@ winter-math = { package = "winter-math", version = "0.6", default-features = fal
 air-parser = { path = "../../parser" }
 air-pass = { path = "../../pass" }
 miden-diagnostics = "0.1"
+rand = "0.8"
