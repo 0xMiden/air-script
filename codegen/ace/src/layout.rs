@@ -67,7 +67,7 @@ impl Layout {
         let public_inputs: BTreeMap<_, _> = air
             .public_inputs
             .iter()
-            .map(|(ident, pi)| (*ident, next_region(&mut inputs_offset, pi.size)))
+            .map(|(ident, pi)| (*ident, next_region(&mut inputs_offset, pi.size())))
             .collect();
 
         let random_values = next_region(&mut inputs_offset, air.num_random_values as usize);
