@@ -101,8 +101,7 @@ pub fn build_ace_circuit(ir: &Air) -> anyhow::Result<(NodeIndex, Circuit)> {
 
     // A circuit builder is instantiated with the inputs of the circuits plus the `NUM_ACE_AUX_INPUTS` needed by the ACE chiplet
     let airscript_inputs = n_random(ir) + n_public_inputs(ir) + n_trace_accesses(ir);
-    let auxiliary_inputs = NUM_ACE_AUX_INPUTS;
-    let (mut cb, inputs) = CircuitBuilder::new(airscript_inputs + auxiliary_inputs);
+    let (mut cb, inputs) = CircuitBuilder::new(airscript_inputs + NUM_ACE_AUX_INPUTS);
     let qs: Vec<NodeIndex> = inputs[(airscript_inputs + QUOTIENT_SEGMENT_POLY_OFFSETT)
         ..(airscript_inputs + QUOTIENT_SEGMENT_POLY_OFFSETT + NUM_QUOTIENT_SEGMENT_POLY)]
         .to_vec();
