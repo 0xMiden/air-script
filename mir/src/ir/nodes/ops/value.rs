@@ -199,6 +199,8 @@ pub struct BusVariableBoundary {
     /// The name of the public input to bind
     pub table_name: Identifier,
     /// The name of the bus to bind
+    /// The bus name is not always known at the time of instantiation,
+    /// making it an Option allows setting it later.
     pub bus_name: Option<Identifier>,
     /// The number of columns in the table
     pub num_cols: usize,

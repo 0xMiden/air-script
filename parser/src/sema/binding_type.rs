@@ -215,7 +215,6 @@ impl BindingType {
                 _ => Err(InvalidAccessError::IndexIntoScalar),
             },
             Self::Function(_) => Err(InvalidAccessError::InvalidBinding),
-            // TODO: FIXME
             Self::Bus(bus) => Ok(Self::Bus(*bus)),
         }
     }
