@@ -87,7 +87,7 @@ impl Codegen for Value {
             },
             Value::Constant(value) => match elem_type {
                 ElemType::Base => format!("Felt::new({value})"),
-                ElemType::Ext => format!("E::from({value}_u64)"),
+                ElemType::Ext => format!("E::from(Felt::new({value}_u64))"),
             },
             Value::TraceAccess(trace_access) => {
                 trace_access.to_string(ir, elem_type, trace_segment)
@@ -109,7 +109,7 @@ impl Codegen for Value {
                 ..
             }) => call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name),
             Value::RandomValue(idx) => {
-                format!("aux_rand_elements.get_segment_elements(0)[{idx}]")
+                format!("aux_rand_elements.rand_elements()[{idx}]")
             }
         }
     }

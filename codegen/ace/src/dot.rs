@@ -1,7 +1,6 @@
 use crate::circuit::{ArithmeticOp, Circuit, Node, OperationNode};
 use crate::layout::StarkVar;
 use std::fmt::{Display, Write};
-use winter_math::StarkField;
 
 impl Circuit {
     /// Serialization to Graphviz Dot format for debugging purposes. Display on

@@ -14,13 +14,13 @@ rust-version.workspace = true
 [dependencies]
 air-ir = { package = "air-ir", path = "../../air", version = "0.4" }
 anyhow = "1.0"
-miden-core = { package = "miden-core", version = "0.6", default-features = false }
-winter-math = { package = "winter-math", version = "0.6", default-features = false }
+miden-core = { package = "miden-core", version = "0.13", default-features = false }
+winter-math = { package = "winter-math", version = "0.12", default-features = false }
 
 [dev-dependencies]
 air-parser = { path = "../../parser" }
 air-pass = { path = "../../pass" }
 mir = { path = "../../mir" }
 miden-diagnostics = "0.1"
-winter-utils = { version =  "0.6", package = "winter-utils" }
+winter-utils = { version =  "0.12", package = "winter-utils" }
 rand = "0.9"

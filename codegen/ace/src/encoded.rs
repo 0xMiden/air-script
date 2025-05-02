@@ -144,7 +144,7 @@ impl Circuit {
             const OP_OFFSET: u64 = 1 << 60;
             const ID_1_OFFSET: u64 = 1 << 30;
             let instruction = (id_0) + (id_1 * ID_1_OFFSET) + (op_tag * OP_OFFSET);
-            Felt::from(instruction)
+            Felt::new(instruction)
         };
         for operation in &self.operations {
             let encoded = operation_to_instruction(operation);
@@ -302,7 +302,7 @@ mod tests {
             (0 << 60) + (5 << 30) + 2, // id = 1
             (1 << 60) + (1 << 30) + 1, // id = 0
         ]
-        .map(Felt::from);
+        .map(Felt::new);
 
         for (i, (op, expected)) in zip(encoded.instructions, expected).enumerate() {
             assert_eq!(op, expected, "op {i} is different");

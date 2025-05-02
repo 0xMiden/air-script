@@ -5,7 +5,6 @@ use air_ir::{
 };
 use miden_core::Felt;
 use std::collections::BTreeMap;
-use winter_math::StarkField;
 
 /// [`CircuitBuilder`] is the only way to build a [`Circuit`]. It guarantees the following
 /// properties:
@@ -105,7 +104,7 @@ impl CircuitBuilder {
 
         // Insert the new unique constant and create a node for it.
         let index = self.constants.len();
-        self.constants.push(c.into());
+        self.constants.push(Felt::new(c));
         let node = Node::Constant(index);
         self.constants_cache.insert(c, node);
         node
@@ -368,7 +367,7 @@ mod tests {
         let result_node = cb.sum(constants);
         let circuit = cb.into_ace_circuit();
         let result = circuit.eval(result_node, &[]);
-        let result_expected: QuadFelt = (0..5).sum::<u64>().into();
+        let result_expected: QuadFelt = Felt::new((0..5).sum::<u64>()).into();
         assert_eq!(result, result_expected)
     }
 
@@ -378,9 +377,9 @@ mod tests {
         let constants: Vec<Node> = (0..5).map(Node::Input).collect();
         let result_node = cb.prod(constants);
         let circuit = cb.into_ace_circuit();
-        let inputs: Vec<_> = (0..5u64).map(QuadFelt::from).collect();
+        let inputs: Vec<_> = (0..5u64).map(Felt::new).map(QuadFelt::from).collect();
         let result = circuit.eval(result_node, &inputs);
-        let result_expected: QuadFelt = (0..5).product::<u64>().into();
+        let result_expected: QuadFelt = Felt::new((0..5).product::<u64>()).into();
         assert_eq!(result, result_expected)
     }
 
@@ -388,12 +387,12 @@ mod tests {
     fn test_horner() {
         let mut cb = CircuitBuilder::default();
         let coeff_nodes: Vec<Node> = (0..5).map(Node::Input).collect();
-        let point = 2u64;
+        let point = Felt::new(2u64);
         let point_node = cb.constant(2);
         let result_node = cb.horner_eval(point_node, coeff_nodes.clone());
         let circuit = cb.into_ace_circuit();
 
-        let inputs: Vec<_> = (0..5u64).map(QuadFelt::from).collect();
+        let inputs: Vec<_> = (0..5u64).map(Felt::new).map(QuadFelt::from).collect();
 
         let result = circuit.eval(result_node, &inputs);
         let result_expected: QuadFelt = inputs
@@ -407,12 +406,12 @@ mod tests {
     fn test_poly_eval() {
         let mut cb = CircuitBuilder::default();
         let coeff_nodes: Vec<Node> = (0..5).map(Node::Input).collect();
-        let point = 2u64;
+        let point = Felt::new(2u64);
         let point_node = cb.constant(2);
         let result_node = cb.poly_eval(point_node, &coeff_nodes);
         let circuit = cb.into_ace_circuit();
 
-        let inputs: Vec<_> = (0..5u64).map(QuadFelt::from).collect();
+        let inputs: Vec<_> = (0..5u64).map(Felt::new).map(QuadFelt::from).collect();
 
         let result = circuit.eval(result_node, &inputs);
         let result_expected: QuadFelt = inputs
@@ -435,8 +434,10 @@ mod tests {
         let res_2 = lc.next_linear_combination(&mut cb, coeffs_2);
         let res = cb.add(res_1, res_2);
 
-        let alpha = QuadFelt::from(5u64);
-        let coeffs: Vec<_> = (0..6).map(|i| QuadFelt::from(1 + i as u64)).collect();
+        let alpha = QuadFelt::from(Felt::new(5u64));
+        let coeffs: Vec<_> = (0..6)
+            .map(|i| QuadFelt::from(Felt::new(1 + i as u64)))
+            .collect();
 
         let result_expected = coeffs
             .iter()

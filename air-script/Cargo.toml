@@ -29,6 +29,9 @@ miden-diagnostics = "0.1"
 
 [dev-dependencies]
 expect-test = "1.4"
-winter-air = { package = "winter-air", version = "0.6", default-features = false }
-winter-math = { package = "winter-math", version = "0.6", default-features = false }
-winter-utils = { package = "winter-utils", version = "0.6", default-features = false }
+winter-air = { package = "winter-air", version = "0.12", default-features = false }
+winter-math = { package = "winter-math", version = "0.12", default-features = false }
+winter-utils = { package = "winter-utils", version = "0.12", default-features = false }
+winter-prover = { package = "winter-prover", version = "0.12", default-features = false }
+winter-verifier = { package = "winter-verifier", version = "0.12", default-features = false }
+winterfell = { package = "winterfell", version = "0.12", default-features = false }
