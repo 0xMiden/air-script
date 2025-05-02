@@ -5,7 +5,6 @@ members = [
     "pass",
     "mir",
     "air",
-    "codegen/masm",
     "codegen/winterfell",
     "codegen/ace",
 ]
