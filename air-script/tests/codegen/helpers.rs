@@ -8,7 +8,6 @@ use miden_diagnostics::{
 
 pub enum Target {
     Winterfell,
-    Masm,
 }
 pub enum Pipeline {
     WithMIR,
@@ -55,7 +54,6 @@ impl Test {
 
         let backend: Box<dyn CodeGenerator<Output = String>> = match target {
             Target::Winterfell => Box::new(air_codegen_winter::CodeGenerator),
-            Target::Masm => Box::<air_codegen_masm::CodeGenerator>::default(),
         };
 
         // generate Rust code targeting Winterfell

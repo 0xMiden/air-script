@@ -11,13 +11,11 @@ use miden_diagnostics::{
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Target {
     Winterfell,
-    Masm,
 }
 impl Target {
     pub fn extension(&self) -> &'static str {
         match self {
             Self::Winterfell => "rs",
-            Self::Masm => "masm",
         }
     }
 }
@@ -35,7 +33,7 @@ pub struct Transpile {
     #[arg(
         short,
         long,
-        help = "Output filename, defaults to the input file with the .rs extension for Winterfell or .masm for MASM"
+        help = "Output filename, defaults to the input file with the .rs extension for Winterfell"
     )]
     output: Option<PathBuf>,
 
@@ -102,7 +100,6 @@ impl Transpile {
                 let target = self.target.unwrap_or(Target::Winterfell);
                 let backend: Box<dyn CodeGenerator<Output = String>> = match target {
                     Target::Winterfell => Box::new(air_codegen_winter::CodeGenerator),
-                    Target::Masm => Box::<air_codegen_masm::CodeGenerator>::default(),
                 };
 
                 // write transpiled output to the output path
