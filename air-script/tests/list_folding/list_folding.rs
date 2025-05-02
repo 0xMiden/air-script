@@ -1,7 +1,6 @@
-use winter_air::{Air, AirContext, Assertion, AuxTraceRandElements, EvaluationFrame, ProofOptions as WinterProofOptions, TransitionConstraintDegree, TraceInfo};
+use winter_air::{Air, AirContext, Assertion, AuxRandElements, EvaluationFrame, ProofOptions as WinterProofOptions, TransitionConstraintDegree, TraceInfo};
 use winter_math::fields::f64::BaseElement as Felt;
-use winter_math::{ExtensionOf, FieldElement};
-use winter_utils::collections::Vec;
+use winter_math::{ExtensionOf, FieldElement, ToElements};
 use winter_utils::{ByteWriter, Serializable};
 
 pub struct PublicInputs {
@@ -17,6 +16,14 @@ impl PublicInputs {
 impl Serializable for PublicInputs {
     fn write_into<W: ByteWriter>(&self, target: &mut W) {
         self.stack_inputs.write_into(target);
+    }
+}
+
+impl ToElements<Felt> for PublicInputs {
+    fn to_elements(&self) -> Vec<Felt> {
+        let mut elements = Vec::new();
+        elements.extend_from_slice(&self.stack_inputs);
+        elements
     }
 }
 
@@ -67,7 +74,7 @@ impl Air for ListFoldingAir {
         result
     }
 
-    fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> Vec<Assertion<E>> {
+    fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
         result
     }
@@ -81,7 +88,7 @@ impl Air for ListFoldingAir {
         result[3] = main_next[8] - (main_current[1] + main_current[9] * main_current[13] + main_current[10] * main_current[14] + main_current[11] * main_current[15] + main_current[12] * main_current[16] + main_current[9] * main_current[13] + main_current[10] * main_current[14] + main_current[11] * main_current[15] + main_current[12] * main_current[16]);
     }
 
-    fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxTraceRandElements<E>, result: &mut [E])
+    fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxRandElements<E>, result: &mut [E])
     where F: FieldElement<BaseField = Felt>,
           E: FieldElement<BaseField = Felt> + ExtensionOf<F>,
     {

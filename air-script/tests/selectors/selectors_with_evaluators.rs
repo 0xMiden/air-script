@@ -15,7 +15,7 @@ impl PublicInputs {
 
 impl Serializable for PublicInputs {
     fn write_into<W: ByteWriter>(&self, target: &mut W) {
-        self.stack_inputs.write_into(target);
+        target.write(self.stack_inputs);
     }
 }
 
@@ -82,9 +82,9 @@ impl Air for SelectorsAir {
     fn evaluate_transition<E: FieldElement<BaseField = Felt>>(&self, frame: &EvaluationFrame<E>, periodic_values: &[E], result: &mut [E]) {
         let main_current = frame.current();
         let main_next = frame.next();
-        result[0] = main_current[0] * (E::ONE - main_current[1]) * (main_next[3] - E::ZERO) - E::ZERO;
-        result[1] = main_current[0] * main_current[1] * main_current[2] * (main_next[3] - main_current[3]) - E::ZERO;
-        result[2] = (E::ONE - main_current[1]) * (E::ONE - main_current[2]) * (main_next[3] - E::ONE) - E::ZERO;
+        result[0] = (main_next[3] - E::ZERO) * main_current[0] * (E::ONE - main_current[1]);
+        result[1] = (main_next[3] - main_current[3]) * main_current[0] * main_current[1] * main_current[2];
+        result[2] = (main_next[3] - E::ONE) * (E::ONE - main_current[1]) * (E::ONE - main_current[2]);
     }
 
     fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxRandElements<E>, result: &mut [E])
