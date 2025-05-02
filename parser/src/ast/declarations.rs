@@ -4,14 +4,13 @@
 //! These declarations define named items which are used by functions/constraints during evaluation.
 //!
 //! Some declarations introduce identifiers at global scope, i.e. they are implicitly defined in all
-//! modules regardless of imports. Currently, this is only the `random_values` section.
+//! modules regardless of imports.
 //!
 //! Certain declarations are only permitted in the root module of an AirScript program, as they are
 //! also effectively global:
 //!
 //! * `trace_columns`
 //! * `public_inputs`
-//! * `random_values`
 //! * `boundary_constraints`
 //! * `integrity_constraints`
 //!
@@ -56,11 +55,6 @@ pub enum Declaration {
     /// There may only be one of these in the entire program, and it must
     /// appear in the root AirScript module, i.e. in a module declared with `def`
     PublicInputs(Span<Vec<PublicInput>>),
-    /// A `random_values` section declaration
-    ///
-    /// There may only be one of these in the entire program, and it must
-    /// appear in the root AirScript module, i.e. in a module declared with `def`
-    RandomValues(RandomValues),
     /// A `trace_bindings` section declaration
     ///
     /// There may only be one of these in the entire program, and it must
@@ -330,231 +324,6 @@ impl Eq for PublicInput {}
 impl PartialEq for PublicInput {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name && self.size == other.size
-    }
-}
-
-/// Declaration of random values for an AirScript program.
-///
-/// This declaration is only permitted in the root module.
-///
-/// Random values are a fixed-size array bound to a given name. In addition to the name
-/// of the array itself, individual elements or sub-slices of the array may be bound to
-/// names which will also be globally-visible.
-///
-/// # Examples
-///
-/// A `random_values` declaration like the following is equivalent to creating a new
-/// [RandomValues] instance with `RandomValues::with_size`, with the name `rand`, and
-/// size `15`:
-///
-/// ```airscript
-/// random_values {
-///     rand: [15]
-/// }
-/// ```
-///
-/// A `random_values` declaration like the following however:
-///
-/// ```airscript
-/// random_values {
-///     rand: [a, b[12]]
-/// }
-/// ```
-///
-/// It is equivalent to creating it with `RandomValues::new`, with two separate bindings,
-/// one for `a`, and one for `b`, with sizes `1` and `12` respectively. The size of the overall
-/// [RandomValues] instance in that case would be `13`.
-///
-#[derive(Clone, Spanned)]
-pub struct RandomValues {
-    #[span]
-    pub span: SourceSpan,
-    /// The name bound to the `random_values` array
-    pub name: Identifier,
-    /// The size of the array
-    pub size: usize,
-    /// Zero or more bindings for individual elements or groups of elements
-    pub bindings: Vec<RandBinding>,
-}
-impl RandomValues {
-    /// Creates a new [RandomValues] array `size` elements
-    pub const fn with_size(span: SourceSpan, name: Identifier, size: usize) -> Self {
-        Self {
-            span,
-            name,
-            size,
-            bindings: vec![],
-        }
-    }
-
-    /// Creates a new [RandomValues] array from the given bindings
-    pub fn new(
-        span: SourceSpan,
-        name: Identifier,
-        raw_bindings: Vec<Span<(Identifier, usize)>>,
-    ) -> Self {
-        let mut bindings = Vec::with_capacity(raw_bindings.len());
-        let mut offset = 0;
-        for binding in raw_bindings.into_iter() {
-            let (name, size) = binding.item;
-            let ty = match size {
-                1 => Type::Felt,
-                n => Type::Vector(n),
-            };
-            bindings.push(RandBinding::new(binding.span(), name, size, offset, ty));
-            offset += size;
-        }
-
-        Self {
-            span,
-            name,
-            size: offset,
-            bindings,
-        }
-    }
-}
-impl Eq for RandomValues {}
-impl PartialEq for RandomValues {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.size == other.size && self.bindings == other.bindings
-    }
-}
-impl fmt::Debug for RandomValues {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("RandomValues")
-            .field("name", &self.name)
-            .field("size", &self.size)
-            .field("bindings", &self.bindings)
-            .finish()
-    }
-}
-impl fmt::Display for RandomValues {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(name) = self.name.as_str().strip_prefix('$') {
-            write!(f, "{}: ", name)?;
-        } else {
-            write!(f, "{}: ", self.name)?;
-        }
-        if self.bindings.is_empty() {
-            write!(f, "[{}]", self.size)
-        } else {
-            write!(f, "{}", DisplayList(self.bindings.as_slice()))
-        }
-    }
-}
-
-/// Declaration of a random value binding used in [RandomValues].
-///
-/// It is represented by a named identifier and its size.
-#[derive(Copy, Clone, Spanned)]
-pub struct RandBinding {
-    #[span]
-    pub span: SourceSpan,
-    /// The name of this binding
-    pub name: Identifier,
-    /// The number of elements bound
-    pub size: usize,
-    /// The offset in the random values array where this binding begins
-    pub offset: usize,
-    /// The type of this binding
-    pub ty: Type,
-}
-impl RandBinding {
-    pub const fn new(
-        span: SourceSpan,
-        name: Identifier,
-        size: usize,
-        offset: usize,
-        ty: Type,
-    ) -> Self {
-        Self {
-            span,
-            name,
-            size,
-            offset,
-            ty,
-        }
-    }
-
-    #[inline]
-    pub fn ty(&self) -> Type {
-        self.ty
-    }
-
-    #[inline]
-    pub fn is_scalar(&self) -> bool {
-        self.ty.is_scalar()
-    }
-
-    /// Derive a new [RandBinding] derived from the current one given an [AccessType]
-    pub fn access(&self, access_type: AccessType) -> Result<Self, InvalidAccessError> {
-        use super::{RangeBound, RangeExpr};
-        match access_type {
-            AccessType::Default => Ok(*self),
-            AccessType::Slice(_) if self.is_scalar() => Err(InvalidAccessError::SliceOfScalar),
-            AccessType::Slice(RangeExpr {
-                start: RangeBound::Const(start),
-                end: RangeBound::Const(end),
-                ..
-            }) if start > end => Err(InvalidAccessError::IndexOutOfBounds),
-            AccessType::Slice(RangeExpr {
-                start: RangeBound::Const(start),
-                end: RangeBound::Const(end),
-                ..
-            }) => {
-                let offset = self.offset + start.item;
-                let size = end.item - start.item;
-                Ok(Self {
-                    offset,
-                    size,
-                    ty: Type::Vector(size),
-                    ..*self
-                })
-            }
-            AccessType::Slice(_) => {
-                unreachable!("expected non-constant range bounds to have been erased by this point")
-            }
-            AccessType::Index(_) if self.is_scalar() => Err(InvalidAccessError::IndexIntoScalar),
-            AccessType::Index(idx) if idx >= self.size => Err(InvalidAccessError::IndexOutOfBounds),
-            AccessType::Index(idx) => {
-                let offset = self.offset + idx;
-                Ok(Self {
-                    offset,
-                    size: 1,
-                    ty: Type::Felt,
-                    ..*self
-                })
-            }
-            AccessType::Matrix(_, _) => Err(InvalidAccessError::IndexIntoScalar),
-        }
-    }
-}
-impl Eq for RandBinding {}
-impl PartialEq for RandBinding {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-            && self.size == other.size
-            && self.offset == other.offset
-            && self.ty == other.ty
-    }
-}
-impl fmt::Debug for RandBinding {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("RandBinding")
-            .field("name", &self.name)
-            .field("size", &self.size)
-            .field("offset", &self.offset)
-            .field("ty", &self.ty)
-            .finish()
-    }
-}
-impl fmt::Display for RandBinding {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.size == 1 {
-            write!(f, "{}", self.name)
-        } else {
-            write!(f, "{}[{}]", self.name, self.size)
-        }
     }
 }
 

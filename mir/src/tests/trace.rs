@@ -6,7 +6,6 @@ fn trace_columns_index_access() {
     def test
     trace_columns {
         main: [a, b],
-        aux: [c, d],
     }
     public_inputs {
         stack_inputs: [16],
@@ -16,7 +15,6 @@ fn trace_columns_index_access() {
     }
     integrity_constraints {
         enf $main[0]' - $main[1] = 0;
-        enf $aux[0]^3 - $aux[1]' = 0;
     }";
 
     assert!(compile(source).is_ok());

@@ -6,8 +6,7 @@ fn list_folding_on_const() {
     def test
     const A = [1, 2, 3];
     trace_columns {
-        main: [clk, fmp[2], ctx],
-        aux: [a, b, c[4], d[4]],
+        main: [clk, fmp[2], ctx, a, b, c[4], d[4]],
     }
     public_inputs {
         stack_inputs: [16],
@@ -30,8 +29,7 @@ fn list_folding_on_variable() {
     let source = "
     def test
     trace_columns {
-        main: [clk, fmp[2], ctx],
-        aux: [a, b, c[4], d[4]],
+        main: [clk, fmp[2], ctx, a, b, c[4], d[4]],
     }
     public_inputs {
         stack_inputs: [16],
@@ -55,8 +53,7 @@ fn list_folding_on_vector() {
     let source = "
     def test
     trace_columns {
-        main: [clk, fmp[2], ctx],
-        aux: [a, b, c[4], d[4]],
+        main: [clk, fmp[2], ctx, a, b, c[4], d[4]],
     }
     public_inputs {
         stack_inputs: [16],
@@ -80,8 +77,7 @@ fn list_folding_on_lc() {
     def test
     const A = [1, 2, 3];
     trace_columns {
-        main: [clk, fmp[2], ctx],
-        aux: [a, b, c[4], d[4]],
+        main: [clk, fmp[2], ctx, a, b, c[4], d[4]],
     }
     public_inputs {
         stack_inputs: [16],
@@ -104,8 +100,7 @@ fn list_folding_in_lc() {
     let source = "
     def test
     trace_columns {
-        main: [clk, fmp[4], ctx],
-        aux: [a, b, c[4], d[4]],
+        main: [clk, fmp[4], ctx, a, b, c[4], d[4]],
     }
     public_inputs {
         stack_inputs: [16],

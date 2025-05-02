@@ -72,7 +72,7 @@ fn valid_tokenization_next_token() {
 
 #[test]
 fn valid_tokenization_indexed_trace_access() {
-    let source = "enf $main[0]' = $main[1] + $aux[0] + $aux[1]'";
+    let source = "enf $main[0]' = $main[1] + $main[2] + $main[3]'";
     let tokens = vec![
         Token::Enf,
         Token::DeclIdentRef(Symbol::intern("$main")),
@@ -86,14 +86,14 @@ fn valid_tokenization_indexed_trace_access() {
         Token::Num(1),
         Token::RBracket,
         Token::Plus,
-        Token::DeclIdentRef(Symbol::intern("$aux")),
+        Token::DeclIdentRef(Symbol::intern("$main")),
         Token::LBracket,
-        Token::Num(0),
+        Token::Num(2),
         Token::RBracket,
         Token::Plus,
-        Token::DeclIdentRef(Symbol::intern("$aux")),
+        Token::DeclIdentRef(Symbol::intern("$main")),
         Token::LBracket,
-        Token::Num(1),
+        Token::Num(3),
         Token::RBracket,
         Token::Quote,
     ];

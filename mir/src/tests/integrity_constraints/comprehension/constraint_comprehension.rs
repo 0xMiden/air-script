@@ -5,8 +5,7 @@ fn constraint_comprehension() {
     let source = "
     def test
     trace_columns {
-        main: [clk, fmp[2], ctx],
-        aux: [a, b, c[4], d[4]],
+        main: [clk, fmp[2], ctx, a, b, c[4], d[4]],
     }
     public_inputs {
         stack_inputs: [16],
@@ -26,8 +25,7 @@ fn ic_comprehension_with_selectors() {
     let source = "
     def test
     trace_columns {
-        main: [clk, fmp[2], ctx],
-        aux: [a, b, c[4], d[4]],
+        main: [clk, fmp[2], ctx, a, b, c[4], d[4]],
     }
     public_inputs {
         stack_inputs: [16],

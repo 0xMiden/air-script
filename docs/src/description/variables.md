@@ -13,21 +13,16 @@ const B = 2;
 
 trace_columns {
     main: [a, b, c, d],
-    aux: [e, f],
 }
 
 public_inputs {
     stack_inputs: [16],
 }
 
-random_values {
-    rand: [16],
-}
-
 boundary_constraints {
-    let x = stack_inputs[0] + stack_inputs[1]   ;
-    let y = [$rand[0], $rand[1]]  ;
-    enf e.first = x + y[0] + y[1];
+    let x = stack_inputs[0] + stack_inputs[1];
+    let y = [stack_inputs[2], stack_inputs[3]];
+    enf a.first = x + y[0] + y[1];
 }
 
 integrity_constraints {
@@ -81,16 +76,8 @@ Built-in variables are identified by the starting character `$`. There are two b
 
 ### \$main
 
-`$main` is used to access columns in the [main execution trace](./appendix.md#main-vs-auxiliary-execution-trace-segments-main-and-aux).
+`$main` is used to access columns in the main execution trace.
 
 These columns may be accessed by using the indexing operator on `$main`. For example, `$main[i]` provides the `(i+1)th` column in the main execution trace.
 
 Columns using the `$main` built-in may only be accessed within source sections for integrity constraints, i.e. the [`integrity_constraints` section](./constraints.md#integrity-constraints-integrity_constraints).
-
-### \$aux
-
-`$aux` is used to access columns in the [auxiliary execution trace](./appendix.md#main-vs-auxiliary-execution-trace-segments-main-and-aux).
-
-These columns may be accessed by using the indexing operator on `$aux`. For example, `$aux[i]` provides the `(i+1)th` column in the auxiliary execution trace.
-
-Columns using the `$aux` built-in may only be accessed within source sections for integrity constraints, i.e. the [`integrity_constraints` section](./constraints.md#integrity-constraints-integrity_constraints).

@@ -40,10 +40,10 @@ impl Air for ListComprehensionAir {
     }
 
     fn new(trace_info: TraceInfo, public_inputs: PublicInputs, options: WinterProofOptions) -> Self {
-        let main_degrees = vec![TransitionConstraintDegree::new(1)];
-        let aux_degrees = vec![TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(1)];
-        let num_main_assertions = 0;
-        let num_aux_assertions = 1;
+        let main_degrees = vec![TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(1)];
+        let aux_degrees = vec![];
+        let num_main_assertions = 1;
+        let num_aux_assertions = 0;
 
         let context = AirContext::new_multi_segment(
             trace_info,
@@ -63,12 +63,12 @@ impl Air for ListComprehensionAir {
 
     fn get_assertions(&self) -> Vec<Assertion<Felt>> {
         let mut result = Vec::new();
+        result.push(Assertion::single(10, 0, Felt::ZERO));
         result
     }
 
     fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
-        result.push(Assertion::single(6, 0, E::ZERO));
         result
     }
 
@@ -76,6 +76,10 @@ impl Air for ListComprehensionAir {
         let main_current = frame.current();
         let main_next = frame.next();
         result[0] = main_current[0] - main_current[2];
+        result[1] = main_current[4] - main_current[0] * E::from(2_u64) * E::from(2_u64) * E::from(2_u64) * main_current[11];
+        result[2] = main_current[4] - main_current[0] * (main_next[8] - main_next[12]);
+        result[3] = main_current[6] - main_current[0] * (main_current[9] - main_current[14]);
+        result[4] = main_current[4] - (E::ZERO + main_current[5] - main_current[8] - main_current[12] + E::ONE + main_current[6] - main_current[9] - main_current[13] + E::from(2_u64) + main_current[7] - main_current[10] - main_current[14]);
     }
 
     fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxTraceRandElements<E>, result: &mut [E])
@@ -86,9 +90,5 @@ impl Air for ListComprehensionAir {
         let main_next = main_frame.next();
         let aux_current = aux_frame.current();
         let aux_next = aux_frame.next();
-        result[0] = aux_current[0] - E::from(main_current[0]) * E::from(2_u64) * E::from(2_u64) * E::from(2_u64) * aux_current[7];
-        result[1] = aux_current[0] - E::from(main_current[0]) * (aux_next[4] - aux_next[8]);
-        result[2] = aux_current[2] - E::from(main_current[0]) * (aux_current[5] - aux_current[10]);
-        result[3] = aux_current[0] - (E::ZERO + aux_current[1] - aux_current[4] - aux_current[8] + E::ONE + aux_current[2] - aux_current[5] - aux_current[9] + E::from(2_u64) + aux_current[3] - aux_current[6] - aux_current[10]);
     }
 }

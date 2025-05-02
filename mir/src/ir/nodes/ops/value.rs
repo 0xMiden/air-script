@@ -52,7 +52,7 @@ impl Child for Value {
 /// Represents a known value in the [MIR]
 ///
 /// Values are either constant, or evaluated at runtime using the context
-/// provided to an AirScript program (i.e. random values, public inputs, etc.).
+/// provided to an AirScript program (i.e. public inputs, etc.).
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum MirValue {
     /// A constant value.
@@ -65,12 +65,12 @@ pub enum MirValue {
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
-    /// A reference to the `random_values` array, specifically the element at the given index
+    /// A reference to a specific index in the random values array
+    ///
+    /// Random values are not provided by the user in the AirScript program, but are used to expand Bus constraints.
     RandomValue(usize),
     /// A binding to a set of consecutive trace columns of a given size
     TraceAccessBinding(TraceAccessBinding),
-    /// A binding to a range of random values
-    RandomValueBinding(RandomValueBinding),
     /// A binding to a [Bus].
     BusAccess(BusAccess),
     Null,
@@ -136,14 +136,6 @@ pub struct TraceAccessBinding {
     /// The offset to the first column of the segment which is bound by this binding
     pub offset: usize,
     /// The number of columns which are bound
-    pub size: usize,
-}
-
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct RandomValueBinding {
-    /// The offset in the random values array where this binding begins
-    pub offset: usize,
-    /// The number of elements which are bound
     pub size: usize,
 }
 

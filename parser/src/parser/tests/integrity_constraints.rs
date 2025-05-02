@@ -265,61 +265,6 @@ fn integrity_constraint_with_periodic_col() {
 }
 
 #[test]
-fn integrity_constraint_with_random_value() {
-    let source = "
-    def test
-
-    trace_columns {
-        main: [a],
-        aux: [aux0[2]],
-    }
-
-    public_inputs {
-        inputs: [2],
-    }
-
-    random_values {
-        rand: [2],
-    }
-
-    boundary_constraints {
-        enf clk.first = 0;
-    }
-
-    integrity_constraints {
-        enf a + $rand[1] = 0;
-    }";
-
-    let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
-    expected
-        .trace_columns
-        .push(trace_segment!(0, "$main", [(a, 1)]));
-    expected
-        .trace_columns
-        .push(trace_segment!(1, "$aux", [(aux0, 2)]));
-    expected.random_values = Some(random_values!("$rand", 2));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
-    );
-    expected.boundary_constraints = Some(Span::new(
-        SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(
-            bounded_access!(clk, Boundary::First),
-            int!(0)
-        ))],
-    ));
-    expected.integrity_constraints = Some(Span::new(
-        SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(
-            add!(access!(a), access!("$rand"[1])),
-            int!(0)
-        ))],
-    ));
-    ParseTest::new().expect_module_ast(source, expected);
-}
-
-#[test]
 fn integrity_constraint_with_constants() {
     let source = "
     def test
@@ -430,7 +375,6 @@ fn integrity_constraint_with_indexed_trace_access() {
 
     trace_columns {
         main: [a, b],
-        aux: [c, d],
     }
 
     public_inputs {
@@ -438,44 +382,31 @@ fn integrity_constraint_with_indexed_trace_access() {
     }
 
     boundary_constraints {
-        enf clk.first = 0;
+        enf a.first = 0;
     }
 
     integrity_constraints {
         enf $main[0]' = $main[1] + 1;
-        enf $aux[0]' - $aux[1] = 1;
     }";
 
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
     expected
         .trace_columns
         .push(trace_segment!(0, "$main", [(a, 1), (b, 1)]));
-    expected
-        .trace_columns
-        .push(trace_segment!(1, "$aux", [(c, 1), (d, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
         PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(
-            bounded_access!(clk, Boundary::First),
-            int!(0)
-        ))],
+        vec![enforce!(eq!(bounded_access!(a, Boundary::First), int!(0)))],
     ));
     expected.integrity_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
-        vec![
-            enforce!(eq!(
-                access!("$main"[0], 1),
-                add!(access!("$main"[1]), int!(1))
-            )),
-            enforce!(eq!(
-                sub!(access!("$aux"[0], 1), access!("$aux"[1])),
-                int!(1)
-            )),
-        ],
+        vec![enforce!(eq!(
+            access!("$main"[0], 1),
+            add!(access!("$main"[1]), int!(1))
+        ))],
     ));
     ParseTest::new().expect_module_ast(source, expected);
 }

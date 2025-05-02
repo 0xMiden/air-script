@@ -5,16 +5,6 @@ use expect_test::expect_file;
 // ================================================================================================
 
 #[test]
-fn aux_trace() {
-    let generated_air = Test::new("tests/aux_trace/aux_trace.air".to_string())
-        .transpile(Target::Winterfell, Pipeline::WithoutMIR)
-        .unwrap();
-
-    let expected = expect_file!["../aux_trace/aux_trace.rs"];
-    expected.assert_eq(&generated_air);
-}
-
-#[test]
 fn binary() {
     let generated_air = Test::new("tests/binary/binary.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithoutMIR)
@@ -168,23 +158,6 @@ fn indexed_trace_access() {
             .unwrap();
 
     let expected = expect_file!["../indexed_trace_access/indexed_trace_access.rs"];
-    expected.assert_eq(&generated_air);
-}
-
-#[test]
-fn random_values() {
-    let generated_air = Test::new("tests/random_values/random_values_simple.air".to_string())
-        .transpile(Target::Winterfell, Pipeline::WithoutMIR)
-        .unwrap();
-
-    let expected = expect_file!["../random_values/random_values.rs"];
-    expected.assert_eq(&generated_air);
-
-    let generated_air = Test::new("tests/random_values/random_values_bindings.air".to_string())
-        .transpile(Target::Winterfell, Pipeline::WithoutMIR)
-        .unwrap();
-
-    let expected = expect_file!["../random_values/random_values.rs"];
     expected.assert_eq(&generated_air);
 }
 

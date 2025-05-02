@@ -7,7 +7,6 @@ def ExampleAir
 
 trace_columns {
     main: [s, a, b, c],
-    aux: [p],
 }
 
 public_inputs {
@@ -34,9 +33,6 @@ boundary_constraints {
     enf b.last = stack_outputs[1];
     enf c.last = stack_outputs[2];
 
-    # set the first row of the auxiliary column p to 1
-    enf p.first = 1;
-
     # set the bus q to be initially empty
     enf q.first = null;
 }
@@ -53,9 +49,6 @@ integrity_constraints {
 
     # c = a * b when s = 1.
     enf s * (c - a * b) = 0;
-
-    # the auxiliary column contains the product of values of c offset by a random value.
-    enf p' = p * (c + $rand[0]);
 
     # insert p to the q bus when s = 1
     q.insert(p) when s;

@@ -4,7 +4,10 @@ def ExampleAir
 
 trace_columns {
     main: [s, a, b, c],
-    aux: [p],
+}
+
+buses {
+    multiset p,
 }
 
 public_inputs {
@@ -14,10 +17,6 @@ public_inputs {
 
 periodic_columns {
     k0: [1, 1, 1, 1, 1, 1, 1, 0],
-}
-
-random_values {
-    rand: [1],
 }
 
 boundary_constraints {
@@ -31,8 +30,8 @@ boundary_constraints {
     enf b.last = stack_outputs[1];
     enf c.last = stack_outputs[2];
 
-    # set the first row of the auxiliary column p to 1
-    enf p.first = 1;
+    # set the p bus to be initially empty
+    enf p.first = null;
 }
 
 integrity_constraints {
@@ -48,6 +47,6 @@ integrity_constraints {
     # c = a * b when s = 1.
     enf s * (c - a * b) = 0;
 
-    # the auxiliary column contains the product of values of c offset by a random value.
-    enf p' = p * (c + $rand[0]);
+    # value c is inserted into bus p while s = 1
+    p.insert(c) when s;
 }

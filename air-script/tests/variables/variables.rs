@@ -44,7 +44,7 @@ impl Air for VariablesAir {
 
     fn new(trace_info: TraceInfo, public_inputs: PublicInputs, options: WinterProofOptions) -> Self {
         let main_degrees = vec![TransitionConstraintDegree::new(2), TransitionConstraintDegree::with_cycles(1, vec![8]), TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(3)];
-        let aux_degrees = vec![TransitionConstraintDegree::new(2)];
+        let aux_degrees = vec![];
         let num_main_assertions = 2;
         let num_aux_assertions = 0;
 
@@ -93,6 +93,5 @@ impl Air for VariablesAir {
         let main_next = main_frame.next();
         let aux_current = aux_frame.current();
         let aux_next = aux_frame.next();
-        result[0] = aux_next[0] - aux_current[0] * (E::from(main_current[3]) + aux_rand_elements.get_segment_elements(0)[0]);
     }
 }

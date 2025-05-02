@@ -41,7 +41,7 @@ impl Air for TraceAccessAir {
 
     fn new(trace_info: TraceInfo, public_inputs: PublicInputs, options: WinterProofOptions) -> Self {
         let main_degrees = vec![TransitionConstraintDegree::new(1)];
-        let aux_degrees = vec![TransitionConstraintDegree::new(1)];
+        let aux_degrees = vec![];
         let num_main_assertions = 1;
         let num_aux_assertions = 0;
 
@@ -86,6 +86,5 @@ impl Air for TraceAccessAir {
         let main_next = main_frame.next();
         let aux_current = aux_frame.current();
         let aux_next = aux_frame.next();
-        result[0] = aux_next[0] - (aux_current[1] + E::ONE);
     }
 }

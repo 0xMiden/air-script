@@ -16,16 +16,11 @@ fn fold_scalar_and_vec(a: felt, b: felt[12]) -> felt {
 }
 
 trace_columns {
-    main: [t, s0, s1, v, b[12]],
-    aux: [b_range],
+    main: [t, s0, s1, v, b[12], b_range],
 }
 
 public_inputs {
     stack_inputs: [16],
-}
-
-random_values {
-    alpha: [16],
 }
 
 boundary_constraints {
@@ -33,13 +28,9 @@ boundary_constraints {
 }
 
 integrity_constraints {
-    # let val = $alpha[0] + v;
     let f = get_multiplicity_flags(s0, s1);
     let z = v^7 * f[3] + v^2 * f[2] + v * f[1] + f[0];
-    # let folded_value = fold_scalar_and_vec(v, b);
     enf b_range' = b_range * (z * t - t + 1);
-    # enf b_range' = b_range * 2;
     let y = fold_scalar_and_vec(v, b);
-    # let c = fold_scalar_and_vec(t, b);
     enf v' = y;
 }

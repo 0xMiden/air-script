@@ -24,7 +24,7 @@ impl Pass for BusOpExpand<'_> {
     type Error = CompileError;
 
     fn run<'a>(&mut self, mut ir: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
-        let mut max_num_random_values = ir.num_random_values as usize;
+        let mut max_num_random_values = 0;
 
         let graph = ir.constraint_graph_mut();
 
@@ -86,7 +86,7 @@ impl Pass for BusOpExpand<'_> {
                                 span: SourceSpan::default(),
                                 value: MirValue::RandomValue(index + 1),
                             });
-                            max_num_random_values = max_num_random_values.max(index + 1);
+                            max_num_random_values = max_num_random_values.max(index + 2);
 
                             // 1.3 Multiply arg with alpha
                             let arg_times_alpha =
@@ -190,7 +190,7 @@ impl Pass for BusOpExpand<'_> {
                                 span: SourceSpan::default(),
                                 value: MirValue::RandomValue(index + 1),
                             });
-                            max_num_random_values = max_num_random_values.max(index + 1);
+                            max_num_random_values = max_num_random_values.max(index + 2);
 
                             // 1.3 Multiply arg with alpha
                             let arg_times_alpha =

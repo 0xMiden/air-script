@@ -49,10 +49,10 @@ impl Air for ConstantsAir {
     }
 
     fn new(trace_info: TraceInfo, public_inputs: PublicInputs, options: WinterProofOptions) -> Self {
-        let main_degrees = vec![TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(1)];
-        let aux_degrees = vec![TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(1)];
-        let num_main_assertions = 4;
-        let num_aux_assertions = 2;
+        let main_degrees = vec![TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(1), TransitionConstraintDegree::new(1)];
+        let aux_degrees = vec![];
+        let num_main_assertions = 6;
+        let num_aux_assertions = 0;
 
         let context = AirContext::new_multi_segment(
             trace_info,
@@ -76,13 +76,13 @@ impl Air for ConstantsAir {
         result.push(Assertion::single(1, 0, Felt::ONE));
         result.push(Assertion::single(2, 0, Felt::ZERO));
         result.push(Assertion::single(3, 0, Felt::ONE - Felt::new(2) + Felt::new(2) - Felt::ZERO));
+        result.push(Assertion::single(4, 0, Felt::ONE));
+        result.push(Assertion::single(4, self.last_step(), Felt::ZERO));
         result
     }
 
     fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
-        result.push(Assertion::single(0, 0, E::ONE));
-        result.push(Assertion::single(0, self.last_step(), E::ZERO));
         result
     }
 
@@ -92,6 +92,8 @@ impl Air for ConstantsAir {
         result[0] = main_next[0] - (main_current[0] + E::ONE);
         result[1] = main_next[1] - E::ZERO * main_current[1];
         result[2] = main_next[2] - E::ONE * main_current[2];
+        result[3] = main_next[4] - (main_current[4] + E::ONE + E::ZERO);
+        result[4] = main_current[4] - E::ONE;
     }
 
     fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxTraceRandElements<E>, result: &mut [E])
@@ -102,7 +104,5 @@ impl Air for ConstantsAir {
         let main_next = main_frame.next();
         let aux_current = aux_frame.current();
         let aux_next = aux_frame.next();
-        result[0] = aux_next[0] - (aux_current[0] + E::ONE + E::ZERO);
-        result[1] = aux_current[0] - E::ONE;
     }
 }

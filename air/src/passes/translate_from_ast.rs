@@ -27,20 +27,17 @@ impl Pass for AstToAir<'_> {
     fn run<'a>(&mut self, program: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
         let mut air = Air::new(program.name);
 
-        let random_values = program.random_values;
         let trace_columns = program.trace_columns;
         let boundary_constraints = program.boundary_constraints;
         let integrity_constraints = program.integrity_constraints;
 
         air.trace_segment_widths = trace_columns.iter().map(|ts| ts.size as u16).collect();
-        air.num_random_values = random_values.as_ref().map(|rv| rv.size as u16).unwrap_or(0);
         air.periodic_columns = program.periodic_columns;
         air.public_inputs = program.public_inputs;
 
         let mut builder = AirBuilder {
             diagnostics: self.diagnostics,
             air: &mut air,
-            random_values,
             trace_columns,
             bindings: Default::default(),
         };
@@ -70,7 +67,6 @@ enum MemoizedBinding {
 struct AirBuilder<'a> {
     diagnostics: &'a DiagnosticsHandler,
     air: &'a mut Air,
-    random_values: Option<ast::RandomValues>,
     trace_columns: Vec<ast::TraceSegment>,
     bindings: LexicalScope<Identifier, MemoizedBinding>,
 }
@@ -519,13 +515,8 @@ impl AirBuilder<'_> {
             }
             // This must be one of public inputs, random values, or trace columns
             ResolvableIdentifier::Global(id) | ResolvableIdentifier::Local(id) => {
-                // Special identifiers are those which are `$`-prefixed, and must refer to
-                // the random values array (generally the case), or the names of trace segments (e.g. `$main`)
+                // Special identifiers are those which are `$`-prefixed, and must refer to the names of trace segments (e.g. `$main`)
                 if id.is_special() {
-                    if let Some(rv) = self.random_value_access(access) {
-                        return self.insert_op(Operation::Value(Value::RandomValue(rv)));
-                    }
-
                     // Must be a trace segment name
                     if let Some(ta) = self.trace_access(access) {
                         return self.insert_op(Operation::Value(Value::TraceAccess(ta)));
@@ -539,13 +530,9 @@ impl AirBuilder<'_> {
                     );
                 }
 
-                // Otherwise, we check the trace bindings, random value bindings, and public inputs, in that order
+                // Otherwise, we check the trace bindings and public inputs, in that order
                 if let Some(trace_access) = self.trace_access(access) {
                     return self.insert_op(Operation::Value(Value::TraceAccess(trace_access)));
-                }
-
-                if let Some(random_value) = self.random_value_access(access) {
-                    return self.insert_op(Operation::Value(Value::RandomValue(random_value)));
                 }
 
                 if let Some(public_input) = self.public_input_access(access) {
@@ -583,33 +570,6 @@ impl AirBuilder<'_> {
                     &access.name
                 );
             }
-        }
-    }
-
-    fn random_value_access(&self, access: &ast::SymbolAccess) -> Option<usize> {
-        let rv = self.random_values.as_ref()?;
-        let id = access.name.as_ref();
-        if rv.name == id {
-            if let AccessType::Index(index) = access.access_type {
-                assert!(index < rv.size);
-                return Some(index);
-            } else {
-                // This should have been caught earlier during compilation
-                unreachable!("invalid access to random values array: {:#?}", access);
-            }
-        }
-
-        // This must be a reference to a binding, if it is a random value access
-        let binding = rv.bindings.iter().find(|rb| rb.name == id)?;
-
-        match access.access_type {
-            AccessType::Default if binding.size == 1 => Some(binding.offset),
-            AccessType::Index(extra) if binding.size > 1 => Some(binding.offset + extra),
-            // This should have been caught earlier during compilation
-            _ => unreachable!(
-                "unexpected random value access type encountered during lowering: {:#?}",
-                access
-            ),
         }
     }
 

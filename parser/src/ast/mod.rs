@@ -82,13 +82,7 @@ pub struct Program {
     /// NOTE: Public inputs are only visible in the root module, so we do
     /// not use [QualifiedIdentifier] as a key into this collection.
     pub public_inputs: BTreeMap<Identifier, PublicInput>,
-    /// The set of random values defined in the root module, if present
-    pub random_values: Option<RandomValues>,
-    /// The set of trace columns defined in the root module
-    ///
-    /// NOTE: It is guaranteed that at least a `main` trace column set
-    /// will be present here. If `random_values` has a value, then it is
-    /// further guaranteed that an `aux` trace column set will be present.
+    /// The set of trace columns of the main trace defined in the root module
     pub trace_columns: Vec<TraceSegment>,
     /// The boundary_constraints block defined in the root module
     ///
@@ -123,7 +117,6 @@ impl Program {
             buses: Default::default(),
             periodic_columns: Default::default(),
             public_inputs: Default::default(),
-            random_values: None,
             trace_columns: vec![],
             boundary_constraints: vec![],
             integrity_constraints: vec![],
@@ -153,7 +146,6 @@ impl Program {
         {
             let root_module = library.get_mut(&root).unwrap();
             mem::swap(&mut program.public_inputs, &mut root_module.public_inputs);
-            mem::swap(&mut program.random_values, &mut root_module.random_values);
             mem::swap(&mut program.trace_columns, &mut root_module.trace_columns);
         }
 
@@ -311,7 +303,6 @@ impl PartialEq for Program {
             && self.functions == other.functions
             && self.periodic_columns == other.periodic_columns
             && self.public_inputs == other.public_inputs
-            && self.random_values == other.random_values
             && self.trace_columns == other.trace_columns
             && self.boundary_constraints == other.boundary_constraints
             && self.integrity_constraints == other.integrity_constraints
@@ -334,13 +325,6 @@ impl fmt::Display for Program {
         }
         f.write_str("}}")?;
         f.write_str("\n")?;
-
-        if let Some(rv) = self.random_values.as_ref() {
-            writeln!(f, "random_values {{")?;
-            writeln!(f, "    {}", rv)?;
-            f.write_str("}}")?;
-            f.write_str("\n")?;
-        }
 
         if !self.periodic_columns.is_empty() {
             writeln!(f, "periodic_columns {{")?;

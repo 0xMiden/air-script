@@ -427,19 +427,15 @@ fn invalid_index_into_scalar_variable() {
     const C = [[1, 2, 3], [4, 5, 6]];
     trace_columns {
         main: [clk],
-        aux: [p],
     }
     public_inputs {
         stack_inputs: [16],
-    }
-    random_values {
-        alphas: [1],
     }
     boundary_constraints {
         enf clk.first = 1;
     }
     integrity_constraints {
-        let a = $alphas[0];
+        let a = A;
         enf clk' = clk + a[0];
     }";
 
@@ -464,13 +460,9 @@ fn trace_binding_access_in_integrity_constraint() {
     const C = [[1, 2, 3], [4, 5, 6]];
     trace_columns {
         main: [clk, x[4]],
-        aux: [p],
     }
     public_inputs {
         stack_inputs: [16],
-    }
-    random_values {
-        alphas: [1],
     }
     boundary_constraints {
         enf clk.first = 1;

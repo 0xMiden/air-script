@@ -12,15 +12,13 @@ pub enum ModuleType {
     /// Only one root module may be defined in an AirScript program, using `def`.
     ///
     /// The root module has no restrictions on what sections it can contain, and in a
-    /// sense "provides" restricted sections to other modules in the program, e.g. random values
-    /// and the trace columns.
+    /// sense "provides" restricted sections to other modules in the program, e.g. the trace columns.
     Root,
     /// Any number of library modules are permitted in an AirScript program, using `module`.
     ///
     /// Library modules are restricted from declaring the following sections:
     ///
     /// * public_inputs
-    /// * random_values
     /// * trace_columns
     /// * boundary_constraints
     /// * integrity_constraints
@@ -57,7 +55,6 @@ pub struct Module {
     pub functions: BTreeMap<Identifier, Function>,
     pub periodic_columns: BTreeMap<Identifier, PeriodicColumn>,
     pub public_inputs: BTreeMap<Identifier, PublicInput>,
-    pub random_values: Option<RandomValues>,
     pub trace_columns: Vec<TraceSegment>,
     pub buses: BTreeMap<Identifier, Bus>,
     pub boundary_constraints: Option<Span<Vec<Statement>>>,
@@ -85,7 +82,6 @@ impl Module {
             buses: Default::default(),
             periodic_columns: Default::default(),
             public_inputs: Default::default(),
-            random_values: None,
             trace_columns: vec![],
             boundary_constraints: None,
             integrity_constraints: None,
@@ -142,9 +138,6 @@ impl Module {
                         module.declare_public_input(diagnostics, &mut names, input)?;
                     }
                 }
-                Declaration::RandomValues(rv) => {
-                    module.declare_random_values(diagnostics, &mut names, rv)?;
-                }
                 Declaration::Trace(segments) => {
                     module.declare_trace_segments(diagnostics, &mut names, segments)?;
                 }
@@ -185,22 +178,6 @@ impl Module {
 
             if module.public_inputs.is_empty() {
                 return Err(SemanticAnalysisError::MissingPublicInputs);
-            }
-
-            if module.random_values.is_some()
-                && !module.trace_columns.iter().any(|ts| ts.name == "$aux")
-            {
-                diagnostics
-                    .diagnostic(Severity::Error)
-                    .with_message(
-                        "declaring random_values requires an aux trace_columns declaration",
-                    )
-                    .with_primary_label(
-                        module.random_values.as_ref().unwrap().span(),
-                        "this declaration is invalid",
-                    )
-                    .emit();
-                return Err(SemanticAnalysisError::Invalid);
             }
         }
 
@@ -490,45 +467,6 @@ impl Module {
         }
     }
 
-    fn declare_random_values(
-        &mut self,
-        diagnostics: &DiagnosticsHandler,
-        names: &mut HashSet<NamespacedIdentifier>,
-        rv: RandomValues,
-    ) -> Result<(), SemanticAnalysisError> {
-        let span = rv.span();
-        if self.is_library() {
-            invalid_section_in_library(diagnostics, "random_values", span);
-            return Err(SemanticAnalysisError::RootSectionInLibrary(span));
-        }
-
-        for binding in rv.bindings.iter() {
-            if let Some(prev) = names.replace(NamespacedIdentifier::Binding(binding.name)) {
-                conflicting_declaration(
-                    diagnostics,
-                    "random values binding",
-                    prev.span(),
-                    binding.name.span(),
-                );
-                return Err(SemanticAnalysisError::NameConflict(binding.name.span()));
-            }
-        }
-
-        if let Some(prev) = self.random_values.replace(rv) {
-            diagnostics
-                .diagnostic(Severity::Error)
-                .with_message("multiple random_values declarations")
-                .with_primary_label(span, "this declaration is invalid")
-                .with_secondary_label(prev.span(), "because this declaration already exists")
-                .with_note("Only a single random_values declaration is allowed at a time")
-                .emit();
-            self.random_values.replace(prev);
-            Err(SemanticAnalysisError::NameConflict(span))
-        } else {
-            Ok(())
-        }
-    }
-
     fn declare_trace_segments(
         &mut self,
         diagnostics: &DiagnosticsHandler,
@@ -668,7 +606,6 @@ impl PartialEq for Module {
             && self.functions == other.functions
             && self.periodic_columns == other.periodic_columns
             && self.public_inputs == other.public_inputs
-            && self.random_values == other.random_values
             && self.trace_columns == other.trace_columns
             && self.boundary_constraints == other.boundary_constraints
             && self.integrity_constraints == other.integrity_constraints

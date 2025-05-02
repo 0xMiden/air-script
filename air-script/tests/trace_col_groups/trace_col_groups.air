@@ -1,8 +1,7 @@
 def TraceColGroupAir
 
 trace_columns {
-    main: [clk, fmp[2], ctx],
-    aux: [a, b, c[3]],
+    main: [clk, fmp[2], ctx, a, b, c[3]],
 }
 
 public_inputs {

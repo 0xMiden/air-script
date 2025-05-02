@@ -73,7 +73,6 @@ Declaration: Declaration = {
     Import => Declaration::Import(<>),
     Constant => Declaration::Constant(<>),
     PeriodicColumns => Declaration::PeriodicColumns(<>),
-    RandomValues => Declaration::RandomValues(<>),
     EvaluatorFunction => Declaration::EvaluatorFunction(<>),
     Function => Declaration::Function(<>),
     Buses => Declaration::Buses(<>),
@@ -96,20 +95,12 @@ Import: Span<Import> = {
 // ================================================================================================
 
 Trace: Vec<TraceSegment> = {
-    <l:@L> "trace_columns" "{" <main: MainTraceBindings?> <aux: AuxTraceBindings?> "}" <r:@R> =>?
-        match (main, aux) {
-            (Some(main), Some(aux)) => Ok(vec![main, aux]),
-            (Some(main), None) => Ok(vec![main]),
-            (None, Some(_)) => {
+    <l:@L> "trace_columns" "{" <main: MainTraceBindings?> "}" <r:@R> =>?
+        match main {
+            Some(main) => Ok(vec![main]),
+            None => {
                 diagnostics.diagnostic(Severity::Error)
                     .with_message("declaration of main trace columns is required")
-                    .with_primary_label(span!(l, r), "missing 'main' declaration in this section")
-                    .emit();
-                Err(ParseError::Failed.into())
-            }
-            (None, None) => {
-                diagnostics.diagnostic(Severity::Error)
-                    .with_message("trace_columns section cannot be empty")
                     .with_primary_label(span!(l, r), "missing 'main' declaration in this section")
                     .emit();
                 Err(ParseError::Failed.into())
@@ -121,18 +112,9 @@ MainSegmentId: Identifier = {
     <l:@L> "main" <r:@R> => Identifier::new(span!(l, r), symbols::Main),
 }
 
-AuxSegmentId: Identifier = {
-    <l:@L> "aux" <r:@R> => Identifier::new(span!(l, r), symbols::Aux),
-}
-
 MainTraceBindings: TraceSegment = {
     <l:@L> <name:MainSegmentId> ":" <bindings: Vector<TraceBinding>> "," <r:@R> =>
         TraceSegment::new(span!(l, r), 0, name, bindings),
-}
-
-AuxTraceBindings: TraceSegment = {
-    <l:@L> <name:AuxSegmentId> ":" <bindings: Vector<TraceBinding>> "," <r:@R> =>
-        TraceSegment::new(span!(l, r), 1, name, bindings),
 }
 
 TraceBinding: Span<(Identifier, usize)> = {
@@ -201,44 +183,6 @@ BusType: BusType = {
     "logup" => BusType::Logup,
 }
 
-// RANDOM VALUES
-// ================================================================================================
-
-RandomValues: RandomValues = {
-    "random_values" "{" <random_values: RandValuesDef> <l:@L> <extra: RandValuesDef*> "}" <r:@R> =>? {
-        if !extra.is_empty() {
-            diagnostics.diagnostic(Severity::Warning)
-                .with_message("only one declaration may appear in random_values")
-                .with_primary_label(span!(l, r), "these declarations will be ignored")
-                .emit();
-        }
-        Ok(random_values)
-    }
-}
-
-RandValuesDef: RandomValues = {
-    <l:@L> <name: Identifier> ":" <size: Size> "," <r:@R> => {
-        let name = Identifier::new(name.span(), Symbol::intern(format!("${}", &name)));
-        RandomValues::with_size(span!(l, r), name, size as usize)
-    },
-    <l:@L> <ignored: Identifier> ":" "[" "]" "," <r:@R> =>? {
-        diagnostics.diagnostic(Severity::Error)
-            .with_message("random values cannot be empty")
-            .with_primary_label(span!(l, r), "invalid declaration occurs here")
-            .emit();
-        Err(ParseError::Failed.into())
-    },
-    <l:@L> <name: Identifier> ":" <bindings: Vector<RandBinding>> "," <r:@R> => {
-        let name = Identifier::new(name.span(), Symbol::intern(format!("${}", &name)));
-        RandomValues::new(span!(l, r), name, bindings)
-    },
-}
-
-RandBinding: Span<(Identifier, usize)> = {
-    <name: Identifier> => Span::new(name.span(), (name, 1)),
-    <l:@L> <name: Identifier> <size: Size> <r:@R> => Span::new(span!(l, r), (name, size as usize)),
-}
-
 // EVALUATOR FUNCTIONS
 // ================================================================================================
 
@@ -253,7 +197,7 @@ EvaluatorBindings: Vec<TraceSegment> = {
 
         for (segment, (span, bindings)) in trace.into_iter().enumerate() {
             // We generate a name for these segments to distinguish them from direct references
-            // to the actual main/aux columns. This is useful during the inlining phase
+            // to the actual main columns. This is useful during the inlining phase
             let segment_name = Identifier::new(span, Symbol::intern(format!("%{}", *next_var)));
             *next_var += 1;
             segments.push(TraceSegment::new(span, segment, segment_name, bindings));
@@ -575,8 +519,7 @@ SymbolAccessBase: (Identifier, AccessType) = {
     <ident: Identifier> "[" <range: Range> "]" => (ident, AccessType::Slice(range)),
     <ident: Identifier> <idx: Index> =>  (ident, AccessType::Index(idx)),
     <ident: Identifier> <row: Index> <col: Index> => (ident, AccessType::Matrix(row, col)),
-    // accessing an identifier used in a section declaration, like the full random values array or
-    // a named trace segment, e.g. $main, $aux, $rand
+    // accessing an identifier used in a section declaration, like a named trace segment, e.g. $main
     <ident: DeclIdentifier> => (ident, AccessType::Default),
     <ident: DeclIdentifier> <idx: Index> => (ident, AccessType::Index(idx))
 
@@ -710,10 +653,8 @@ extern {
         "const" => Token::Const,
         "trace_columns" => Token::TraceColumns,
         "main" => Token::Main,
-        "aux" => Token::Aux,
         "public_inputs" => Token::PublicInputs,
         "periodic_columns" => Token::PeriodicColumns,
-        "random_values" => Token::RandomValues,
         "buses" => Token::Buses,
         "multiset" => Token::Multiset,
         "logup" => Token::Logup,

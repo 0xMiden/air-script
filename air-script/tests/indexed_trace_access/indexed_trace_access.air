@@ -1,8 +1,7 @@
 def TraceAccessAir
 
 trace_columns {
-    main: [a, b],
-    aux: [c, d],
+    main: [a, b, c, d],
 }
 
 public_inputs {
@@ -11,7 +10,6 @@ public_inputs {
 
 integrity_constraints {
     enf $main[0]' = $main[1] + 1;
-    enf $aux[0]' = $aux[1] + 1;
 }
 
 boundary_constraints {

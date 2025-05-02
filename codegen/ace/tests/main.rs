@@ -123,11 +123,10 @@ const C = [[1, 2], [2, 0]];
 
 trace_columns {
     main: [a, b, c, d, e[2]],
-    aux: [f],
 }
 
-periodic_columns {
-    k: [1, 1],
+buses {
+    multiset f,
 }
 
 public_inputs {
@@ -135,9 +134,6 @@ public_inputs {
     stack_outputs: [2],
 }
 
-random_values {
-    rand: [2],
-}
 
 boundary_constraints {
     enf a.first = stack_inputs[0];
@@ -145,18 +141,18 @@ boundary_constraints {
     enf a.last = stack_outputs[0];
     enf b.last = stack_outputs[1];
 
-    enf c.first = (B[0] - C[1][1]) * A;
+    enf c.first = 1;
     enf d.first = 1;
 
     enf e[0].first = 0;
     enf e[1].first = 1;
 
-    enf f.first = $rand[0];
-    enf f.last = 1;
+    enf f.first = null;
+    enf f.last = null;
 }
 
 integrity_constraints {
-    enf a + b * k = 0;
+    enf a + b = 0;
 }";
 
 static CONSTANTS_AIR: &str = "
@@ -205,27 +201,6 @@ integrity_constraints {
     enf a = 0;
 }";
 
-static MIXED_BOUNDARY_AIR: &str = "
-def MixedBoundaryAux
-
-trace_columns {
-    main: [a],
-    aux: [b],
-}
-
-public_inputs {
-    stack_inputs: [1],
-}
-
-boundary_constraints {
-    enf a.first = 3;
-    enf b.last = 5;
-}
-
-integrity_constraints {
-    enf a = 0;
-}";
-
 static SIMPLE_AIR: &str = "
 def Simple
 
@@ -243,29 +218,6 @@ boundary_constraints {
 
 integrity_constraints {
     enf a + a = 0;
-}";
-
-static SIMPLE_AUX_AIR: &str = "
-def SimpleAux
-
-trace_columns {
-    main: [a],
-}
-
-periodic_columns {
-    k: [1, 1],
-}
-
-public_inputs {
-    stack_inputs: [1],
-}
-
-boundary_constraints {
-    enf a.first = 0;
-}
-
-integrity_constraints {
-    enf a * k = 0;
 }";
 
 static MULTIPLE_AUX_AIR: &str = "
@@ -295,23 +247,25 @@ integrity_constraints {
     enf c * o = 0;
 }";
 
-static RANDOM: &str = "
-    def Random
+static BUSES: &str = "
+    def Buses
     trace_columns {
-        main: [a],
-        aux: [b],
+        main: [a, s],
+    }
+    buses {
+        multiset b,
     }
     public_inputs {
         stack_inputs: [1],
     }
-    random_values {
-        rand: [1],
-    }
     boundary_constraints {
-        enf b.first = $rand[0];
+        enf a.first = 1;
+        enf b.first = null;
+        enf b.last = null;
     }
     integrity_constraints {
-        enf a = 0 ;
+        enf a' = a;
+        b.insert(a) when s;
     }";
 
 static ARITH_AIR: &str = "
@@ -359,22 +313,20 @@ integrity_constraints {
     enf a = 0;
 }";
 
-static TESTS: [&str; 15] = [
+static TESTS: [&str; 13] = [
     SIMPLE_INTEGRITY_AIR,
     SIMPLE_AIR,
     ARITH_AIR,
     VECTOR,
     LONG_TRACE,
-    MIXED_BOUNDARY_AIR,
     MULTIPLE_ROWS_AIR,
-    RANDOM,
+    BUSES,
     EXP_AIR,
     SIMPLE_BOUNDARY_AIR,
     CONSTANTS_AIR,
     COMPLEX_BOUNDARY_AIR,
     PUBLIC_INPUT_AIR,
     // periodic
-    SIMPLE_AUX_AIR,
     MULTIPLE_AUX_AIR,
 ];
 
@@ -573,22 +525,31 @@ fn test_constants() {
 }
 
 #[test]
-fn test_random() {
+fn test_buses() {
     let mut rng = thread_rng();
-
     let public = to_quad(rng.next_u64(), rng.next_u64());
-    let random = to_quad(rng.next_u64(), rng.next_u64());
+    let random = [
+        to_quad(rng.next_u64(), rng.next_u64()),
+        to_quad(rng.next_u64(), rng.next_u64()),
+    ];
     let a = to_quad(rng.next_u64(), rng.next_u64());
-    let b = to_quad(rng.next_u64(), rng.next_u64());
     let a_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let s = to_quad(rng.next_u64(), rng.next_u64());
+    let s_prime = to_quad(rng.next_u64(), rng.next_u64());
+    let b = to_quad(rng.next_u64(), rng.next_u64());
     let b_prime = to_quad(rng.next_u64(), rng.next_u64());
 
     let t0 = Test {
-        code: RANDOM.into(),
-        inputs: vec![public, random, a, b, a_prime, b_prime],
-        int_roots: vec![a],
-        bf_roots: vec![b - random],
-        bl_roots: vec![],
+        code: BUSES.into(),
+        inputs: vec![
+            public, random[0], random[1], a, s, b, a_prime, s_prime, b_prime,
+        ],
+        int_roots: vec![
+            a_prime - a,
+            ((random[0] + random[1] * a) * s + ONE - s) * b - b_prime,
+        ],
+        bf_roots: vec![a - ONE, b - ONE],
+        bl_roots: vec![b - ONE],
     };
     run_test(t0)
 }
@@ -629,47 +590,6 @@ fn coeffs(evals: &[u64]) -> Vec<Quad> {
             to_quad(unsigned, 0)
         })
         .collect()
-}
-
-#[test]
-fn test_simple_aux() {
-    let (root, circuit, _) = codegen(SIMPLE_AUX_AIR);
-    let mut rng = thread_rng();
-    let trace_len_log = rng.sample(Uniform::new(10, 20));
-    let n = 1 << trace_len_log;
-    let alpha = to_quad(rng.next_u64(), rng.next_u64());
-    let z = to_quad(rng.next_u64(), rng.next_u64());
-    let zn = z.exp(n);
-    let inv_g = QuadExtension::new(Felt::GENERATOR.inv(), Felt::ZERO);
-    let inv_g_2 = inv_g.square();
-    let mut qs: Vec<Quad> = (0..=7)
-        .map(|_| to_quad(rng.next_u64(), rng.next_u64()))
-        .collect();
-    let max_cycle_len = 2;
-    let min_num_cycles = n / max_cycle_len;
-    let z_min_num_cycles = z.exp(min_num_cycles);
-
-    let k_evals = [1, 1];
-    let k = horner(z_min_num_cycles, &coeffs(&k_evals));
-    let public = to_quad(rng.next_u64(), rng.next_u64());
-    let a = to_quad(rng.next_u64(), rng.next_u64());
-    let a_prime = a;
-
-    let int_roots = vec![a * k];
-    let bf_roots = vec![a];
-    let bl_roots = vec![];
-
-    compute_modified_quotient(
-        alpha, z, zn, inv_g, &int_roots, &bf_roots, &bl_roots, &mut qs, inv_g_2,
-    );
-
-    let all_inputs = [public, a, a_prime]
-        .into_iter()
-        .chain(qs)
-        .chain([alpha, z, zn, inv_g, z_min_num_cycles, inv_g_2])
-        .collect::<Vec<Quad>>();
-    let res = circuit.eval(root, &all_inputs);
-    assert_eq!(Quad::ZERO, res)
 }
 
 #[test]

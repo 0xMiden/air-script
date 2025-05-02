@@ -30,60 +30,6 @@ fn ev_fn_main_cols() {
 }
 
 #[test]
-fn ev_fn_aux_cols() {
-    let source = "
-    mod test
-
-    ev foo([], [p]) {
-        enf p' = p + 1;
-    }";
-
-    let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
-    expected.evaluators.insert(
-        ident!(foo),
-        EvaluatorFunction::new(
-            SourceSpan::UNKNOWN,
-            ident!(foo),
-            vec![
-                trace_segment!(0, "%0", []),
-                trace_segment!(1, "%1", [(p, 1)]),
-            ],
-            vec![enforce!(eq!(access!(p, 1), add!(access!(p), int!(1))))],
-        ),
-    );
-    ParseTest::new().expect_module_ast(source, expected);
-}
-
-#[test]
-fn ev_fn_main_and_aux_cols() {
-    let source = "
-    mod test
-
-    ev ev_func([clk], [a, b]) {
-        let z = a + b;
-        enf clk' = clk + 1;
-        enf a' = a + z;
-    }";
-
-    let body = vec![let_!(z = expr!(add!(access!(a), access!(b))) =>
-            enforce!(eq!(access!(clk, 1), add!(access!(clk), int!(1)))), enforce!(eq!(access!(a, 1), add!(access!(a), access!(z)))))];
-    let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
-    expected.evaluators.insert(
-        ident!(ev_func),
-        EvaluatorFunction::new(
-            SourceSpan::UNKNOWN,
-            ident!(ev_func),
-            vec![
-                trace_segment!(0, "%0", [(clk, 1)]),
-                trace_segment!(1, "%1", [(a, 1), (b, 1)]),
-            ],
-            body,
-        ),
-    );
-    ParseTest::new().expect_module_ast(source, expected);
-}
-
-#[test]
 fn ev_fn_call_simple() {
     let source = "
     def test
@@ -174,7 +120,7 @@ fn ev_fn_call_inside_ev_fn() {
     let source = "
     mod test
 
-    ev ev_func([clk], [a, b]) {
+    ev ev_func([clk]) {
         enf advance_clock([clk]);
     }";
 
@@ -185,10 +131,7 @@ fn ev_fn_call_inside_ev_fn() {
         EvaluatorFunction::new(
             SourceSpan::UNKNOWN,
             ident!(ev_func),
-            vec![
-                trace_segment!(0, "%0", [(clk, 1)]),
-                trace_segment!(1, "%1", [(a, 1), (b, 1)]),
-            ],
+            vec![trace_segment!(0, "%0", [(clk, 1)])],
             body,
         ),
     );

@@ -88,8 +88,7 @@ fn err_non_const_exp_outside_lc() {
     let source = "
     def test
     trace_columns {
-        main: [clk, fmp[2], ctx],
-        aux: [a, b, c[4], d[4]],
+        main: [clk, fmp[2], ctx, a, b, c[4], d[4]],
     }
     public_inputs {
         stack_inputs: [16],

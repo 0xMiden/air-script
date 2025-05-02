@@ -413,18 +413,6 @@ macro_rules! trace_segment {
     }
 }
 
-macro_rules! random_values {
-    ($name:literal, $size:literal) => {
-        RandomValues::with_size(miden_diagnostics::SourceSpan::UNKNOWN, ident!($name), $size)
-    };
-
-    ($name:literal, [$(($binding_name:ident, $binding_size:literal)),*]) => {
-        RandomValues::new(miden_diagnostics::SourceSpan::UNKNOWN, ident!($name), vec![
-            $(miden_diagnostics::Span::new(miden_diagnostics::SourceSpan::UNKNOWN, (ident!($binding_name), $binding_size))),*
-        ])
-    }
-}
-
 macro_rules! constant {
     ($name:ident = $value:literal) => {
         Constant::new(
@@ -696,7 +684,6 @@ mod list_comprehension;
 mod modules;
 mod periodic_columns;
 mod pub_inputs;
-mod random_values;
 mod sections;
 mod selectors;
 mod trace_columns;

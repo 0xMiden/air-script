@@ -5,16 +5,6 @@ use expect_test::expect_file;
 // ================================================================================================
 
 #[test]
-fn aux_trace() {
-    let generated_masm = Test::new("tests/aux_trace/aux_trace.air".to_string())
-        .transpile(Target::Masm, Pipeline::WithoutMIR)
-        .unwrap();
-
-    let expected = expect_file!["../aux_trace/aux_trace.masm"];
-    expected.assert_eq(&generated_masm);
-}
-
-#[test]
 fn binary() {
     let generated_masm = Test::new("tests/binary/binary.air".to_string())
         .transpile(Target::Masm, Pipeline::WithoutMIR)

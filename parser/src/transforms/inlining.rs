@@ -64,8 +64,6 @@ pub struct Inlining<'a> {
     root: Identifier,
     /// The global trace segment configuration
     trace: Vec<TraceSegment>,
-    /// The random_values declaration
-    random_values: Option<RandomValues>,
     /// The public_inputs declaration
     public_inputs: BTreeMap<Identifier, PublicInput>,
     /// All local/global bindings in scope
@@ -116,8 +114,6 @@ impl Pass for Inlining<'_> {
 
         // We'll be referencing the trace configuration during inlining, so keep a copy of it
         self.trace.clone_from(&program.trace_columns);
-        // Same with the random values
-        self.random_values.clone_from(&program.random_values);
         // And the public inputs
         self.public_inputs.clone_from(&program.public_inputs);
 
@@ -153,23 +149,6 @@ impl Pass for Inlining<'_> {
                 );
             }
         }
-        // Random values..
-        if let Some(rv) = program.random_values.as_ref() {
-            self.bindings.insert(
-                rv.name,
-                BindingType::RandomValue(RandBinding::new(
-                    rv.name.span(),
-                    rv.name,
-                    rv.size,
-                    0,
-                    Type::Vector(rv.size),
-                )),
-            );
-            for binding in rv.bindings.iter().copied() {
-                self.bindings
-                    .insert(binding.name, BindingType::RandomValue(binding));
-            }
-        }
         // Public inputs..
         for input in program.public_inputs.values() {
             self.bindings.insert(
@@ -198,7 +177,6 @@ impl<'a> Inlining<'a> {
             diagnostics,
             root: Identifier::new(SourceSpan::UNKNOWN, crate::symbols::Main),
             trace: vec![],
-            random_values: None,
             public_inputs: Default::default(),
             bindings: Default::default(),
             let_bound: Default::default(),
@@ -1128,27 +1106,11 @@ impl<'a> Inlining<'a> {
             }
         }
 
-        // Add random values, trace columns, and other root declarations to the set of
+        // Add trace columns, and other root declarations to the set of
         // bindings visible in the evaluator body, _if_ the evaluator is defined in the
         // root module.
         let is_evaluator_in_root = callee.module == self.root;
         if is_evaluator_in_root {
-            if let Some(rv) = self.random_values.as_ref() {
-                eval_bindings.insert(
-                    rv.name,
-                    BindingType::RandomValue(RandBinding::new(
-                        rv.name.span(),
-                        rv.name,
-                        rv.size,
-                        0,
-                        Type::Vector(rv.size),
-                    )),
-                );
-                for binding in rv.bindings.iter().copied() {
-                    eval_bindings.insert(binding.name, BindingType::RandomValue(binding));
-                }
-            }
-
             for segment in self.trace.iter() {
                 eval_bindings.insert(
                     segment.name,
@@ -1254,27 +1216,11 @@ impl<'a> Inlining<'a> {
             }
         }
 
-        // Add random values, trace columns, and other root declarations to the set of
+        // Add trace columns, and other root declarations to the set of
         // bindings visible in the function body, _if_ the function is defined in the
         // root module.
         let is_function_in_root = callee.module == self.root;
         if is_function_in_root {
-            if let Some(rv) = self.random_values.as_ref() {
-                function_bindings.insert(
-                    rv.name,
-                    BindingType::RandomValue(RandBinding::new(
-                        rv.name.span(),
-                        rv.name,
-                        rv.size,
-                        0,
-                        Type::Vector(rv.size),
-                    )),
-                );
-                for binding in rv.bindings.iter().copied() {
-                    function_bindings.insert(binding.name, BindingType::RandomValue(binding));
-                }
-            }
-
             for segment in self.trace.iter() {
                 function_bindings.insert(
                     segment.name,
