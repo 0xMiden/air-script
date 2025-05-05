@@ -1,7 +1,7 @@
 use super::compile;
 
 #[test]
-fn list_comprehension_nested() {
+fn list_comprehension_nested_nobind() {
     let source_explicit = "
     def ListComprehensionAir
 
