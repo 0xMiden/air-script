@@ -62,6 +62,9 @@ pub struct Air {
     pub num_random_values: u16,
     /// The constraints enforced by this program, in their algebraic graph representation.
     pub constraints: Constraints,
+    /// The buses referenced by this program.
+    ///
+    /// Only their name, type, and the first and last boundary constraints are stored here.
     pub buses: HashMap<Identifier, Bus>,
 }
 impl Default for Air {
