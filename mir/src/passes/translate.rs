@@ -123,12 +123,12 @@ impl<'a> MirBuilder<'a> {
                 .unwrap_or_else(|| panic!("bus missing name"));
             if let Some(ref mut mirvalue) = bus.borrow().get_first().as_value_mut() {
                 if let MirValue::PublicInputBinding(ref mut first) = mirvalue.value.value {
-                    first.bus_name = Some(bus_name);
+                    first.set_bus_name(bus_name);
                 }
             }
             if let Some(ref mut mirvalue) = bus.borrow().get_last().as_value_mut() {
                 if let MirValue::PublicInputBinding(ref mut last) = mirvalue.value.value {
-                    last.bus_name = Some(bus_name);
+                    last.set_bus_name(bus_name);
                 }
             }
         }

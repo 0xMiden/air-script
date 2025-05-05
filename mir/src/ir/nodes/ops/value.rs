@@ -201,7 +201,7 @@ pub struct BusVariableBoundary {
     /// The name of the bus to bind
     /// The bus name is not always known at the time of instantiation,
     /// making it an Option allows setting it later.
-    pub bus_name: Option<Identifier>,
+    bus_name: Option<Identifier>,
     /// The number of columns in the table
     pub num_cols: usize,
 }
@@ -213,6 +213,12 @@ impl BusVariableBoundary {
             bus_name: None,
             num_cols,
         }
+    }
+    pub fn set_bus_name(&mut self, bus_name: Identifier) {
+        self.bus_name = Some(bus_name);
+    }
+    pub fn bus_name(&self) -> Identifier {
+        self.bus_name.expect("Bus name not set")
     }
 }
 

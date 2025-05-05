@@ -260,7 +260,7 @@ impl AirBuilder<'_> {
                     MirValue::PublicInputBinding(public_input_binding) => {
                         crate::ir::Value::PublicInputBinding(crate::ir::BusVariableBoundary::new(
                             public_input_binding.table_name,
-                            public_input_binding.bus_name.unwrap(),
+                            public_input_binding.bus_name(),
                             public_input_binding.num_cols,
                         ))
                     }
