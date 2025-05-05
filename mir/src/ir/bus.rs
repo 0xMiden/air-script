@@ -60,7 +60,7 @@ use crate::{
 #[derive(Default, Clone, Eq, Debug, Spanned)]
 pub struct Bus {
     /// Identifier of the bus
-    pub name: Option<Identifier>,
+    name: Option<Identifier>,
     /// Type of bus
     pub bus_type: ast::BusType,
     /// values stored in the bus
@@ -118,6 +118,9 @@ impl Bus {
         self.last = last;
         Ok(())
     }
+    pub fn set_name(&mut self, name: Identifier) {
+        self.name = Some(name);
+    }
 
     pub fn get_first(&self) -> Link<Op> {
         self.first.clone()
@@ -127,8 +130,8 @@ impl Bus {
         self.last.clone()
     }
 
-    pub fn get_name(&self) -> Option<Identifier> {
-        self.name
+    pub fn get_name(&self) -> Identifier {
+        self.name.expect("Bus name should have already been set")
     }
 }
 
@@ -157,10 +160,14 @@ impl Link<Bus> {
         self.borrow_mut().latches.push(latch.clone());
         bus_op
     }
+
+    pub fn set_name(&self, name: Identifier) {
+        self.borrow_mut().set_name(name);
+    }
 }
 
 impl BackLink<Bus> {
-    pub fn get_name(&self) -> Option<Identifier> {
+    pub fn get_name(&self) -> Identifier {
         self.to_link()
             .map(|l| l.borrow().get_name())
             .unwrap_or_else(|| panic!("Bus was dropped"))

@@ -237,7 +237,7 @@ impl AirBuilder<'_> {
                         })
                     }
                     MirValue::BusAccess(bus_access) => {
-                        let name = bus_access.bus.borrow().deref().name.unwrap();
+                        let name = bus_access.bus.borrow().deref().get_name();
                         let column = self.bus_bindings_map.get(&name).unwrap();
                         crate::ir::Value::TraceAccess(crate::ir::TraceAccess {
                             segment: AUX_SEGMENT,
@@ -300,7 +300,7 @@ impl AirBuilder<'_> {
                         })
                     }
                     MirValue::BusAccess(bus_access) => {
-                        let name = bus_access.bus.borrow().deref().name.unwrap();
+                        let name = bus_access.bus.borrow().deref().get_name();
                         let column = self.bus_bindings_map.get(&name).unwrap();
                         crate::ir::Value::TraceAccess(crate::ir::TraceAccess {
                             segment: AUX_SEGMENT,
@@ -401,7 +401,7 @@ impl AirBuilder<'_> {
                         span: lhs_span,
                     } => {
                         let bus = bus_access.bus;
-                        let name = bus.borrow().deref().name.unwrap();
+                        let name = bus.borrow().deref().get_name();
                         let column = self.bus_bindings_map.get(&name).unwrap();
                         let trace_access =
                             mir::ir::TraceAccess::new(AUX_SEGMENT, *column, bus_access.row_offset);
@@ -538,8 +538,8 @@ impl AirBuilder<'_> {
         let first = self.insert_mir_operation(&mir_bus.get_first())?;
         let last = self.insert_mir_operation(&mir_bus.get_last())?;
         self.buses.insert(
-            mir_bus.name.unwrap(),
-            Bus::new(mir_bus.name, mir_bus.bus_type, first, last),
+            mir_bus.get_name(),
+            Bus::new(mir_bus.get_name(), mir_bus.bus_type, first, last),
         );
         Ok(())
     }

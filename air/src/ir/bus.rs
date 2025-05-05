@@ -5,7 +5,7 @@ use crate::NodeIndex;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Bus {
-    pub name: Option<ast::Identifier>,
+    pub name: ast::Identifier,
     pub bus_type: ast::BusType,
     pub first: NodeIndex,
     pub last: NodeIndex,
@@ -13,7 +13,7 @@ pub struct Bus {
 
 impl Bus {
     pub fn new(
-        name: Option<ast::Identifier>,
+        name: ast::Identifier,
         bus_type: ast::BusType,
         first: NodeIndex,
         last: NodeIndex,

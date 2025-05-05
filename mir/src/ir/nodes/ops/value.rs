@@ -218,7 +218,8 @@ impl BusVariableBoundary {
         self.bus_name = Some(bus_name);
     }
     pub fn bus_name(&self) -> Identifier {
-        self.bus_name.expect("Bus name not set")
+        self.bus_name
+            .expect("Bus name should have already been set")
     }
 }
 
