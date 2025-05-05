@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{collections::BTreeMap, ops::Deref};
 
 use air_parser::{
     ast::{self, TraceSegment},
@@ -37,7 +37,7 @@ impl Pass for MirToAir<'_> {
 
         let mut trace_columns = mir.trace_columns.clone();
 
-        let mut bus_bindings_map = HashMap::new();
+        let mut bus_bindings_map = BTreeMap::new();
         if !buses.is_empty() {
             let bus_raw_bindings: Vec<_> = buses
                 .keys()
@@ -74,7 +74,7 @@ impl Pass for MirToAir<'_> {
             air: &mut air,
             trace_columns: trace_columns.clone(),
             bus_bindings_map,
-            buses: HashMap::new(),
+            buses: BTreeMap::new(),
         };
 
         let graph = mir.constraint_graph();
@@ -100,8 +100,8 @@ struct AirBuilder<'a> {
     diagnostics: &'a DiagnosticsHandler,
     air: &'a mut Air,
     trace_columns: Vec<TraceSegment>,
-    bus_bindings_map: HashMap<Identifier, usize>,
-    buses: HashMap<Identifier, Bus>,
+    bus_bindings_map: BTreeMap<Identifier, usize>,
+    buses: BTreeMap<Identifier, Bus>,
 }
 
 /// Helper function to remove the vector wrapper from a scalar operation

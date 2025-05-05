@@ -29,7 +29,7 @@ pub const CURRENT_ROW: usize = 0;
 /// The minimum cycle length of a periodic column
 pub const MIN_CYCLE_LENGTH: usize = 2;
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 use miden_diagnostics::{SourceSpan, Spanned};
 
@@ -65,7 +65,7 @@ pub struct Air {
     /// The buses referenced by this program.
     ///
     /// Only their name, type, and the first and last boundary constraints are stored here.
-    pub buses: HashMap<Identifier, Bus>,
+    pub buses: BTreeMap<Identifier, Bus>,
 }
 impl Default for Air {
     fn default() -> Self {
