@@ -1181,16 +1181,6 @@ impl<'a> MirBuilder<'a> {
                 .build());
         }
 
-        /* if let Some(public_input) = self.public_input_access(access) {
-            return Ok(Value::builder()
-                .value(SpannedMirValue {
-                    span: access.span(),
-                    value: MirValue::PublicInput(public_input),
-                })
-                .build());
-        } */
-
-        // TODO: Will be used (instead of the if let above) when handling variable-length public inputs
         match self.public_input_access(access) {
             (Some(public_input), None) => {
                 return Ok(Value::builder()
