@@ -49,7 +49,7 @@ impl Air for BusesAir {
     fn new(trace_info: TraceInfo, public_inputs: PublicInputs, options: WinterProofOptions) -> Self {
         let main_degrees = vec![TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(2)];
         let aux_degrees = vec![TransitionConstraintDegree::new(5), TransitionConstraintDegree::new(4)];
-        let num_main_assertions = 0;
+        let num_main_assertions = 1;
         let num_aux_assertions = 4;
 
         let context = AirContext::new_multi_segment(
@@ -70,6 +70,7 @@ impl Air for BusesAir {
 
     fn get_assertions(&self) -> Vec<Assertion<Felt>> {
         let mut result = Vec::new();
+        result.push(Assertion::single(0, 0, Felt::ZERO));
         result
     }
 

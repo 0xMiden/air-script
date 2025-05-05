@@ -89,8 +89,8 @@ impl Air for VariablesAir {
         let main_next = frame.next();
         result[0] = main_current[0] * main_current[0] - main_current[0];
         result[1] = periodic_values[0] * (main_next[0] - main_current[0]) - E::ZERO;
-        result[2] = (E::ONE - main_current[0]) * (main_current[3] - main_current[1] - main_current[2]) - (E::from(Felt::new(6_u64)) - main_current[0]);
-        result[3] = main_current[0] * (main_current[3] - main_current[1] * main_current[2]) - (main_next[0] - E::from(Felt::new(3_u64)) - E::from(Felt::new(2_u64)));
+        result[2] = (E::ONE - main_current[0]) * (main_current[3] - main_current[1] - main_current[2]) - (E::from(Felt::new(6_u64)) - (E::from(Felt::new(7_u64)) - main_current[0]));
+        result[3] = main_current[0] * (main_current[3] - main_current[1] * main_current[2]) - (E::from(Felt::new(4_u64)) - E::from(Felt::new(3_u64)) - main_next[0]);
     }
 
     fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxRandElements<E>, result: &mut [E])
