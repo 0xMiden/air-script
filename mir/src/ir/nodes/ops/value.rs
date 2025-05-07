@@ -59,19 +59,19 @@ pub enum MirValue {
     Constant(ConstantValue),
     /// A reference to a specific column in the trace segment, with an optional offset.
     TraceAccess(TraceAccess),
-    /// A reference to a periodic column
+    /// A reference to a periodic column.
     ///
     /// The value this corresponds to is determined by the current row of the trace.
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
-    /// A reference to a given public input
-    PublicInputBinding(BusVariableBoundary),
-    /// A reference to a specific index in the random values array
+    /// A reference to a public input table.
+    PublicInputTable(PublicInputTableAccess),
+    /// A reference to a specific index in the random values array.
     ///
     /// Random values are not provided by the user in the AirScript program, but are used to expand Bus constraints.
     RandomValue(usize),
-    /// A binding to a set of consecutive trace columns of a given size
+    /// A binding to a set of consecutive trace columns of a given size.
     TraceAccessBinding(TraceAccessBinding),
     /// A binding to a [Bus].
     BusAccess(BusAccess),
@@ -193,9 +193,11 @@ impl PublicInputAccess {
     }
 }
 
-/// Represents an access of a [PublicInput], similar in nature to [TraceAccess].
+/// Represents an access of a public input table, similar in nature to [TraceAccess].
+///
+/// It can only be bound to a [Bus]'s .first or .last boundary constraints.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct BusVariableBoundary {
+pub struct PublicInputTableAccess {
     /// The name of the public input to bind
     pub table_name: Identifier,
     /// The name of the bus to bind
@@ -206,7 +208,7 @@ pub struct BusVariableBoundary {
     pub num_cols: usize,
 }
 
-impl BusVariableBoundary {
+impl PublicInputTableAccess {
     pub const fn new(table_name: Identifier, num_cols: usize) -> Self {
         Self {
             table_name,

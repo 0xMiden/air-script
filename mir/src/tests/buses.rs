@@ -1,7 +1,7 @@
 use crate::{
     ir::{
-        assert_bus_eq, Add, Builder, Bus, BusVariableBoundary, Fold, FoldOperator, Link, Mir,
-        MirValue, Op, Vector,
+        assert_bus_eq, Add, Builder, Bus, Fold, FoldOperator, Link, Mir, MirValue, Op,
+        PublicInputTableAccess, Vector,
     },
     tests::translate,
 };
@@ -173,7 +173,7 @@ fn buses_table_in_boundary_constraints() {
     assert!(result.is_ok());
 
     let get_name = |op: &Link<Op>| -> (ast::Identifier, usize) {
-        let MirValue::PublicInputBinding(BusVariableBoundary {
+        let MirValue::PublicInputTable(PublicInputTableAccess {
             table_name,
             num_cols,
             ..

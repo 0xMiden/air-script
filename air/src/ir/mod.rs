@@ -10,7 +10,7 @@ pub use self::constraints::{ConstraintDomain, ConstraintError, ConstraintRoot, C
 pub use self::degree::IntegrityConstraintDegree;
 pub use self::operation::Operation;
 pub use self::trace::TraceAccess;
-pub use self::value::{BusVariableBoundary, PeriodicColumnAccess, PublicInputAccess, Value};
+pub use self::value::{PeriodicColumnAccess, PublicInputAccess, PublicInputTableAccess, Value};
 
 pub use air_parser::{
     ast::{

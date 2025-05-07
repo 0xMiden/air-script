@@ -9,10 +9,10 @@ use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned}
 use crate::ir::BusAccess;
 use crate::{
     ir::{
-        Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, BusVariableBoundary, Call,
-        ConstantValue, Enf, Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir,
-        MirType, MirValue, Mul, Op, Owner, Parameter, PublicInputAccess, Root, SpannedMirValue,
-        Sub, TraceAccess, TraceAccessBinding, Value, Vector,
+        Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, Call, ConstantValue, Enf,
+        Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir, MirType, MirValue,
+        Mul, Op, Owner, Parameter, PublicInputAccess, PublicInputTableAccess, Root,
+        SpannedMirValue, Sub, TraceAccess, TraceAccessBinding, Value, Vector,
     },
     passes::duplicate_node,
     CompileError,
@@ -119,12 +119,12 @@ impl<'a> MirBuilder<'a> {
         for bus in self.mir.constraint_graph().buses.values() {
             let bus_name = bus.borrow().get_name();
             if let Some(ref mut mirvalue) = bus.borrow().get_first().as_value_mut() {
-                if let MirValue::PublicInputBinding(ref mut first) = mirvalue.value.value {
+                if let MirValue::PublicInputTable(ref mut first) = mirvalue.value.value {
                     first.set_bus_name(bus_name);
                 }
             }
             if let Some(ref mut mirvalue) = bus.borrow().get_last().as_value_mut() {
-                if let MirValue::PublicInputBinding(ref mut last) = mirvalue.value.value {
+                if let MirValue::PublicInputTable(ref mut last) = mirvalue.value.value {
                     last.set_bus_name(bus_name);
                 }
             }
@@ -1179,19 +1179,19 @@ impl<'a> MirBuilder<'a> {
         }
 
         match self.public_input_access(access) {
-            (Some(public_input), None) => {
+            (Some(public_input_access), None) => {
                 return Ok(Value::builder()
                     .value(SpannedMirValue {
                         span: access.span(),
-                        value: MirValue::PublicInput(public_input),
+                        value: MirValue::PublicInput(public_input_access),
                     })
                     .build());
             }
-            (None, Some(public_input_binding)) => {
+            (None, Some(public_input_table_access)) => {
                 return Ok(Value::builder()
                     .value(SpannedMirValue {
                         span: access.span(),
-                        value: MirValue::PublicInputBinding(public_input_binding),
+                        value: MirValue::PublicInputTable(public_input_table_access),
                     })
                     .build());
             }
@@ -1205,14 +1205,14 @@ impl<'a> MirBuilder<'a> {
     fn public_input_access(
         &self,
         access: &ast::SymbolAccess,
-    ) -> (Option<PublicInputAccess>, Option<BusVariableBoundary>) {
+    ) -> (Option<PublicInputAccess>, Option<PublicInputTableAccess>) {
         let Some(public_input) = self.mir.public_inputs.get(access.name.as_ref()) else {
             return (None, None);
         };
         match access.access_type {
             AccessType::Default => (
                 None,
-                Some(BusVariableBoundary::new(
+                Some(PublicInputTableAccess::new(
                     public_input.name(),
                     public_input.size(),
                 )),

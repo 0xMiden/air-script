@@ -65,7 +65,7 @@ pub fn eval_quotient(air: &Air, ace_vars: &AceVars, log_trace_len: u32) -> QuadF
                     let idx = public[&access.name];
                     ace_vars.public[idx][access.index]
                 }
-                Value::PublicInputBinding(_) => unimplemented!(),
+                Value::PublicInputTable(_) => unimplemented!(),
                 Value::RandomValue(idx) => ace_vars.rand[idx],
             },
             Operation::Add(l, r) => evals[usize::from(l)] + evals[usize::from(r)],

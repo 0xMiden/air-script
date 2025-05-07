@@ -349,7 +349,7 @@ impl<'a> BusOpExpand<'a> {
                     }
                     // Bus boundary bindings to variable length public inputs
                     // are expanded later in the codegen.
-                    MirValue::PublicInputBinding(_) => {}
+                    MirValue::PublicInputTable(_) => {}
                     _ => unreachable!(),
                 }
             }

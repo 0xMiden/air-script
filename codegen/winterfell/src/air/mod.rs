@@ -78,7 +78,7 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
             ir.constraint_graph().node(&bus.last),
         ];
         for fl in bus_constraints {
-            if let Operation::Value(Value::PublicInputBinding(_)) = fl.op() {
+            if let Operation::Value(Value::PublicInputTable(_)) = fl.op() {
                 match bus.bus_type {
                     BusType::Multiset => {
                         add_bus_multiset_boundary_varlen = true;

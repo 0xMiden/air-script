@@ -103,7 +103,7 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             }
-            Value::PublicInputBinding(air_ir::BusVariableBoundary {
+            Value::PublicInputTable(air_ir::PublicInputTableAccess {
                 bus_name,
                 table_name,
                 ..

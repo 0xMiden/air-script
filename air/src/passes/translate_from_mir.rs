@@ -257,11 +257,11 @@ impl AirBuilder<'_> {
                             index: public_input_access.index,
                         })
                     }
-                    MirValue::PublicInputBinding(public_input_binding) => {
-                        crate::ir::Value::PublicInputBinding(crate::ir::BusVariableBoundary::new(
-                            public_input_binding.table_name,
-                            public_input_binding.bus_name(),
-                            public_input_binding.num_cols,
+                    MirValue::PublicInputTable(public_input_table) => {
+                        crate::ir::Value::PublicInputTable(crate::ir::PublicInputTableAccess::new(
+                            public_input_table.table_name,
+                            public_input_table.bus_name(),
+                            public_input_table.num_cols,
                         ))
                     }
                     MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
