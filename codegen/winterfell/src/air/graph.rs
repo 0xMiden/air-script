@@ -162,11 +162,11 @@ fn call_bus_boundary_varlen_pubinput(
     let bus = ir.buses.get(&bus_name).expect("bus not found");
     match bus.bus_type {
         BusType::Multiset => format!(
-            "self.bus_multiset_boundary_varlen(aux_rand_elements, self.{})",
+            "Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.{}.iter())",
             table_name
         ),
         BusType::Logup => format!(
-            "self.bus_logup_boundary_varlen(aux_rand_elements, self.{})",
+            "Self::bus_logup_boundary_varlen(aux_rand_elements, &self.{}.iter())",
             table_name
         ),
     }

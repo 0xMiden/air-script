@@ -33,10 +33,10 @@ impl BusesAir {
         self.trace_length() - self.context().num_transition_exemptions()
     }
 
-    pub fn bus_multiset_boundary_varlen<E: FieldElement<BaseField = Felt>>(aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &PublicInputs) -> E {
+    pub fn bus_multiset_boundary_varlen<'a, const N: usize, I: IntoIterator<Item = &'a [Felt; N]> + Clone, E: FieldElement<BaseField = Felt>>(aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &I) -> E {
         let mut bus_p_last: E = E::ONE;
         let rand = aux_rand_elements.get_segment_elements(0);
-        for row in public_inputs.as_slice().iter() {
+        for row in public_inputs.clone().into_iter() {
             let mut p_last = rand[0];
             for (c, p_i) in row.iter().enumerate() {
                 p_last += E::from(*p_i) * rand[c + 1];
@@ -46,10 +46,10 @@ impl BusesAir {
         bus_p_last
     }
 
-    pub fn bus_logup_boundary_varlen<E: FieldElement<BaseField = Felt>>(aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &PublicInputs) -> E {
+    pub fn bus_logup_boundary_varlen<'a, const N: usize, I: IntoIterator<Item = &'a [Felt; N]> + Clone, E: FieldElement<BaseField = Felt>>(aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &I) -> E {
         let mut bus_q_last = E::ZERO;
         let rand = aux_rand_elements.get_segment_elements(0);
-        for row in public_inputs.iter() {
+        for row in public_inputs.clone().into_iter() {
             let mut q_last = rand[0];
             for (c, p_i) in row.iter().enumerate() {
                 let p_i = *p_i;
@@ -98,10 +98,10 @@ impl Air for BusesAir {
 
     fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
-        result.push(Assertion::single(0, 0, self.bus_multiset_boundary_varlen(aux_rand_elements, self.inputs)));
-        result.push(Assertion::single(1, 0, self.bus_logup_boundary_varlen(aux_rand_elements, self.inputs)));
-        result.push(Assertion::single(0, self.last_step(), self.bus_multiset_boundary_varlen(aux_rand_elements, self.outputs)));
-        result.push(Assertion::single(1, self.last_step(), self.bus_logup_boundary_varlen(aux_rand_elements, self.outputs)));
+        result.push(Assertion::single(0, 0, Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.inputs.iter())));
+        result.push(Assertion::single(1, 0, Self::bus_logup_boundary_varlen(aux_rand_elements, &self.inputs.iter())));
+        result.push(Assertion::single(0, self.last_step(), Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.outputs.iter())));
+        result.push(Assertion::single(1, self.last_step(), Self::bus_logup_boundary_varlen(aux_rand_elements, &self.outputs.iter())));
         result
     }
 
