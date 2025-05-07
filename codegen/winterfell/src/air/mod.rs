@@ -98,7 +98,7 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
     }
 }
 
-/// Build the Unit bus constraint based on the public input
+/// Build the Multiset bus constraint based on the public input
 ///
 /// p: the constraint to be built
 /// v: the public input
@@ -138,7 +138,7 @@ fn impl_bus_multiset_boundary_varlen(base_impl: &mut Impl) {
         .line("bus_p_last");
 }
 
-/// Build the Multiplicity bus constraint based on the public input
+/// Build the Logup bus constraint based on the public input
 /// q: the constraint to be built
 /// v: the public input
 /// r: the random elements
