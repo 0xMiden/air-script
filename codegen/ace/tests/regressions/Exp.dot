@@ -24,15 +24,15 @@ op0 -> op2
 op3 [label="op3\ninput5 × op2"]
 input5 -> op3
 op2 -> op3
-op4 [label="op4\ninput31 - input29"]
+op4 [label="op4\ninput31 - const1"]
 input31 -> op4
-input29 -> op4
+const1 -> op4
 op5 [label="op5\ninput31 - input28"]
 input31 -> op5
 input28 -> op5
-op6 [label="op6\ninput31 - const1"]
+op6 [label="op6\ninput31 - input29"]
 input31 -> op6
-const1 -> op6
+input29 -> op6
 op7 [label="op7\ninput32 - const1"]
 input32 -> op7
 const1 -> op7
@@ -69,14 +69,14 @@ op16 -> op17
 op18 [label="op18\nop15 + op17"]
 op15 -> op18
 op17 -> op18
-op19 [label="op19\nop5 × op5"]
-op5 -> op19
+op19 [label="op19\nop4 × op5"]
+op4 -> op19
 op5 -> op19
 op20 [label="op20\nop6 × op19"]
 op6 -> op20
 op19 -> op20
-op21 [label="op21\nop4 × op20"]
-op4 -> op21
+op21 [label="op21\nop5 × op20"]
+op5 -> op21
 op20 -> op21
 op22 [label="op22\nop18 × op21"]
 op18 -> op22
@@ -96,8 +96,8 @@ op25 -> op26
 op27 [label="op27\nop22 + op26"]
 op22 -> op27
 op26 -> op27
-op28 [label="op28\nop6 × op7"]
-op6 -> op28
+op28 [label="op28\nop4 × op7"]
+op4 -> op28
 op7 -> op28
 op29 [label="op29\ninput15 × input32"]
 input15 -> op29
@@ -141,16 +141,13 @@ op40 -> op41
 op42 [label="op42\ninput8 + op41"]
 input8 -> op42
 op41 -> op42
-op43 [label="op43\nop7 × op42"]
+op43 [label="op43\nop7 × op19"]
 op7 -> op43
-op42 -> op43
-op44 [label="op44\nop6 × op43"]
-op6 -> op44
+op19 -> op43
+op44 [label="op44\nop42 × op43"]
+op42 -> op44
 op43 -> op44
-op45 [label="op45\nop5 × op44"]
-op5 -> op45
+op45 [label="op45\nop27 - op44"]
+op27 -> op45
 op44 -> op45
-op46 [label="op46\nop27 - op45"]
-op27 -> op46
-op45 -> op46
 }

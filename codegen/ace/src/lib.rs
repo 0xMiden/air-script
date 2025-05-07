@@ -103,9 +103,9 @@ pub fn build_ace_circuit(air: &Air) -> anyhow::Result<(AceNode, AceCircuit)> {
     // At this point, all the nodes of the original AirScript are copied inside the ACE circuit.
     // We now start adding new nodes to join the AirScript roots in the formula
     // described above.
-    let vanish_last = cb.sub(z, gen_last);
-    let vanish_penultimate = cb.sub(z, gen_penultimate);
     let vanish_first = cb.sub(z, one);
+    let vanish_penultimate = cb.sub(z, gen_penultimate);
+    let vanish_last = cb.sub(z, gen_last);
     let vanish_all = cb.sub(z_n, one);
 
     let mut lc = LinearCombination::new(alpha);
@@ -114,10 +114,10 @@ pub fn build_ace_circuit(air: &Air) -> anyhow::Result<(AceNode, AceCircuit)> {
     {
         let int = lc.next_linear_combination(&mut cb, integrity_roots);
         let res = cb.prod([
-            vanish_penultimate,
-            vanish_penultimate,
             vanish_first,
+            vanish_penultimate,
             vanish_last,
+            vanish_penultimate,
             int,
         ]);
         lhs = cb.add(lhs, res);
@@ -126,14 +126,14 @@ pub fn build_ace_circuit(air: &Air) -> anyhow::Result<(AceNode, AceCircuit)> {
     // zₙ⋅z₋₂⋅bf
     {
         let bf = lc.next_linear_combination(&mut cb, boundary_first_roots);
-        let res = cb.prod([vanish_all, vanish_penultimate, bf]);
+        let res = cb.prod([vanish_penultimate, vanish_all, bf]);
         lhs = cb.add(lhs, res);
     };
 
     // zₙ⋅z₀⋅bl
     {
         let bl = lc.next_linear_combination(&mut cb, boundary_last_roots);
-        let res = cb.prod([vanish_all, vanish_first, bl]);
+        let res = cb.prod([vanish_first, vanish_all, bl]);
         lhs = cb.add(lhs, res);
     };
 
@@ -141,7 +141,7 @@ pub fn build_ace_circuit(air: &Air) -> anyhow::Result<(AceNode, AceCircuit)> {
     let rhs = {
         let q = cb.layout.quotient_nodes(); // [Q₀(z), ..., Q₇(z)]
         let qz = cb.poly_eval(z_n, &q); // Q(z)
-        cb.prod([qz, vanish_all, vanish_first, vanish_penultimate])
+        cb.prod([vanish_first, vanish_penultimate, vanish_all, qz])
     };
 
     let root = cb.sub(lhs, rhs);
