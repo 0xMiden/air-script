@@ -1,0 +1,25 @@
+def MultipleAux
+
+trace_columns {
+    main: [a, b, c],
+}
+
+periodic_columns {
+    m: [1, 0],
+    n: [1, 1, 1, 0],
+    o: [1, 0, 0, 0],
+}
+
+public_inputs {
+    stack_inputs: [16],
+}
+
+boundary_constraints {
+    enf a.first = 0;
+}
+
+integrity_constraints {
+    enf a * m = 0;
+    enf b * n = 0;
+    enf c * o = 0;
+}

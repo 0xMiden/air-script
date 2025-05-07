@@ -1,0 +1,23 @@
+def SimpleArithmetic
+
+trace_columns {
+    main: [a, b],
+}
+
+public_inputs {
+    stack_inputs: [1],
+}
+
+boundary_constraints {
+    enf a.first = 0;
+}
+
+integrity_constraints {
+    enf a + a = 0;
+    enf a - a = 0;
+    enf a * a = 0;
+
+    enf b + a = 0;
+    enf b - a = 0;
+    enf b * a = 0;
+}

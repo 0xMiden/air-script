@@ -1,0 +1,18 @@
+def PublicInput
+
+trace_columns {
+    main: [a, b],
+}
+
+public_inputs {
+    z: [2],
+    m: [2],
+}
+
+boundary_constraints {
+    enf a.first = m[0];
+}
+
+integrity_constraints {
+    enf a = 0;
+}
