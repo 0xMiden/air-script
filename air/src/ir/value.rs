@@ -16,7 +16,7 @@ pub enum Value {
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
-    /// A public input binding
+    /// A reference to a public input table.
     PublicInputTable(PublicInputTableAccess),
     /// A reference to the `random_values` array, specifically the element at the given index
     RandomValue(usize),
