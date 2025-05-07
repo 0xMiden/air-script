@@ -55,6 +55,7 @@ fn add_serializable_impl(scope: &mut Scope, pub_input_values: Vec<String>) {
         .arg_ref_self()
         .arg("target", "&mut W");
     for pub_input_value in pub_input_values {
-        write_into_fn.line(format!("target.write(self.{pub_input_value}.as_slice());"));
+        write_into_fn.line(format!("self.{pub_input_value}.write_into(target);"));
+        //write_into_fn.line(format!("target.write(self.{pub_input_value}.as_slice());"));
     }
 }

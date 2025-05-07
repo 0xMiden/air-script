@@ -16,7 +16,7 @@ impl PublicInputs {
 
 impl Serializable for PublicInputs {
     fn write_into<W: ByteWriter>(&self, target: &mut W) {
-        target.write(self.outputs.as_slice());
+        self.outputs.write_into(target);
     }
 }
 
