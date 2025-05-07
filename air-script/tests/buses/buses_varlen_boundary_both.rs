@@ -33,7 +33,7 @@ impl BusesAir {
         self.trace_length() - self.context().num_transition_exemptions()
     }
 
-    pub fn bus_multiset_boundary_varlen<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &PublicInputs) -> E {
+    pub fn bus_multiset_boundary_varlen<E: FieldElement<BaseField = Felt>>(aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &PublicInputs) -> E {
         let mut bus_p_last: E = E::ONE;
         let rand = aux_rand_elements.get_segment_elements(0);
         for row in public_inputs.as_slice().iter() {
@@ -46,7 +46,7 @@ impl BusesAir {
         bus_p_last
     }
 
-    pub fn bus_logup_boundary_varlen<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &PublicInputs) -> E {
+    pub fn bus_logup_boundary_varlen<E: FieldElement<BaseField = Felt>>(aux_rand_elements: &AuxTraceRandElements<E>, public_inputs: &PublicInputs) -> E {
         let mut bus_q_last = E::ZERO;
         let rand = aux_rand_elements.get_segment_elements(0);
         for row in public_inputs.iter() {

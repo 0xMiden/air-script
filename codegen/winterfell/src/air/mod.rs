@@ -121,7 +121,6 @@ fn impl_bus_multiset_boundary_varlen(base_impl: &mut Impl) {
     base_impl
         .new_fn("bus_multiset_boundary_varlen")
         .generic("E: FieldElement<BaseField = Felt>")
-        .arg_ref_self()
         .arg("aux_rand_elements", "&AuxTraceRandElements<E>")
         .arg("public_inputs", "&PublicInputs")
         .ret("E")
@@ -163,7 +162,6 @@ fn impl_bus_logup_boundary_varlen(base_impl: &mut Impl) {
     base_impl
         .new_fn("bus_logup_boundary_varlen")
         .generic("E: FieldElement<BaseField = Felt>")
-        .arg_ref_self()
         .arg("aux_rand_elements", "&AuxTraceRandElements<E>")
         .arg("public_inputs", "&PublicInputs")
         .ret("E")
