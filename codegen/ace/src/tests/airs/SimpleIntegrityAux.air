@@ -1,0 +1,17 @@
+def SimpleIntegrityAux
+
+trace_columns {
+    main: [a],
+}
+
+public_inputs {
+    stack_inputs: [1],
+}
+
+boundary_constraints {
+    enf a.first = 0;
+}
+
+integrity_constraints {
+    enf a = 0;
+}

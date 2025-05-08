@@ -1,0 +1,22 @@
+def SimpleBoundary
+
+trace_columns {
+    main: [a, b, len],
+}
+
+public_inputs {
+    target: [1],
+}
+
+boundary_constraints {
+    enf a.first = 1;
+    enf b.first = 1;
+
+    enf len.first = 0;
+    enf len.last = target[0];
+}
+
+integrity_constraints {
+    enf a' = a + b;
+    enf b' = a;
+}

@@ -1,0 +1,21 @@
+def Exp
+
+trace_columns {
+    main: [a, b],
+}
+
+public_inputs {
+    stack_inputs: [1],
+}
+
+boundary_constraints {
+    enf a.first = 0;
+}
+
+integrity_constraints {
+    enf b^1 = 0;
+    enf b^2 = 0;
+    enf b^3 = 0;
+    enf b^4 = 0;
+    enf b^5 = 0;
+}

@@ -1,0 +1,17 @@
+def Vector
+
+trace_columns {
+    main: [clk, fmp[2]],
+}
+
+public_inputs {
+    stack_inputs: [1],
+}
+
+boundary_constraints {
+    enf clk.first = 0;
+}
+
+integrity_constraints {
+    enf clk - fmp[0] + fmp[1] = 0;
+}

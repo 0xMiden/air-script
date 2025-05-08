@@ -1,0 +1,39 @@
+def ComplexBoundary
+
+const A = 1;
+const B = [0, 1];
+const C = [[1, 2], [2, 0]];
+
+trace_columns {
+    main: [a, b, c, d, e[2]],
+
+}
+
+buses {
+    multiset f,
+}
+
+public_inputs {
+    stack_inputs: [2],
+    stack_outputs: [2],
+}
+
+boundary_constraints {
+    enf a.first = stack_inputs[0];
+    enf b.first = stack_inputs[1];
+    enf a.last = stack_outputs[0];
+    enf b.last = stack_outputs[1];
+
+    enf c.first = 1;
+    enf d.first = 1;
+
+    enf e[0].first = 0;
+    enf e[1].first = 1;
+
+    enf f.first = null;
+    enf f.last = null;
+}
+
+integrity_constraints {
+    enf a + b = 0;
+}
