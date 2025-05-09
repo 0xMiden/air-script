@@ -4,8 +4,7 @@ use std::{
     collections::BTreeMap,
 };
 
-use air_parser::ast::{Identifier, QualifiedIdentifier};
-use miden_diagnostics::Spanned;
+use air_parser::ast::QualifiedIdentifier;
 
 /// The constraints graph for the Mir.
 ///
