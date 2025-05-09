@@ -140,7 +140,7 @@ fn impl_bus_multiset_boundary_varlen(base_impl: &mut Impl) {
         .line("bus_p_last");
 }
 
-/// Build the Logup bus constraint based on the public input
+/// Build the LogUp bus constraint based on the public input
 /// q: the constraint to be built
 /// v: the public input
 /// r: the random elements

@@ -6,7 +6,7 @@ use crate::{
     tests::translate,
 };
 use air_parser::{ast, Symbol};
-use miden_diagnostics::SourceSpan;
+use miden_diagnostics::{SourceSpan, Spanned};
 
 use super::{compile, expect_diagnostic};
 
@@ -136,10 +136,12 @@ fn buses_args_expr_in_integrity_expr() {
     let not_sel: Link<Op> = From::from(0);
     let _p_rem = bus.remove(&[x.clone()], not_sel.clone(), SourceSpan::default());
     let bus_ident = result_mir.constraint_graph().buses.keys().next().unwrap();
+    let bus_name = ast::Identifier::new(bus_ident.span(), bus_ident.name());
+    bus.borrow_mut().set_name_unchecked(bus_name);
     let mut expected_mir = Mir::new(result_mir.name);
     let _ = expected_mir
         .constraint_graph_mut()
-        .insert_bus(*bus_ident, bus.clone().clone());
+        .insert_bus(*bus_ident, bus.clone());
     assert_bus_eq(&mut expected_mir, &mut result_mir);
 }
 

@@ -118,7 +118,19 @@ impl Bus {
         self.last = last;
         Ok(())
     }
+    /// Set the name of the bus but only if it is not already set
+    ///
+    /// Only use it for testing purposes
+    pub fn set_name_unchecked(&mut self, name: Identifier) {
+        self.name = Some(name);
+    }
     pub fn set_name(&mut self, name: Identifier) {
+        assert!(
+            self.name.is_none(),
+            "Bus name is already set to {}, cannot update to {}",
+            self.name.unwrap(),
+            name
+        );
         self.name = Some(name);
     }
 
@@ -130,7 +142,7 @@ impl Bus {
         self.last.clone()
     }
 
-    pub fn get_name(&self) -> Identifier {
+    pub fn name(&self) -> Identifier {
         self.name.expect("Bus name should have already been set")
     }
 }
@@ -169,7 +181,7 @@ impl Link<Bus> {
 impl BackLink<Bus> {
     pub fn get_name(&self) -> Identifier {
         self.to_link()
-            .map(|l| l.borrow().get_name())
+            .map(|l| l.borrow().name())
             .unwrap_or_else(|| panic!("Bus was dropped"))
     }
 }

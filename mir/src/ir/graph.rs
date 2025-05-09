@@ -163,8 +163,6 @@ impl Graph {
         ident: QualifiedIdentifier,
         bus: ir::Link<ir::Bus>,
     ) -> Result<(), CompileError> {
-        bus.set_name(Identifier::new(bus.span(), ident.name()));
-
         self.buses
             .insert(ident, bus)
             .map_or(Ok(()), |_| Err(CompileError::Failed))

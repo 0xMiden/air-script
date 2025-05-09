@@ -117,7 +117,7 @@ impl<'a> MirBuilder<'a> {
         }
 
         for bus in self.mir.constraint_graph().buses.values() {
-            let bus_name = bus.borrow().get_name();
+            let bus_name = bus.borrow().name();
             if let Some(ref mut mirvalue) = bus.borrow().get_first().as_value_mut() {
                 if let MirValue::PublicInputTable(ref mut first) = mirvalue.value.value {
                     first.set_bus_name(bus_name);
