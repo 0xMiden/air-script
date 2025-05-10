@@ -1,12 +1,12 @@
 # AirScript
 
-<a href="https://github.com/0xPolygonMiden/air-script/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<img src="https://github.com/0xPolygonMiden/air-script/workflows/CI/badge.svg?branch=main">
+<a href="https://github.com/0xMiden/air-script/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+<img src="https://github.com/0xMiden/air-script/workflows/CI/badge.svg?branch=main">
 <a href="https://crates.io/crates/air-script"><img src="https://img.shields.io/crates/v/air-script"></a>
 
 A domain-specific language for expressing AIR constraints for STARKs, especially for STARK-based virtual machines like [Miden VM](https://github.com/maticnetwork/miden/).
 
-An in-depth description of AirScript is available in the full AirScript [documentation](https://0xpolygonmiden.github.io/air-script/).
+An in-depth description of AirScript is available in the full AirScript [documentation](https://0xMiden.github.io/air-script/).
 
 **WARNING**: This project is in an alpha stage. It has not been audited and may contain bugs and security flaws. This implementation is NOT ready for production use.
 
@@ -27,7 +27,7 @@ The project is organized into several crates as follows:
 
 ## Contributing to AirScript
 
-AirScript is an open project and we welcome everyone to contribute! If you are interested in contributing to AirScript, please have a look at our [Contribution guidelines](https://github.com/0xPolygonMiden/air-script/blob/main/CONTRIBUTING.md). If you want to work on a specific issue, please add a comment on the GitHub issue indicating you are interested before submitting a PR. This will help avoid duplicated effort. If you have thoughts on how to improve AirScript, we'd love to know them. So, please don't hesitate to open issues.
+AirScript is an open project and we welcome everyone to contribute! If you are interested in contributing to AirScript, please have a look at our [Contribution guidelines](https://github.com/0xMiden/air-script/blob/main/CONTRIBUTING.md). If you want to work on a specific issue, please add a comment on the GitHub issue indicating you are interested before submitting a PR. This will help avoid duplicated effort. If you have thoughts on how to improve AirScript, we'd love to know them. So, please don't hesitate to open issues.
 
 ## References
 

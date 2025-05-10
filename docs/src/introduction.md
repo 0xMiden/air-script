@@ -1,6 +1,6 @@
 # Introduction
 
-Polygon Miden's AirScript is designed to make it simple to describe AIR constraints and generate efficient and accurate constraint evaluation code in the required target language. The code for AirScript can be found [here](https://github.com/0xPolygonMiden/air-script/).
+0xMiden Miden's AirScript is designed to make it simple to describe AIR constraints and generate efficient and accurate constraint evaluation code in the required target language. The code for AirScript can be found [here](https://github.com/0xMiden/air-script/).
 
 ## Current Version
 
