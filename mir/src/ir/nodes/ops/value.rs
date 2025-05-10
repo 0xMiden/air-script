@@ -3,8 +3,8 @@ use miden_diagnostics::{SourceSpan, Spanned};
 
 use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner, Singleton};
 
-/// A MIR operation to represent a known value, [Value]
-/// Wraps a [SpannedMirValue] to represent a known value in the [MIR]
+/// A MIR operation to represent a known value, [Value].
+/// Wraps a [SpannedMirValue] to represent a known value in the [MIR].
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Builder, Spanned)]
 #[enum_wrapper(Op)]
 pub struct Value {
@@ -49,7 +49,7 @@ impl Child for Value {
     }
 }
 
-/// Represents a known value in the [MIR]
+/// Represents a known value in the [MIR].
 ///
 /// Values are either constant, or evaluated at runtime using the context
 /// provided to an AirScript program (i.e. public inputs, etc.).
@@ -59,17 +59,19 @@ pub enum MirValue {
     Constant(ConstantValue),
     /// A reference to a specific column in the trace segment, with an optional offset.
     TraceAccess(TraceAccess),
-    /// A reference to a periodic column
+    /// A reference to a periodic column.
     ///
     /// The value this corresponds to is determined by the current row of the trace.
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
-    /// A reference to a specific index in the random values array
+    /// A reference to a public input table.
+    PublicInputTable(PublicInputTableAccess),
+    /// A reference to a specific index in the random values array.
     ///
     /// Random values are not provided by the user in the AirScript program, but are used to expand Bus constraints.
     RandomValue(usize),
-    /// A binding to a set of consecutive trace columns of a given size
+    /// A binding to a set of consecutive trace columns of a given size.
     TraceAccessBinding(TraceAccessBinding),
     /// A binding to a [Bus].
     BusAccess(BusAccess),
@@ -140,7 +142,6 @@ pub struct TraceAccessBinding {
 }
 
 /// Represents a typed value in the [MIR]
-///
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Spanned)]
 pub struct SpannedMirValue {
     #[span]
@@ -166,7 +167,7 @@ impl From<ast::Type> for MirType {
     }
 }
 
-/// Represents an access of a [PeriodicColumn], similar in nature to [TraceAccess]
+/// Represents an access of a [PeriodicColumn], similar in nature to [TraceAccess].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct PeriodicColumnAccess {
     pub name: QualifiedIdentifier,
@@ -178,7 +179,7 @@ impl PeriodicColumnAccess {
     }
 }
 
-/// Represents an access of a [PublicInput], similar in nature to [TraceAccess]
+/// Represents an access of a [PublicInput], similar in nature to [TraceAccess].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct PublicInputAccess {
     /// The name of the public input to access
@@ -189,6 +190,38 @@ pub struct PublicInputAccess {
 impl PublicInputAccess {
     pub const fn new(name: Identifier, index: usize) -> Self {
         Self { name, index }
+    }
+}
+
+/// Represents an access of a public input table, similar in nature to [TraceAccess].
+///
+/// It can only be bound to a [Bus]'s .first or .last boundary constraints.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PublicInputTableAccess {
+    /// The name of the public input to bind
+    pub table_name: Identifier,
+    /// The name of the bus to bind
+    /// The bus name is not always known at the time of instantiation,
+    /// making it an Option allows setting it later.
+    bus_name: Option<Identifier>,
+    /// The number of columns in the table
+    pub num_cols: usize,
+}
+
+impl PublicInputTableAccess {
+    pub const fn new(table_name: Identifier, num_cols: usize) -> Self {
+        Self {
+            table_name,
+            bus_name: None,
+            num_cols,
+        }
+    }
+    pub fn set_bus_name(&mut self, bus_name: Identifier) {
+        self.bus_name = Some(bus_name);
+    }
+    pub fn bus_name(&self) -> Identifier {
+        self.bus_name
+            .expect("Bus name should have already been set")
     }
 }
 

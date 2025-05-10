@@ -102,7 +102,7 @@ fn fn_use_scalars_and_vectors() {
 
     expected.public_inputs.insert(
         ident!(stack_inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
     );
 
     expected.boundary_constraints = Some(Span::new(
@@ -186,7 +186,7 @@ fn fn_call_in_fn() {
 
     expected.public_inputs.insert(
         ident!(stack_inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
     );
 
     expected.boundary_constraints = Some(Span::new(
@@ -286,7 +286,7 @@ fn fn_call_in_ev() {
 
     expected.public_inputs.insert(
         ident!(stack_inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
     );
 
     expected.boundary_constraints = Some(Span::new(
@@ -353,7 +353,7 @@ fn fn_as_lc_iterables() {
 
     expected.public_inputs.insert(
         ident!(stack_inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
     );
 
     expected.boundary_constraints = Some(Span::new(
@@ -428,7 +428,7 @@ fn fn_call_in_binary_ops() {
 
     expected.public_inputs.insert(
         ident!(stack_inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
     );
 
     expected.boundary_constraints = Some(Span::new(
@@ -513,7 +513,7 @@ fn fn_call_in_vector_def() {
 
     expected.public_inputs.insert(
         ident!(stack_inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(stack_inputs), 16),
     );
 
     expected.boundary_constraints = Some(Span::new(

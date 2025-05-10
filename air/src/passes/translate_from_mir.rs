@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{collections::BTreeMap, ops::Deref};
 
 use air_parser::{
     ast::{self, TraceSegment},
@@ -37,7 +37,7 @@ impl Pass for MirToAir<'_> {
 
         let mut trace_columns = mir.trace_columns.clone();
 
-        let mut bus_bindings_map = HashMap::new();
+        let mut bus_bindings_map = BTreeMap::new();
         if !buses.is_empty() {
             let bus_raw_bindings: Vec<_> = buses
                 .keys()
@@ -74,6 +74,7 @@ impl Pass for MirToAir<'_> {
             air: &mut air,
             trace_columns: trace_columns.clone(),
             bus_bindings_map,
+            buses: BTreeMap::new(),
         };
 
         let graph = mir.constraint_graph();
@@ -86,6 +87,11 @@ impl Pass for MirToAir<'_> {
             builder.build_integrity_constraint(ic)?;
         }
 
+        for bus in buses.values() {
+            builder.build_bus(bus)?;
+        }
+        air.buses = builder.buses;
+
         Ok(air)
     }
 }
@@ -94,7 +100,8 @@ struct AirBuilder<'a> {
     diagnostics: &'a DiagnosticsHandler,
     air: &'a mut Air,
     trace_columns: Vec<TraceSegment>,
-    bus_bindings_map: HashMap<Identifier, usize>,
+    bus_bindings_map: BTreeMap<Identifier, usize>,
+    buses: BTreeMap<Identifier, Bus>,
 }
 
 /// Helper function to remove the vector wrapper from a scalar operation
@@ -230,7 +237,7 @@ impl AirBuilder<'_> {
                         })
                     }
                     MirValue::BusAccess(bus_access) => {
-                        let name = bus_access.bus.borrow().deref().name.unwrap();
+                        let name = bus_access.bus.borrow().deref().name();
                         let column = self.bus_bindings_map.get(&name).unwrap();
                         crate::ir::Value::TraceAccess(crate::ir::TraceAccess {
                             segment: AUX_SEGMENT,
@@ -250,8 +257,15 @@ impl AirBuilder<'_> {
                             index: public_input_access.index,
                         })
                     }
+                    MirValue::PublicInputTable(public_input_table) => {
+                        crate::ir::Value::PublicInputTable(crate::ir::PublicInputTableAccess::new(
+                            public_input_table.table_name,
+                            public_input_table.bus_name(),
+                            public_input_table.num_cols,
+                        ))
+                    }
                     MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
-                    _ => unreachable!("Unexpected MirValue: {:?}", mir_value),
+                    _ => unreachable!("Unexpected MirValue: {:#?}", mir_value),
                 };
 
                 Ok(self.insert_op(Operation::Value(value)))
@@ -286,7 +300,7 @@ impl AirBuilder<'_> {
                         })
                     }
                     MirValue::BusAccess(bus_access) => {
-                        let name = bus_access.bus.borrow().deref().name.unwrap();
+                        let name = bus_access.bus.borrow().deref().name();
                         let column = self.bus_bindings_map.get(&name).unwrap();
                         crate::ir::Value::TraceAccess(crate::ir::TraceAccess {
                             segment: AUX_SEGMENT,
@@ -387,7 +401,7 @@ impl AirBuilder<'_> {
                         span: lhs_span,
                     } => {
                         let bus = bus_access.bus;
-                        let name = bus.borrow().deref().name.unwrap();
+                        let name = bus.borrow().deref().name();
                         let column = self.bus_bindings_map.get(&name).unwrap();
                         let trace_access =
                             mir::ir::TraceAccess::new(AUX_SEGMENT, *column, bus_access.row_offset);
@@ -515,6 +529,18 @@ impl AirBuilder<'_> {
             }
             _ => unreachable!(),
         }
+        Ok(())
+    }
+
+    /// Builds the bus boundary constraints.
+    fn build_bus(&mut self, mir_bus: &Link<mir::ir::Bus>) -> Result<(), CompileError> {
+        let mir_bus = mir_bus.borrow();
+        let first = self.insert_mir_operation(&mir_bus.get_first())?;
+        let last = self.insert_mir_operation(&mir_bus.get_last())?;
+        self.buses.insert(
+            mir_bus.name(),
+            Bus::new(mir_bus.name(), mir_bus.bus_type, first, last),
+        );
         Ok(())
     }
 

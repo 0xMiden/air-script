@@ -7,13 +7,12 @@ use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 
 use crate::ir::BusAccess;
-//use crate::ir::PublicInputBinding;
 use crate::{
     ir::{
         Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, Call, ConstantValue, Enf,
         Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir, MirType, MirValue,
-        Mul, Op, Owner, Parameter, PublicInputAccess, Root, SpannedMirValue, Sub, TraceAccess,
-        TraceAccessBinding, Value, Vector,
+        Mul, Op, Owner, Parameter, PublicInputAccess, PublicInputTableAccess, Root,
+        SpannedMirValue, Sub, TraceAccess, TraceAccessBinding, Value, Vector,
     },
     passes::duplicate_node,
     CompileError,
@@ -116,11 +115,25 @@ impl<'a> MirBuilder<'a> {
         for integrity_constraint in integrity_constraints {
             self.translate_statement(integrity_constraint)?;
         }
+
+        for bus in self.mir.constraint_graph().buses.values() {
+            let bus_name = bus.borrow().name();
+            if let Some(ref mut mirvalue) = bus.borrow().get_first().as_value_mut() {
+                if let MirValue::PublicInputTable(ref mut first) = mirvalue.value.value {
+                    first.set_bus_name(bus_name);
+                }
+            }
+            if let Some(ref mut mirvalue) = bus.borrow().get_last().as_value_mut() {
+                if let MirValue::PublicInputTable(ref mut last) = mirvalue.value.value {
+                    last.set_bus_name(bus_name);
+                }
+            }
+        }
         Ok(())
     }
 
     fn translate_bus_definition(&mut self, bus: &'a ast::Bus) -> Result<Link<Bus>, CompileError> {
-        Ok(Bus::create(bus.name, bus.bus_type.clone(), bus.span()))
+        Ok(Bus::create(bus.name, bus.bus_type, bus.span()))
     }
 
     fn translate_evaluator_signature(
@@ -1165,23 +1178,49 @@ impl<'a> MirBuilder<'a> {
                 .build());
         }
 
-        if let Some(public_input) = self.public_input_access(access) {
-            return Ok(Value::builder()
-                .value(SpannedMirValue {
-                    span: access.span(),
-                    value: MirValue::PublicInput(public_input),
-                })
-                .build());
+        match self.public_input_access(access) {
+            (Some(public_input_access), None) => {
+                return Ok(Value::builder()
+                    .value(SpannedMirValue {
+                        span: access.span(),
+                        value: MirValue::PublicInput(public_input_access),
+                    })
+                    .build());
+            }
+            (None, Some(public_input_table_access)) => {
+                return Ok(Value::builder()
+                    .value(SpannedMirValue {
+                        span: access.span(),
+                        value: MirValue::PublicInputTable(public_input_table_access),
+                    })
+                    .build());
+            }
+            _ => {}
         }
 
         panic!("undefined variable: {:?}", access);
     }
 
     // Check assumptions, probably this assumed that the inlining pass did some work
-    fn public_input_access(&self, access: &ast::SymbolAccess) -> Option<PublicInputAccess> {
-        let public_input = self.mir.public_inputs.get(access.name.as_ref())?;
+    fn public_input_access(
+        &self,
+        access: &ast::SymbolAccess,
+    ) -> (Option<PublicInputAccess>, Option<PublicInputTableAccess>) {
+        let Some(public_input) = self.mir.public_inputs.get(access.name.as_ref()) else {
+            return (None, None);
+        };
         match access.access_type {
-            AccessType::Index(index) => Some(PublicInputAccess::new(public_input.name, index)),
+            AccessType::Default => (
+                None,
+                Some(PublicInputTableAccess::new(
+                    public_input.name(),
+                    public_input.size(),
+                )),
+            ),
+            AccessType::Index(index) => (
+                Some(PublicInputAccess::new(public_input.name(), index)),
+                None,
+            ),
             _ => {
                 // This should have been caught earlier during compilation
                 unreachable!(

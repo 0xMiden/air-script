@@ -548,7 +548,7 @@ pub fn visit_mut_public_input<V, T>(visitor: &mut V, expr: &mut ast::PublicInput
 where
     V: ?Sized + VisitMut<T>,
 {
-    visitor.visit_mut_identifier(&mut expr.name)
+    visitor.visit_mut_identifier(&mut expr.name())
 }
 
 pub fn visit_mut_statement_block<V, T>(

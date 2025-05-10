@@ -321,7 +321,7 @@ impl fmt::Display for Program {
 
         writeln!(f, "public_inputs {{")?;
         for public_input in self.public_inputs.values() {
-            writeln!(f, "    {}: [{}]", public_input.name, public_input.size)?;
+            writeln!(f, "    {}: [{}]", public_input.name(), public_input.size())?;
         }
         f.write_str("}}")?;
         f.write_str("\n")?;

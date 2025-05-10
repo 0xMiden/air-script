@@ -249,10 +249,9 @@ impl Visitor for StripSpansVisitor {
             MirValue::PublicInput(v) => {
                 v.name.0 = Span::new(SourceSpan::default(), v.name.0.item);
             }
-            // TODO: Will be used when handling variable-length public inputs
-            /*MirValue::PublicInputBinding(v) => {
-                v.name.0 = Span::new(SourceSpan::default(), v.name.0.item);
-            }*/
+            MirValue::PublicInputTable(v) => {
+                v.table_name.0 = Span::new(SourceSpan::default(), v.table_name.0.item);
+            }
             MirValue::RandomValue(_) => {}
             MirValue::TraceAccessBinding(_) => {}
             MirValue::BusAccess(_) => {}

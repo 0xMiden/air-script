@@ -458,11 +458,16 @@ impl Module {
             return Err(SemanticAnalysisError::RootSectionInLibrary(input.span()));
         }
 
-        if let Some(prev) = names.replace(NamespacedIdentifier::Binding(input.name)) {
-            conflicting_declaration(diagnostics, "public input", prev.span(), input.name.span());
-            Err(SemanticAnalysisError::NameConflict(input.name.span()))
+        if let Some(prev) = names.replace(NamespacedIdentifier::Binding(input.name())) {
+            conflicting_declaration(
+                diagnostics,
+                "public input",
+                prev.span(),
+                input.name().span(),
+            );
+            Err(SemanticAnalysisError::NameConflict(input.name().span()))
         } else {
-            assert_eq!(self.public_inputs.insert(input.name, input), None);
+            assert_eq!(self.public_inputs.insert(input.name(), input), None);
             Ok(())
         }
     }

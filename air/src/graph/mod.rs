@@ -112,7 +112,7 @@ impl AlgebraicGraph {
                     // the default domain for [IntegrityConstraints] is `EveryRow`
                     Ok((DEFAULT_SEGMENT, ConstraintDomain::EveryRow))
                 }
-                Value::PublicInput(_) => {
+                Value::PublicInput(_) | Value::PublicInputTable(_) => {
                     assert!(
                         !default_domain.is_integrity(),
                         "unexpected access to public input in integrity constraint"
@@ -172,7 +172,10 @@ impl AlgebraicGraph {
         // recursively walk the subgraph and compute the degree from the operation and child nodes
         match self.node(index).op() {
             Operation::Value(value) => match value {
-                Value::Constant(_) | Value::RandomValue(_) | Value::PublicInput(_) => 0,
+                Value::Constant(_)
+                | Value::RandomValue(_)
+                | Value::PublicInput(_)
+                | Value::PublicInputTable(_) => 0,
                 Value::TraceAccess(_) => 1,
                 Value::PeriodicColumn(pc) => {
                     cycles.insert(pc.name, pc.cycle);

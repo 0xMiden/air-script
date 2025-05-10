@@ -215,7 +215,7 @@ impl BindingType {
                 _ => Err(InvalidAccessError::IndexIntoScalar),
             },
             Self::Function(_) => Err(InvalidAccessError::InvalidBinding),
-            Self::Bus(bus) => Ok(Self::Bus(bus.clone())),
+            Self::Bus(bus) => Ok(Self::Bus(*bus)),
         }
     }
 }

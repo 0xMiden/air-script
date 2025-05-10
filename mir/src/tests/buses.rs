@@ -1,9 +1,12 @@
 use crate::{
-    ir::{assert_bus_eq, Add, Builder, Bus, Fold, FoldOperator, Link, Mir, Op, Vector},
+    ir::{
+        assert_bus_eq, Add, Builder, Bus, Fold, FoldOperator, Link, Mir, MirValue, Op,
+        PublicInputTableAccess, Vector,
+    },
     tests::translate,
 };
 use air_parser::{ast, Symbol};
-use miden_diagnostics::SourceSpan;
+use miden_diagnostics::{SourceSpan, Spanned};
 
 use super::{compile, expect_diagnostic};
 
@@ -30,9 +33,6 @@ fn buses_in_boundary_constraints() {
         enf q.first = null;
         enf p.last = null;
         enf q.last = null;
-        # TODO: to be used when we have support for variable-length public inputs
-        #enf p.last = inputs;
-        #enf q.last = inputs;
     }
 
     integrity_constraints {
@@ -64,9 +64,6 @@ fn buses_in_integrity_constraints() {
         enf q.first = null;
         enf p.last = null;
         enf q.last = null;
-        # TODO: to be used when we have support for variable-length public inputs
-        #enf p.last = inputs;
-        #enf q.last = inputs;
     }
 
     integrity_constraints {
@@ -139,11 +136,67 @@ fn buses_args_expr_in_integrity_expr() {
     let not_sel: Link<Op> = From::from(0);
     let _p_rem = bus.remove(&[x.clone()], not_sel.clone(), SourceSpan::default());
     let bus_ident = result_mir.constraint_graph().buses.keys().next().unwrap();
+    let bus_name = ast::Identifier::new(bus_ident.span(), bus_ident.name());
+    bus.borrow_mut().set_name_unchecked(bus_name);
     let mut expected_mir = Mir::new(result_mir.name);
     let _ = expected_mir
         .constraint_graph_mut()
-        .insert_bus(*bus_ident, bus.clone().clone());
+        .insert_bus(*bus_ident, bus.clone());
     assert_bus_eq(&mut expected_mir, &mut result_mir);
+}
+
+#[test]
+fn buses_table_in_boundary_constraints() {
+    let source = "
+    def test
+    trace_columns {
+        main: [a],
+    }
+
+    public_inputs {
+        x: [[2]],
+        y: [[3]],
+    }
+
+    buses {
+        multiset p,
+    }
+
+    boundary_constraints {
+        enf p.first = x;
+        enf p.last = y;
+    }
+
+    integrity_constraints {
+        enf a = 0;
+    }";
+
+    let result = compile(source);
+    assert!(result.is_ok());
+
+    let get_name = |op: &Link<Op>| -> (ast::Identifier, usize) {
+        let MirValue::PublicInputTable(PublicInputTableAccess {
+            table_name,
+            num_cols,
+            ..
+        }) = op.as_value().unwrap().value.value
+        else {
+            panic!("Expected a public input, got {:#?}", op);
+        };
+        (table_name, num_cols)
+    };
+    let mir = result.unwrap();
+    let bus = mir.constraint_graph().buses.values().next().unwrap();
+    let p = bus.borrow();
+    let (first, first_nc) = get_name(&p.get_first());
+    let (last, last_nc) = get_name(&p.get_last());
+    let public_inputs = &mir.public_inputs;
+    let mut pi = public_inputs.keys();
+    let (x, y) = (pi.next().unwrap(), pi.next().unwrap());
+    assert_eq!(first, x);
+    assert_eq!(last, y);
+    assert_eq!(first_nc, 2);
+    assert_eq!(last_nc, 3);
 }
 
 // Tests that should return errors

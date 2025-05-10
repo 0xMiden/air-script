@@ -173,6 +173,7 @@ impl UnrollingFirstPass<'_> {
                 MirValue::TraceAccess(_) => {}
                 MirValue::PeriodicColumn(_) => {}
                 MirValue::PublicInput(_) => {}
+                MirValue::PublicInputTable(_) => {}
                 MirValue::RandomValue(_) => {}
                 MirValue::TraceAccessBinding(trace_access_binding) => {
                     // Create Trace Access based on this binding

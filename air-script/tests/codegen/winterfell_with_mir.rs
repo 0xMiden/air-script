@@ -26,12 +26,42 @@ fn buses_simple() {
 
 #[test]
 fn buses_complex() {
-    let generated_masm = Test::new("tests/buses/buses_complex.air".to_string())
+    let generated_air = Test::new("tests/buses/buses_complex.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithMIR)
         .unwrap();
 
     let expected = expect_file!["../buses/buses_complex.rs"];
-    expected.assert_eq(&generated_masm);
+    expected.assert_eq(&generated_air);
+}
+
+#[test]
+fn buses_varlen_boundary_first() {
+    let generated_air = Test::new("tests/buses/buses_varlen_boundary_first.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_varlen_boundary_first.rs"];
+    expected.assert_eq(&generated_air);
+}
+
+#[test]
+fn buses_varlen_boundary_last() {
+    let generated_air = Test::new("tests/buses/buses_varlen_boundary_last.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_varlen_boundary_last.rs"];
+    expected.assert_eq(&generated_air);
+}
+
+#[test]
+fn buses_varlen_boundary_both() {
+    let generated_air = Test::new("tests/buses/buses_varlen_boundary_both.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_varlen_boundary_both.rs"];
+    expected.assert_eq(&generated_air);
 }
 
 #[test]

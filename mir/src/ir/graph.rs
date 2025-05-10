@@ -4,8 +4,7 @@ use std::{
     collections::BTreeMap,
 };
 
-use air_parser::ast::{Identifier, QualifiedIdentifier};
-use miden_diagnostics::Spanned;
+use air_parser::ast::QualifiedIdentifier;
 
 /// The constraints graph for the Mir.
 ///
@@ -163,7 +162,6 @@ impl Graph {
         ident: QualifiedIdentifier,
         bus: ir::Link<ir::Bus>,
     ) -> Result<(), CompileError> {
-        bus.borrow_mut().name = Some(Identifier::new(bus.span(), ident.name()));
         self.buses
             .insert(ident, bus)
             .map_or(Ok(()), |_| Err(CompileError::Failed))

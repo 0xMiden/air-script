@@ -1,14 +1,16 @@
+mod bus;
 mod constraints;
 mod degree;
 mod operation;
 mod trace;
 mod value;
 
+pub use self::bus::{Bus, BusType};
 pub use self::constraints::{ConstraintDomain, ConstraintError, ConstraintRoot, Constraints};
 pub use self::degree::IntegrityConstraintDegree;
 pub use self::operation::Operation;
 pub use self::trace::TraceAccess;
-pub use self::value::{PeriodicColumnAccess, PublicInputAccess, Value};
+pub use self::value::{PeriodicColumnAccess, PublicInputAccess, PublicInputTableAccess, Value};
 
 pub use air_parser::{
     ast::{
@@ -60,6 +62,10 @@ pub struct Air {
     pub num_random_values: u16,
     /// The constraints enforced by this program, in their algebraic graph representation.
     pub constraints: Constraints,
+    /// The buses referenced by this program.
+    ///
+    /// Only their name, type, and the first and last boundary constraints are stored here.
+    pub buses: BTreeMap<Identifier, Bus>,
 }
 impl Default for Air {
     fn default() -> Self {
@@ -84,6 +90,7 @@ impl Air {
             public_inputs: Default::default(),
             num_random_values: 0,
             constraints: Default::default(),
+            buses: Default::default(),
         }
     }
 

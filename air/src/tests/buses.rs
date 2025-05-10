@@ -15,17 +15,14 @@ fn buses_in_boundary_constraints() {
     }
 
     public_inputs {
-        inputs: [2],
+        inputs: [[2]],
     }
 
     boundary_constraints {
         enf p.first = null;
         enf q.first = null;
-        enf p.last = null;
-        enf q.last = null;
-        # TODO: to be used when we have support for variable-length public inputs
-        #enf p.last = inputs;
-        #enf q.last = inputs;
+        enf p.last = inputs;
+        enf q.last = inputs;
     }
 
     integrity_constraints {
@@ -59,17 +56,14 @@ fn buses_in_integrity_constraints() {
     }
 
     public_inputs {
-        inputs: [2],
+        inputs: [[2]],
     }
 
     boundary_constraints {
         enf p.first = null;
         enf q.first = null;
-        enf p.last = null;
-        enf q.last = null;
-        # TODO: to be used when we have support for variable-length public inputs
-        #enf p.last = inputs;
-        #enf q.last = inputs;
+        enf p.last = inputs;
+        enf q.last = inputs;
     }
 
     integrity_constraints {

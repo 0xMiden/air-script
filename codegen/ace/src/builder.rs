@@ -136,6 +136,7 @@ impl CircuitBuilder {
                 Value::PublicInput(pi) => self.layout.public_inputs[&pi.name]
                     .as_node(pi.index)
                     .expect("invalid public input access"),
+                Value::PublicInputTable(_) => unimplemented!(),
                 Value::RandomValue(idx) => self
                     .layout
                     .random_values

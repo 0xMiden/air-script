@@ -1,5 +1,5 @@
 mod public_inputs;
-use public_inputs::add_public_inputs_struct;
+use public_inputs::{add_public_inputs_struct, public_input_type_to_string};
 
 mod periodic_columns;
 use periodic_columns::add_fn_get_periodic_column_values;
@@ -13,7 +13,7 @@ use boundary_constraints::{add_fn_get_assertions, add_fn_get_aux_assertions};
 mod transition_constraints;
 use transition_constraints::{add_fn_evaluate_aux_transition, add_fn_evaluate_transition};
 
-use air_ir::{Air, TraceSegmentId};
+use air_ir::{Air, BusType, Operation, TraceSegmentId, Value};
 
 use super::{Impl, Scope};
 
@@ -55,8 +55,8 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
     // add public inputs
     for public_input in ir.public_inputs() {
         air_struct.field(
-            public_input.name.as_str(),
-            format!("[Felt; {}]", public_input.size),
+            public_input.name().as_str(),
+            public_input_type_to_string(public_input),
         );
     }
 
@@ -69,6 +69,120 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
         .vis("pub")
         .ret("usize")
         .line("self.trace_length() - self.context().num_transition_exemptions()");
+    // add a method to get the variable length public inputs bus boundary constraints.
+    let (mut add_bus_multiset_boundary_varlen, mut add_bus_logup_boundary_varlen) = (false, false);
+    for bus in ir.buses.values() {
+        // Check which bus type is refering to variable length public inputs
+        let bus_constraints = [
+            ir.constraint_graph().node(&bus.first),
+            ir.constraint_graph().node(&bus.last),
+        ];
+        for fl in bus_constraints {
+            if let Operation::Value(Value::PublicInputTable(_)) = fl.op() {
+                match bus.bus_type {
+                    BusType::Multiset => {
+                        add_bus_multiset_boundary_varlen = true;
+                    }
+                    BusType::Logup => {
+                        add_bus_logup_boundary_varlen = true;
+                    }
+                }
+            }
+        }
+    }
+    if add_bus_multiset_boundary_varlen {
+        impl_bus_multiset_boundary_varlen(base_impl);
+    }
+    if add_bus_logup_boundary_varlen {
+        impl_bus_logup_boundary_varlen(base_impl);
+    }
+}
+
+/// Build the Multiset bus constraint based on the public input
+///
+/// p: the constraint to be built
+/// v: the public input
+/// r: the random elements
+/// n: the number of rows in v
+/// c: the number of columns in v
+/// p = prod(
+///     r[0] + sum(p[i][j] * r[j+1] for j in 0..c)
+///     for i in 0..n)
+/// when n = 3, c = 2, the constraint is
+/// p = ((r[0] + v[0][0] * r[1] + v[0][1] * r[2])
+///    * (r[0] + v[1][0] * r[1] + v[1][1] * r[2])
+///    * (r[0] + v[2][0] * r[1] + v[2][1] * r[2]))
+///
+/// denoting vi_j as v[i][j], and ri as r[i] for readability
+/// p = ((r0 + v0_0 * r1 + v0_1 * r2)
+///    * (r0 + v1_0 * r1 + v1_1 * r2)
+///    * (r0 + v2_0 * r1 + v2_1 * r2))
+fn impl_bus_multiset_boundary_varlen(base_impl: &mut Impl) {
+    base_impl
+        .new_fn("bus_multiset_boundary_varlen")
+        .generic("'a")
+        .generic("const N: usize")
+        .generic("I: IntoIterator<Item = &'a [Felt; N]> + Clone")
+        .generic("E: FieldElement<BaseField = Felt>")
+        .arg("aux_rand_elements", "&AuxTraceRandElements<E>")
+        .arg("public_inputs", "&I")
+        .ret("E")
+        .vis("pub")
+        .line("let mut bus_p_last: E = E::ONE;")
+        .line("let rand = aux_rand_elements.get_segment_elements(0);")
+        .line("for row in public_inputs.clone().into_iter() {")
+        .line("    let mut p_last = rand[0];")
+        .line("    for (c, p_i) in row.iter().enumerate() {")
+        .line("        p_last += E::from(*p_i) * rand[c + 1];")
+        .line("    }")
+        .line("    bus_p_last *= p_last;")
+        .line("}")
+        .line("bus_p_last");
+}
+
+/// Build the LogUp bus constraint based on the public input
+/// q: the constraint to be built
+/// v: the public input
+/// r: the random elements
+/// n: the number of rows in v
+/// c: the number of columns in v
+/// q = sum(
+///     1 / (r[0] + sum(p[i][j] * r[j+1] for j in 0..c))
+///     for i in 0..n)
+/// when n = 3, c = 2, the constraint is
+/// q = (1 / (r[0] + v[0][0] * r[1] + v[0][1] * r[2])
+///    + 1 / (r[0] + v[1][0] * r[1] + v[1][1] * r[2])
+///    + 1 / (r[0] + v[2][0] * r[1] + v[2][1] * r[2]))
+///
+/// denoting vi_j as v[i][j], and ri as r[i] for readability
+/// q = (1 / (r0 + v0_0 * r1 + v0_1 * r2)
+///    + 1 / (r0 + v1_0 * r1 + v1_1 * r2)
+///    + 1 / (r0 + v2_0 * r1 + v2_1 * r2))
+///
+/// Because this operation is not part of the Air, and is repeated by the Verifier,
+/// we can divide in this scenario!
+fn impl_bus_logup_boundary_varlen(base_impl: &mut Impl) {
+    base_impl
+        .new_fn("bus_logup_boundary_varlen")
+        .generic("'a")
+        .generic("const N: usize")
+        .generic("I: IntoIterator<Item = &'a [Felt; N]> + Clone")
+        .generic("E: FieldElement<BaseField = Felt>")
+        .arg("aux_rand_elements", "&AuxTraceRandElements<E>")
+        .arg("public_inputs", "&I")
+        .ret("E")
+        .vis("pub")
+        .line("let mut bus_q_last = E::ZERO;")
+        .line("let rand = aux_rand_elements.get_segment_elements(0);")
+        .line("for row in public_inputs.clone().into_iter() {")
+        .line("    let mut q_last = rand[0];")
+        .line("    for (c, p_i) in row.iter().enumerate() {")
+        .line("        let p_i = *p_i;")
+        .line("        q_last += E::from(p_i) * rand[c + 1];")
+        .line("    }")
+        .line("    bus_q_last += q_last.inv();")
+        .line("}")
+        .line("bus_q_last");
 }
 
 /// Updates the provided scope with the custom Air struct and an Air trait implementation based on
@@ -148,7 +262,7 @@ let context = AirContext::new_multi_segment(
     // get public inputs
     let mut pub_inputs = Vec::new();
     for public_input in ir.public_inputs() {
-        pub_inputs.push(format!("{0}: public_inputs.{0}", public_input.name));
+        pub_inputs.push(format!("{0}: public_inputs.{0}", public_input.name()));
     }
     // return initialized Self.
     new.line(format!("Self {{ context, {} }}", pub_inputs.join(", ")));
