@@ -1,7 +1,7 @@
 # Backends
 AirScript currently comes bundled with two backends:
 
-- [Winterfell backend](https://github.com/0xPolygonMiden/air-script/tree/main/codegen/winterfell) which outputs `Air` trait implementation for the [Winterfell prover](https://github.com/facebook/winterfell) (Rust).
+- [Winterfell backend](https://github.com/0xMiden/air-script/tree/main/codegen/winterfell) which outputs `Air` trait implementation for the [Winterfell prover](https://github.com/facebook/winterfell) (Rust).
 
 These backends can be used programmatically as crates. They can also be used via AirScript CLI by specifying `--target` flag.
 
