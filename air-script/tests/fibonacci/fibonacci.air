@@ -1,0 +1,21 @@
+def FibonacciAir
+
+public_inputs {
+    stack_inputs: [2],
+    stack_output: [1],
+}
+
+trace_columns {
+    main: [a, b],
+}
+
+boundary_constraints {
+    enf a.first = stack_inputs[0];
+    enf b.first = stack_inputs[1];
+    enf b.last = stack_output[0];
+}
+
+integrity_constraints {
+    enf b' = a + b;
+    enf a' = b;
+}
