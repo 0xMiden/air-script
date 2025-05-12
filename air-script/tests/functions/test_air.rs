@@ -51,6 +51,7 @@ impl AirTester for FunctionsAirTester {
         PublicInputs::new([zero; 16])
     }
 
+    // For this test we need a blowup factor of 16 instead of the default 8
     fn build_proof_options(&self) -> ProofOptions {
         ProofOptions::new(
             32, // number of queries

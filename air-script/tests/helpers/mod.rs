@@ -2,7 +2,9 @@ use winter_air::{BatchingMethod, EvaluationFrame, FieldExtension, ProofOptions, 
 use winter_math::fields::f64::BaseElement as Felt;
 use winterfell::{matrix::ColMatrix, AuxTraceWithMetadata, Trace, TraceTable};
 
-// We need to encapsulate the trace table in a struct to fix the aux trace width, that always return zero otherwise
+/// We need to encapsulate the trace table in a struct to manually implement the `aux_trace_width` method of the `Table` trait.
+/// Otherwise, using only a TraceTable<Felt> will return an `aux_trace_width` of 0 even if we provide a non-empty aux trace in `Trace::validate`,
+/// and it fails the tests.
 pub struct MyTraceTable {
     pub trace: TraceTable<Felt>,
     pub aux_width: usize,
@@ -39,8 +41,7 @@ pub trait AirTester {
 
     fn build_main_trace(&self, length: usize) -> MyTraceTable;
     fn public_inputs(&self) -> Self::PubInputs;
-    #[allow(unused_variables)]
-    fn build_aux_trace(&self, length: usize) -> Option<AuxTraceWithMetadata<Felt>> {
+    fn build_aux_trace(&self, _length: usize) -> Option<AuxTraceWithMetadata<Felt>> {
         None
     }
     fn build_trace_info(&self, length: usize) -> TraceInfo {
