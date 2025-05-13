@@ -30,8 +30,8 @@ fn list_comprehension_nested_nobind() {
         enf expected = result;
     }
 
-    fn inner_loop(st: felt[3], row: felt[3]) -> felt {
-        return sum([s * m for (s, m) in (st, row)]);
+    fn inner_loop(st: felt[3], ro: felt[3]) -> felt {
+        return sum([s * m for (s, m) in (st, ro)]);
     }
     ";
     let source_nested = "

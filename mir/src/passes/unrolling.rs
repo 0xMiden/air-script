@@ -119,7 +119,6 @@ impl Pass for Unrolling<'_> {
             first_pass.all_for_nodes.clone(),
         );
         Visitor::run(&mut second_pass, ir.constraint_graph_mut())?;
-
         Ok(ir)
     }
 }
@@ -702,6 +701,20 @@ impl UnrollingFirstPass<'_> {
         Ok(updated_accessor)
     }
 
+    fn compute_iterator_len(iterator: Link<Op>) -> usize {
+        match iterator.borrow().deref() {
+            Op::Vector(vector) => vector.size,
+            Op::Matrix(matrix) => matrix.size,
+            Op::Accessor(accessor) => Self::compute_iterator_len(accessor.indexable.clone()),
+            Op::Parameter(parameter) => match parameter.ty {
+                MirType::Felt => 1,
+                MirType::Vector(l) => l,
+                MirType::Matrix(l, _) => l,
+            },
+            _ => 1,
+        }
+    }
+
     fn visit_for_bis(
         &mut self,
         _graph: &mut Graph,
@@ -726,20 +739,16 @@ impl UnrollingFirstPass<'_> {
             if iterators.is_empty() {
                 unreachable!(); // Raise diag
             }
-
-            let iterator_expected_len = match iterators[0].clone().as_vector() {
-                Some(vec) => vec.children().borrow().len(),
-                _ => 1,
-            };
+            dbg!(&iterators);
+            let iterator_expected_len = Self::compute_iterator_len(iterators[0].clone());
+            dbg!(&iterator_expected_len);
 
             for iterator in iterators.iter().skip(1) {
-                let iterator_len = match iterator.clone().as_vector() {
-                    Some(vec) => vec.children().borrow().len(),
-                    _ => 1,
-                };
-
+                let iterator_len = Self::compute_iterator_len(iterator.clone());
+                dbg!(&iterator_len);
                 if iterator_len != iterator_expected_len {
-                    unreachable!(); // Raise diag
+                    unreachable!()
+                    // Raise diag
                 }
             }
 
