@@ -36,16 +36,12 @@ impl Pass for ConstantPropagation<'_> {
     type Error = SemanticAnalysisError;
 
     fn run<'a>(&mut self, mut program: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
-        dbg!(&program);
-        eprintln!("Running constant propagation pass");
         self.global.reserve(program.constants.len());
 
-        let res = match self.run_visitor(&mut program) {
+        match self.run_visitor(&mut program) {
             ControlFlow::Continue(()) => Ok(program),
             ControlFlow::Break(err) => Err(err),
-        };
-        dbg!(&res);
-        res
+        }
     }
 }
 impl<'a> ConstantPropagation<'a> {

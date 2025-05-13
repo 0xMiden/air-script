@@ -833,11 +833,28 @@ impl<'a> MirBuilder<'a> {
                 .get_function_root(&resolved_callee)
             {
                 callee_node = callee.clone();
+                let mut errors = Vec::with_capacity(call.args.len());
                 arg_nodes = call
                     .args
                     .iter()
-                    .map(|arg| self.translate_expr(arg).unwrap())
+                    .map(|arg| {
+                        self.translate_expr(arg).unwrap_or_else(|e| {
+                            errors.push(e);
+                            Link::default()
+                        })
+                    })
                     .collect();
+                if !errors.is_empty() {
+                    self.diagnostics
+                        .diagnostic(Severity::Error)
+                        .with_message("failed to translate arguments")
+                        .with_primary_label(
+                            call.span(),
+                            format!("failed to translate {} arguments", errors.len()),
+                        )
+                        .emit();
+                    return Err(errors.swap_remove(0));
+                }
                 // safe to unwrap because we know it is a Function due to get_function
                 let callee_ref = callee.as_function().unwrap();
                 if callee_ref.parameters.len() != arg_nodes.len() {
@@ -1198,7 +1215,16 @@ impl<'a> MirBuilder<'a> {
             _ => {}
         }
 
-        panic!("undefined variable: {:?}", access);
+        self.diagnostics
+            .diagnostic(Severity::Error)
+            .with_message("undefined variable")
+            .with_primary_label(
+                access.span(),
+                format!("undefined variable `{:?}` in this expression", access.name),
+            )
+            .emit();
+        Err(CompileError::Failed)
+        //panic!("undefined variable: {:?}", access);
     }
 
     // Check assumptions, probably this assumed that the inlining pass did some work
