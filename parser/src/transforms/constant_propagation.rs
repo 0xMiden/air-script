@@ -491,6 +491,8 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                     self.visit_mut_expr(iterable)?;
                     has_constant_iterables &= iterable.is_constant();
                 }
+                // First, fold all other constants inside the body of the comprehension
+                self.visit_mut_scalar_expr(&mut lc.body)?;
 
                 // If we have constant iterables, drive the comprehension, evaluating it at
                 // each step. If any part of the body cannot be compile-time evaluated, then
