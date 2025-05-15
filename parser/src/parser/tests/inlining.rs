@@ -1348,7 +1348,10 @@ fn test_repro_issue340() {
 
     let mut pipeline =
         ConstantPropagation::new(&test.diagnostics).chain(Inlining::new(&test.diagnostics));
-    let program = pipeline.run(program).unwrap();
+    let program = pipeline.run(program).unwrap_or_else(|err| {
+        test.diagnostics.emit(err);
+        panic!("expected inlining to succeed, see diagnostics for details");
+    });
 
     let mut expected = Program::new(ident!(root));
     expected.trace_columns.push(trace_segment!(
