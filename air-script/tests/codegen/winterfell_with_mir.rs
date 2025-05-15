@@ -135,6 +135,16 @@ fn evaluators() {
 }
 
 #[test]
+fn fibonacci() {
+    let generated_air = Test::new("tests/fibonacci/fibonacci.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../fibonacci/fibonacci.rs"];
+    expected.assert_eq(&generated_air);
+}
+
+#[test]
 fn functions_simple() {
     let generated_air = Test::new("tests/functions/functions_simple.air".to_string())
         .transpile(Target::Winterfell, Pipeline::WithMIR)

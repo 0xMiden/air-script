@@ -34,7 +34,7 @@ pub(super) fn add_fn_get_aux_assertions(impl_ref: &mut Impl, ir: &Air) {
         .new_fn("get_aux_assertions")
         .generic("E: FieldElement<BaseField = Felt>")
         .arg_ref_self()
-        .arg("aux_rand_elements", "&AuxTraceRandElements<E>")
+        .arg("aux_rand_elements", "&AuxRandElements<E>")
         .ret("Vec<Assertion<E>>");
 
     // add the boundary constraints

@@ -21,13 +21,13 @@ boundary_constraints {
     enf c.first = (B[0] - C[1][1]) * A;
     enf d.first = A + B[0] - B[1] + C[0][0] - C[0][1] + C[1][0] - C[1][1];
     enf e.first = A + B[0] * C[0][1];
-    enf e.last = A - B[1] * C[0][0];
+    enf g.last = A - B[1] * C[0][0];
 }
 
 integrity_constraints {
     enf a' = a + A;
     enf b' = B[0] * b;
     enf c' = (C[0][0] + B[0]) * c;
-    enf e' = e + A + B[0] * C[0][1];
+    enf f' = f + A + B[0] * C[0][1];
     enf e = A + B[1] * C[1][1];
 }

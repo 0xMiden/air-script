@@ -27,7 +27,13 @@ pub fn eval_quotient(air: &Air, ace_vars: &AceVars, log_trace_len: u32) -> QuadF
             let z_col_pow = trace_len / col.values.len();
             let z_col = z.exp_vartime(z_col_pow as u64);
 
-            let mut poly: Vec<_> = col.values.iter().copied().map(QuadFelt::from).collect();
+            let mut poly: Vec<_> = col
+                .values
+                .iter()
+                .copied()
+                .map(Felt::new)
+                .map(QuadFelt::from)
+                .collect();
             let twiddles = winter_math::fft::get_inv_twiddles::<Felt>(poly.len());
             winter_math::fft::interpolate_poly(&mut poly, &twiddles);
 
@@ -56,7 +62,7 @@ pub fn eval_quotient(air: &Air, ace_vars: &AceVars, log_trace_len: u32) -> QuadF
         let op = graph.node(&node).op();
         let eval = match *op {
             Operation::Value(v) => match v {
-                Value::Constant(c) => QuadFelt::from(c),
+                Value::Constant(c) => QuadFelt::from(Felt::new(c)),
                 Value::TraceAccess(access) => {
                     ace_vars.segments[access.row_offset][access.segment][access.column]
                 }

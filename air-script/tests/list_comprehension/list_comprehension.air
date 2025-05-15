@@ -26,5 +26,5 @@ integrity_constraints {
     enf b[1] = clk * diff_slice_iterables[1];
     
     let m = [w + x - y - z for (w, x, y, z) in (0..3, b, c[0..3], d[0..3])];
-    enf a = m[0] + m[1] + m[2];
+    enf fmp[0] = m[0] + m[1] + m[2];
 }

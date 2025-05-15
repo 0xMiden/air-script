@@ -36,7 +36,7 @@ pub(super) fn add_fn_evaluate_aux_transition(impl_ref: &mut Impl, ir: &Air) {
         .arg("main_frame", "&EvaluationFrame<F>")
         .arg("aux_frame", "&EvaluationFrame<E>")
         .arg("_periodic_values", "&[F]")
-        .arg("aux_rand_elements", "&AuxTraceRandElements<E>")
+        .arg("aux_rand_elements", "&AuxRandElements<E>")
         .arg("result", "&mut [E]")
         .bound("F", "FieldElement<BaseField = Felt>")
         .bound("E", "FieldElement<BaseField = Felt> + ExtensionOf<F>");
