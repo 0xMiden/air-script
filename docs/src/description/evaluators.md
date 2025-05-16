@@ -9,7 +9,7 @@ Evaluator declaration starts with the `ev` keyword, followed by the name of the 
 ev foo([a, b, c]) {}
 ```
 Evaluator name must:
-- Be a string consisting of alpha-numeric characters and underscores.
+- Be a string consisting of alphanumeric characters and underscores.
 - Start with a letter.
 - Be unique among the evaluators declared in and imported by a module.
 
