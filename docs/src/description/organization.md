@@ -25,7 +25,7 @@ A root module defines an entrypoint into an AirScript project. It must start wit
 def ExampleAir
 ```
 where the name of the module must:
-- Be a string consisting of alpha-numeric characters and underscores.
+- Be a string consisting of alphanumeric characters and underscores.
 - Start with a letter.
 - End with a newline.
 
@@ -45,7 +45,7 @@ mod example_module
 ```
 where the name of the module must:
 - Be the same as the name of the file in which the library module is defined (e.g., the above module must be located in `example_module.air` file).
-- Be a string consisting of alpha-numeric characters and underscores.
+- Be a string consisting of alphanumeric characters and underscores.
 - Start with a letter.
 - End with a newline.
 
