@@ -125,8 +125,7 @@ impl Compiler {
                     air_parser::transforms::ConstantPropagation::new(&self.diagnostics)
                         .chain(crate::passes::AstToMir::new(&self.diagnostics))
                         .chain(crate::passes::Inlining::new(&self.diagnostics))
-                        .chain(crate::passes::Unrolling::new(&self.diagnostics))
-                        .chain(crate::passes::BusOpExpand::new(&self.diagnostics));
+                        .chain(crate::passes::Unrolling::new(&self.diagnostics));
                 pipeline.run(ast)
             })
     }

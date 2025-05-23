@@ -1,9 +1,7 @@
-mod bus_op_expand;
 mod inlining;
 mod translate;
 mod unrolling;
 mod visitor;
-pub use bus_op_expand::BusOpExpand;
 pub use inlining::Inlining;
 pub use translate::AstToMir;
 pub use unrolling::Unrolling;

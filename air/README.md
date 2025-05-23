@@ -19,7 +19,6 @@ let pipeline_with_mir = air_parser::transforms::ConstantPropagation::new(&diagno
   .chain(mir::passes::AstToMir::new(&diagnostics))
   .chain(mir::passes::Inlining::new(&diagnostics))
   .chain(mir::passes::Unrolling::new(&diagnostics))
-  .chain(mir::passes::BusOpExpand::new(&diagnostics))
   .chain(air_ir::passes::MirToAir::new(&diagnostics));
 
 let pipeline_without_mir = air_parser::transforms::ConstantPropagation::new(&diagnostics)
