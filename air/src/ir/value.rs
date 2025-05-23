@@ -18,8 +18,8 @@ pub enum Value {
     PublicInput(PublicInputAccess),
     /// A reference to a public input table.
     PublicInputTable(PublicInputTableAccess),
-    /// A reference to the `random_values` array, specifically the element at the given index
-    RandomValue(usize),
+    /// A reference to an empty bus
+    Null,
 }
 
 /// Represents an access of a [PeriodicColumn], similar in nature to [TraceAccess]

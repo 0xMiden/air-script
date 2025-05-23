@@ -74,10 +74,13 @@ impl Pass for MirToAir<'_> {
             air: &mut air,
             trace_columns: trace_columns.clone(),
             bus_bindings_map,
-            buses: BTreeMap::new(),
         };
 
         let graph = mir.constraint_graph();
+
+        for bus in buses.values() {
+            builder.build_bus(bus)?;
+        }
 
         for bc in graph.boundary_constraints_roots.borrow().deref().iter() {
             builder.build_boundary_constraint(bc)?;
@@ -86,12 +89,6 @@ impl Pass for MirToAir<'_> {
         for ic in graph.integrity_constraints_roots.borrow().deref().iter() {
             builder.build_integrity_constraint(ic)?;
         }
-
-        for bus in buses.values() {
-            builder.build_bus(bus)?;
-        }
-        air.buses = builder.buses;
-
         Ok(air)
     }
 }
@@ -101,7 +98,6 @@ struct AirBuilder<'a> {
     air: &'a mut Air,
     trace_columns: Vec<TraceSegment>,
     bus_bindings_map: BTreeMap<Identifier, usize>,
-    buses: BTreeMap<Identifier, Bus>,
 }
 
 /// Helper function to remove the vector wrapper from a scalar operation
@@ -264,7 +260,7 @@ impl AirBuilder<'_> {
                             public_input_table.num_cols,
                         ))
                     }
-                    MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
+                    MirValue::Null => crate::ir::Value::Null,
                     _ => unreachable!("Unexpected MirValue: {:#?}", mir_value),
                 };
 
@@ -320,7 +316,6 @@ impl AirBuilder<'_> {
                             index: public_input_access.index,
                         })
                     }
-                    MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
                     _ => unreachable!(),
                 };
 
@@ -535,11 +530,28 @@ impl AirBuilder<'_> {
     /// Builds the bus boundary constraints.
     fn build_bus(&mut self, mir_bus: &Link<mir::ir::Bus>) -> Result<(), CompileError> {
         let mir_bus = mir_bus.borrow();
+
         let first = self.insert_mir_operation(&mir_bus.get_first())?;
         let last = self.insert_mir_operation(&mir_bus.get_last())?;
-        self.buses.insert(
+
+        let mut bus_ops = vec![];
+        for (mir_column, mir_latch) in mir_bus.columns.iter().zip(mir_bus.latches.iter()) {
+            let mut column = vec![];
+
+            let mir_bus_op = mir_column.as_bus_op().unwrap();
+            let mir_bus_op_args = mir_bus_op.args.clone();
+            for arg in mir_bus_op_args.iter() {
+                let arg = self.insert_mir_operation(arg)?;
+                column.push(arg);
+            }
+            let latch = self.insert_mir_operation(mir_latch)?;
+
+            let bus_op = BusOp::new(column, latch, mir_bus_op.kind);
+            bus_ops.push(bus_op);
+        }
+        self.air.buses.insert(
             mir_bus.name(),
-            Bus::new(mir_bus.name(), mir_bus.bus_type, first, last),
+            Bus::new(mir_bus.name(), mir_bus.bus_type, first, last, bus_ops),
         );
         Ok(())
     }

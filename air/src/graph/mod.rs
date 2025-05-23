@@ -119,7 +119,6 @@ impl AlgebraicGraph {
                     );
                     Ok((DEFAULT_SEGMENT, default_domain))
                 }
-                Value::RandomValue(_) => Ok((AUX_SEGMENT, default_domain)),
                 Value::TraceAccess(trace_access) => {
                     let domain = if default_domain.is_boundary() {
                         assert_eq!(
@@ -132,6 +131,13 @@ impl AlgebraicGraph {
                     };
 
                     Ok((trace_access.segment, domain))
+                }
+                Value::Null => {
+                    assert!(
+                        !default_domain.is_integrity(),
+                        "unexpected access to public input in integrity constraint"
+                    );
+                    Ok((DEFAULT_SEGMENT, default_domain))
                 }
             },
             Operation::Add(lhs, rhs) | Operation::Sub(lhs, rhs) | Operation::Mul(lhs, rhs) => {
@@ -164,7 +170,7 @@ impl AlgebraicGraph {
     }
 
     /// Recursively accumulates the base degree and the cycle lengths of the periodic columns.
-    fn accumulate_degree(
+    pub fn accumulate_degree(
         &self,
         cycles: &mut BTreeMap<QualifiedIdentifier, usize>,
         index: &NodeIndex,
@@ -173,9 +179,9 @@ impl AlgebraicGraph {
         match self.node(index).op() {
             Operation::Value(value) => match value {
                 Value::Constant(_)
-                | Value::RandomValue(_)
                 | Value::PublicInput(_)
-                | Value::PublicInputTable(_) => 0,
+                | Value::PublicInputTable(_)
+                | Value::Null => 0,
                 Value::TraceAccess(_) => 1,
                 Value::PeriodicColumn(pc) => {
                     cycles.insert(pc.name, pc.cycle);

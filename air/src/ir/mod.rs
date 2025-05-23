@@ -5,7 +5,7 @@ mod operation;
 mod trace;
 mod value;
 
-pub use self::bus::{Bus, BusType};
+pub use self::bus::{Bus, BusOp, BusOpKind, BusType};
 pub use self::constraints::{ConstraintDomain, ConstraintError, ConstraintRoot, Constraints};
 pub use self::degree::IntegrityConstraintDegree;
 pub use self::operation::Operation;
