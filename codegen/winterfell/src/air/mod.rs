@@ -1,5 +1,10 @@
 mod public_inputs;
+
+use buses_helper::{compute_logup_degree, compute_multiset_degree};
 use public_inputs::{add_public_inputs_struct, public_input_type_to_string};
+
+mod buses_helper;
+//use buses_helper::*;
 
 mod periodic_columns;
 use periodic_columns::add_fn_get_periodic_column_values;
@@ -228,10 +233,10 @@ fn add_fn_new(impl_ref: &mut Impl, ir: &Air) {
         .ret("Self");
 
     // define the integrity constraint degrees of the main trace `main_degrees`.
-    add_constraint_degrees(new, ir, 0, "main_degrees");
+    add_main_constraint_degrees(new, ir, 0, "main_degrees");
 
     // define the integrity constraint degrees of the aux trace `aux_degrees`.
-    add_constraint_degrees(new, ir, 1, "aux_degrees");
+    add_buses_constraint_degrees(new, ir, "aux_degrees");
 
     // define the number of main trace boundary constraints `num_main_assertions`.
     new.line(format!(
@@ -270,7 +275,7 @@ let context = AirContext::new_multi_segment(
 
 /// Iterates through the degrees of the integrity constraints in the IR, and appends a line of
 /// generated code to the function body that declares all of the constraint degrees.
-fn add_constraint_degrees(
+fn add_main_constraint_degrees(
     func_body: &mut codegen::Function,
     ir: &Air,
     trace_segment: TraceSegmentId,
@@ -281,5 +286,24 @@ fn add_constraint_degrees(
         .iter()
         .map(|degree| degree.to_string(ir, ElemType::Ext, trace_segment))
         .collect::<Vec<_>>();
+
+    func_body.line(format!("let {decl_name} = vec![{}];", degrees.join(", ")));
+}
+
+/// Iterates through the degrees of the integrity constraints in the IR, and appends a line of
+/// generated code to the function body that declares all of the constraint degrees.
+fn add_buses_constraint_degrees(func_body: &mut codegen::Function, ir: &Air, decl_name: &str) {
+    let degrees: Vec<_> = ir
+        .buses
+        .values()
+        .map(|bus| {
+            let degree = match bus.bus_type {
+                BusType::Multiset => compute_multiset_degree(ir, bus),
+                BusType::Logup => compute_logup_degree(ir, bus),
+            };
+            degree.to_string(ir, ElemType::Ext, 1)
+        })
+        .collect();
+
     func_body.line(format!("let {decl_name} = vec![{}];", degrees.join(", ")));
 }

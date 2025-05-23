@@ -3,7 +3,7 @@ use air_ir::{
     TraceSegmentId, Value,
 };
 
-use super::ElemType;
+use super::{buses_helper::OperationStr, ElemType};
 
 // RUST STRING GENERATION FOR THE CONSTRAINT GRAPH
 // ================================================================================================
@@ -108,10 +108,14 @@ impl Codegen for Value {
                 table_name,
                 ..
             }) => call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name),
-            Value::RandomValue(idx) => {
-                format!("aux_rand_elements.rand_elements()[{idx}]")
-            }
+            Value::Null => "NULL".to_string(),
         }
+    }
+}
+
+impl Codegen for OperationStr {
+    fn to_string(&self, _ir: &Air, _elem_type: ElemType, _trace_segment: TraceSegmentId) -> String {
+        self.inner()
     }
 }
 

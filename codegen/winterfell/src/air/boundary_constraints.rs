@@ -62,12 +62,28 @@ fn add_assertions(func_body: &mut codegen::Function, ir: &Air, trace_segment: Tr
             split_boundary_constraint(ir.constraint_graph(), constraint.node_index());
         debug_assert_eq!(trace_access.segment, trace_segment);
 
+        let expr_root_string =
+            if *ir.constraint_graph().node(&expr_root).op() == Operation::Value(Value::Null) {
+                let (_bus_name, bus) = ir
+                    .buses
+                    .iter()
+                    .nth(trace_access.column)
+                    .expect("Invalid bus index");
+                match bus.bus_type {
+                    air_ir::BusType::Multiset => "E::ONE".to_string(),
+                    air_ir::BusType::Logup => "E::ZERO".to_string(),
+                }
+            } else {
+                expr_root.to_string(ir, elem_type, trace_segment)
+            };
+
         let assertion = format!(
             "result.push(Assertion::single({}, {}, {}));",
             trace_access.column,
             domain_to_str(constraint.domain()),
-            expr_root.to_string(ir, elem_type, trace_segment)
+            expr_root_string
         );
+
         func_body.line(assertion);
     }
 }
