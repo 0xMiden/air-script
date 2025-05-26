@@ -4,7 +4,7 @@ use air_ir::{
     Air, AlgebraicGraph, ConstraintDomain, NodeIndex, Operation, TraceAccess, TraceSegmentId, Value,
 };
 
-use super::{Codegen, ElemType, Impl};
+use super::{buses_helper::call_bus_boundary_varlen_pubinput, Codegen, ElemType, Impl};
 
 // HELPERS TO GENERATE THE WINTERFELL BOUNDARY CONSTRAINT METHODS
 // ================================================================================================
@@ -56,26 +56,13 @@ fn add_assertions(func_body: &mut codegen::Function, ir: &Air, trace_segment: Tr
     // declare the result vector to be returned.
     func_body.line("let mut result = Vec::new();");
 
-    // add the boundary constraints
+    // add the main boundary constraints
     for constraint in ir.boundary_constraints(trace_segment) {
         let (trace_access, expr_root) =
             split_boundary_constraint(ir.constraint_graph(), constraint.node_index());
         debug_assert_eq!(trace_access.segment, trace_segment);
 
-        let expr_root_string =
-            if *ir.constraint_graph().node(&expr_root).op() == Operation::Value(Value::Null) {
-                let (_bus_name, bus) = ir
-                    .buses
-                    .iter()
-                    .nth(trace_access.column)
-                    .expect("Invalid bus index");
-                match bus.bus_type {
-                    air_ir::BusType::Multiset => "E::ONE".to_string(),
-                    air_ir::BusType::Logup => "E::ZERO".to_string(),
-                }
-            } else {
-                expr_root.to_string(ir, elem_type, trace_segment)
-            };
+        let expr_root_string = expr_root.to_string(ir, elem_type, trace_segment);
 
         let assertion = format!(
             "result.push(Assertion::single({}, {}, {}));",
@@ -85,6 +72,42 @@ fn add_assertions(func_body: &mut codegen::Function, ir: &Air, trace_segment: Tr
         );
 
         func_body.line(assertion);
+    }
+
+    // add the buses boundary constraints
+    if trace_segment == 1 {
+        let domains = [ConstraintDomain::FirstRow, ConstraintDomain::LastRow];
+
+        for domain in &domains {
+            for (index, bus) in ir.buses.values().enumerate() {
+                let bus_boundary = match domain {
+                    ConstraintDomain::FirstRow => &bus.first,
+                    ConstraintDomain::LastRow => &bus.last,
+                    _ => unreachable!("Invalid domain for bus boundary constraint"),
+                };
+
+                let expr_root_string = match bus_boundary {
+                    air_ir::BusBoundary::PublicInputTable(air_ir::PublicInputTableAccess {
+                        bus_name,
+                        table_name,
+                        ..
+                    }) => call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name),
+                    air_ir::BusBoundary::Null => match bus.bus_type {
+                        air_ir::BusType::Multiset => "E::ONE".to_string(),
+                        air_ir::BusType::Logup => "E::ZERO".to_string(),
+                    },
+                };
+
+                let assertion = format!(
+                    "result.push(Assertion::single({}, {}, {}));",
+                    index,
+                    domain_to_str(*domain),
+                    expr_root_string
+                );
+
+                func_body.line(assertion);
+            }
+        }
     }
 }
 

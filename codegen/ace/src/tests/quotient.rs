@@ -71,8 +71,6 @@ pub fn eval_quotient(air: &Air, ace_vars: &AceVars, log_trace_len: u32) -> QuadF
                     let idx = public[&access.name];
                     ace_vars.public[idx][access.index]
                 }
-                Value::PublicInputTable(_) => unimplemented!(),
-                Value::Null => todo!(), // REMOVE AUX/RAND FROM BACKEND PR TODO: IN CODEGEN, EVALUATE THIS VALUE BEFORE ITERATING ON ALL NODES
             },
             Operation::Add(l, r) => evals[usize::from(l)] + evals[usize::from(r)],
             Operation::Sub(l, r) => evals[usize::from(l)] - evals[usize::from(r)],

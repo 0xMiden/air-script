@@ -135,8 +135,6 @@ impl CircuitBuilder {
                 Value::PublicInput(pi) => self.layout.public_inputs[&pi.name]
                     .as_node(pi.index)
                     .expect("invalid public input access"),
-                Value::PublicInputTable(_) => unimplemented!(),
-                Value::Null => unimplemented!(),
             },
             AirOperation::Add(l_idx, r_idx) => {
                 let node_l = self.node_from_index(air, l_idx);

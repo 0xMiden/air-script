@@ -571,6 +571,11 @@ impl<'a> MirBuilder<'a> {
     }
 
     fn insert_enforce(&mut self, node: Link<Op>) -> Result<Link<Op>, CompileError> {
+        let node_is_none = matches!(node.borrow().deref(), Op::None(_));
+        if node_is_none {
+            return Ok(node);
+        }
+
         let node_to_add = if let Op::Enf(_) = node.clone().borrow().deref() {
             node
         } else {
@@ -758,6 +763,7 @@ impl<'a> MirBuilder<'a> {
                             })?;
                         }
                     }
+                    return Ok(Op::None(bin_op.span()).into());
                 }
             }
         }

@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
 use air_ir::{
-    Air, Bus, BusOpKind, IntegrityConstraintDegree, Operation, TraceAccess, TraceSegmentId,
+    Air, Bus, BusOpKind, BusType, Identifier, IntegrityConstraintDegree, Operation, TraceAccess,
+    TraceSegmentId,
 };
 
 use super::{graph::Codegen, ElemType};
@@ -386,4 +387,26 @@ pub(crate) fn expand_logup_constraints(ir: &Air, bus: &Bus, index: usize) -> Str
     // 5. Create the resulting constraint
     let resulting_constraint = OperationStr::create_sub(q_term, q_prime_term);
     resulting_constraint.inner()
+}
+
+pub(crate) fn call_bus_boundary_varlen_pubinput(
+    ir: &Air,
+    bus_name: Identifier,
+    table_name: Identifier,
+) -> String {
+    let bus = ir.buses.get(&bus_name).expect("bus not found");
+    match bus.bus_type {
+        BusType::Multiset => format!(
+            "Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.{}.iter())",
+            table_name
+        ),
+        BusType::Logup => format!(
+            "Self::bus_logup_boundary_varlen(aux_rand_elements, &self.{}.iter())",
+            table_name
+        ),
+    }
+}
+
+pub(crate) fn num_bus_boundary_constraints(ir: &Air) -> usize {
+    ir.buses.len() * 2
 }

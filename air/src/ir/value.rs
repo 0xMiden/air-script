@@ -16,10 +16,6 @@ pub enum Value {
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
-    /// A reference to a public input table.
-    PublicInputTable(PublicInputTableAccess),
-    /// A reference to an empty bus
-    Null,
 }
 
 /// Represents an access of a [PeriodicColumn], similar in nature to [TraceAccess]
@@ -45,25 +41,5 @@ pub struct PublicInputAccess {
 impl PublicInputAccess {
     pub const fn new(name: Identifier, index: usize) -> Self {
         Self { name, index }
-    }
-}
-
-/// Represents an access of a public input table, similar in nature to [TraceAccess].
-///
-/// It can only be bound to a [Bus]'s .first or .last boundary constraints.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct PublicInputTableAccess {
-    /// The name of the public input to bind
-    pub table_name: Identifier,
-    pub bus_name: Identifier,
-    pub num_cols: usize,
-}
-impl PublicInputTableAccess {
-    pub const fn new(table_name: Identifier, bus_name: Identifier, num_cols: usize) -> Self {
-        Self {
-            table_name,
-            num_cols,
-            bus_name,
-        }
     }
 }
