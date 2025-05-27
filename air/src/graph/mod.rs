@@ -94,7 +94,38 @@ impl AlgebraicGraph {
         }
     }
 
-    /// TODO: docs
+    /// Recursively analyzes a subgraph starting from the specified node and infers the trace 
+    /// segment and constraint domain that the subgraph should be applied to.
+    ///
+    /// This function performs a bottom-up traversal of the constraint expression graph to determine:
+    /// - The **trace segment** that this constraint expression operates on (main trace vs auxiliary trace)
+    /// - The **constraint domain** that specifies which rows the constraint should be applied to
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the node to analyze
+    /// * `default_domain` - The default constraint domain to use for leaf nodes that don't 
+    ///   specify their own domain (e.g., constants, public inputs)
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing:
+    /// - `TraceSegmentId`: The trace segment this expression should be applied to (0 for main, 1+ for auxiliary)
+    /// - `ConstraintDomain`: The domain specifying which rows to apply the constraint to
+    ///
+    /// # Inference Rules
+    ///
+    /// - **Constants**: Use default segment and provided default domain
+    /// - **Periodic columns**: Use default segment with `EveryRow` domain (invalid in boundary constraints)
+    /// - **Public inputs**: Use default segment with provided domain (invalid in integrity constraints)  
+    /// - **Random values**: Use auxiliary segment with provided domain
+    /// - **Trace access**: Use the access's segment with domain inferred from row offset
+    /// - **Binary operations**: Use the maximum segment and merged domain from both operands
+    ///
+    /// # Errors
+    ///
+    /// Returns `ConstraintError::IncompatibleConstraintDomains` if operands of a binary operation
+    /// have incompatible constraint domains that cannot be merged.
     pub fn node_details(
         &self,
         index: &NodeIndex,
