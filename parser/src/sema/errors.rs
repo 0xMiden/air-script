@@ -3,7 +3,7 @@ use miden_diagnostics::{Diagnostic, Label, SourceSpan, Spanned, ToDiagnostic};
 use crate::ast::{Identifier, InvalidExprError, InvalidTypeError, ModuleId};
 
 /// Represents the various module validation errors we might encounter during semantic analysis.
-#[derive(Debug, thiserror::Error)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum SemanticAnalysisError {
     #[error("root module is missing")]
     MissingRoot,

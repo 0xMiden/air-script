@@ -29,6 +29,7 @@ pub struct ConstantPropagation<'a> {
     /// The set of identifiers which are live (in use) in the current scope
     live: HashSet<Identifier>,
     in_constraint_comprehension: bool,
+    in_list_comprehension: bool,
 }
 impl Pass for ConstantPropagation<'_> {
     type Input<'a> = Program;
@@ -40,7 +41,11 @@ impl Pass for ConstantPropagation<'_> {
 
         match self.run_visitor(&mut program) {
             ControlFlow::Continue(()) => Ok(program),
-            ControlFlow::Break(err) => Err(err),
+            ControlFlow::Break(err) => {
+                self.diagnostics.emit(err.clone());
+                eprintln!("Constant propagation failed, see diagnostics for details",);
+                Err(err)
+            }
         }
     }
 }
@@ -52,6 +57,7 @@ impl<'a> ConstantPropagation<'a> {
             local: Default::default(),
             live: Default::default(),
             in_constraint_comprehension: false,
+            in_list_comprehension: false,
         }
     }
 
@@ -238,6 +244,15 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                         }
                         ControlFlow::Continue(())
                     }
+                    Err(SemanticAnalysisError::InvalidExpr(
+                        InvalidExprError::NonConstantExponent(_),
+                    )) if self.in_list_comprehension => {
+                        // If we are in a list comprehension, we do not know iterators' lengths
+                        // yet.
+                        // TODO: Add semantic analysis pass in Mir after all passes are done to
+                        // check for non-constant exponents in list comprehensions
+                        ControlFlow::Continue(())
+                    }
                     Err(err) => ControlFlow::Break(err),
                 }
             }
@@ -403,6 +418,15 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                     }
                     ControlFlow::Continue(())
                 }
+                Err(SemanticAnalysisError::InvalidExpr(InvalidExprError::NonConstantExponent(
+                    _,
+                ))) if self.in_list_comprehension => {
+                    // If we are in a list comprehension, we do not know iterators' lengths
+                    // yet.
+                    // TODO: Add semantic analysis pass in Mir after all passes are done to
+                    // check for non-constant exponents in list comprehensions
+                    ControlFlow::Continue(())
+                }
                 Err(err) => ControlFlow::Break(err),
             },
             // Ranges are constant
@@ -486,6 +510,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
             }
             // Visit list comprehensions and convert to constant if possible
             Expr::ListComprehension(ref mut lc) => {
+                let old_in_lc = core::mem::replace(&mut self.in_list_comprehension, true);
                 let mut has_constant_iterables = true;
                 for iterable in lc.iterables.iter_mut() {
                     self.visit_mut_expr(iterable)?;
@@ -499,6 +524,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 // we bail early, as the comprehension can only be folded if all parts of it
                 // are constant.
                 if !has_constant_iterables {
+                    self.in_list_comprehension = old_in_lc;
                     return ControlFlow::Continue(());
                 }
 
@@ -518,7 +544,10 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                     }) => rows.len(),
                     Expr::Const(_) => panic!("expected iterable constant, got scalar"),
                     Expr::Range(range) => range.to_slice_range().len(),
-                    _ => unreachable!(),
+                    _ => unreachable!(
+                        "expected iterable constant or range, got {:?}",
+                        lc.iterables[0]
+                    ),
                 };
 
                 // Drive the comprehension step-by-step
@@ -548,7 +577,10 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                                 let value = ConstantExpr::Scalar((range.start + step) as u64);
                                 self.local.insert(binding, Span::new(span, value));
                             }
-                            _ => unreachable!(),
+                            _ => unreachable!(
+                                "expected iterable constant or range, got {:#?}",
+                                iterable
+                            ),
                         }
                     }
 
@@ -562,7 +594,10 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                                 }
                             }
                             // The selector cannot be evaluated, bail out early
-                            _ => return ControlFlow::Continue(()),
+                            _ => {
+                                self.in_list_comprehension = old_in_lc;
+                                return ControlFlow::Continue(());
+                            }
                         }
                     }
 
@@ -574,6 +609,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                     if let ScalarExpr::Const(folded_body) = body {
                         folded.push(folded_body.item);
                     } else {
+                        self.in_list_comprehension = old_in_lc;
                         return ControlFlow::Continue(());
                     }
                 }
@@ -583,6 +619,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
 
                 // If we reach here, the comprehension was expanded to a constant vector
                 *expr = Expr::Const(Span::new(span, ConstantExpr::Vector(folded)));
+                self.in_list_comprehension = old_in_lc;
                 ControlFlow::Continue(())
             }
             Expr::Let(ref mut let_expr) => {

@@ -1,7 +1,7 @@
 use miden_diagnostics::{Diagnostic, Label, SourceSpan, ToDiagnostic};
 
 /// Represents an invalid expression for use in an `Expr` context
-#[derive(Debug, thiserror::Error)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum InvalidExprError {
     #[error("this value is too large for an exponent")]
     InvalidExponent(SourceSpan),
@@ -59,7 +59,7 @@ impl ToDiagnostic for InvalidExprError {
 }
 
 /// Represents an invalid type for use in a `BindingType` context
-#[derive(Debug, thiserror::Error)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum InvalidTypeError {
     #[error("expected iterable to be a vector")]
     NonVectorIterable(SourceSpan),
