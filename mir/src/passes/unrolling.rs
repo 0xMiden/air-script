@@ -739,13 +739,10 @@ impl UnrollingFirstPass<'_> {
             if iterators.is_empty() {
                 unreachable!(); // Raise diag
             }
-            dbg!(&iterators);
             let iterator_expected_len = Self::compute_iterator_len(iterators[0].clone());
-            dbg!(&iterator_expected_len);
 
             for iterator in iterators.iter().skip(1) {
                 let iterator_len = Self::compute_iterator_len(iterator.clone());
-                dbg!(&iterator_len);
                 if iterator_len != iterator_expected_len {
                     unreachable!()
                     // Raise diag

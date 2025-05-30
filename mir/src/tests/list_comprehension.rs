@@ -1,3 +1,5 @@
+use crate::ir::assert_integrity_eq;
+
 use super::compile;
 
 #[test]
@@ -41,7 +43,7 @@ fn list_comprehension_nested_nobind() {
       [0, 1, 2],
       [3, 4, 5],
       [6, 7, 8],
-      [9, 10, 11],
+      [9, 10, 11]
     ];
 
     trace_columns {
@@ -63,11 +65,11 @@ fn list_comprehension_nested_nobind() {
         enf expected = result;
     }";
 
-    let Ok(explicit) = compile(source_explicit) else {
-        panic!("Failed to compile the explicit version\n{source_explicit}");
-    };
-    let Ok(nested) = compile(source_nested) else {
+    let Ok(mut nested) = compile(source_nested) else {
         panic!("Failed to compile the nested version\n{source_nested}");
     };
-    assert_eq!(explicit, nested);
+    let Ok(mut explicit) = compile(source_explicit) else {
+        panic!("Failed to compile the explicit version\n{source_explicit}");
+    };
+    assert_integrity_eq(&mut nested, &mut explicit);
 }
