@@ -705,7 +705,27 @@ impl UnrollingFirstPass<'_> {
         match iterator.borrow().deref() {
             Op::Vector(vector) => vector.size,
             Op::Matrix(matrix) => matrix.size,
-            Op::Accessor(accessor) => Self::compute_iterator_len(accessor.indexable.clone()),
+            Op::Accessor(accessor) => match &accessor.access_type {
+                AccessType::Default => Self::compute_iterator_len(accessor.indexable.clone()),
+                AccessType::Slice(range_expr) => range_expr.to_slice_range().count(),
+                AccessType::Index(_) => match accessor.indexable.borrow().deref() {
+                    Op::Vector(_) => 1,
+                    Op::Matrix(matrix) => {
+                        let children = matrix.children().borrow().deref().clone();
+                        match children.first() {
+                            Some(first_row) => match first_row.as_vector() {
+                                Some(row_vector) => row_vector.size,
+                                _ => unreachable!(), // Raise diag
+                            },
+                            None => {
+                                unreachable!(); // Raise diag
+                            }
+                        }
+                    },
+                    _ => unreachable!(), // Raise diag
+                }
+                AccessType::Matrix(_, _) => 1,
+            },
             Op::Parameter(parameter) => match parameter.ty {
                 MirType::Felt => 1,
                 MirType::Vector(l) => l,
@@ -758,9 +778,47 @@ impl UnrollingFirstPass<'_> {
 
                 let iterators_i = iterators
                     .iter()
-                    .map(|op| match op.clone().as_vector() {
-                        Some(vec) => vec.children().borrow()[i].clone(),
-                        _ => op.clone(),
+                    .map(|op| {
+                        match op.borrow().deref() {
+                        Op::Vector(vector) => {
+                            let children = vector.children().borrow().deref().clone();
+                           children[i].clone()
+                        },
+                        Op::Matrix(matrix) => {
+                            let children = matrix.children().borrow().deref().clone();
+                            children[i].clone()
+                        },
+                        Op::Accessor(accessor) => {
+                            match accessor.indexable.borrow().deref() {
+                                /*Op::Vector(vector) => {
+                                    let children = vector.children().borrow().deref().clone();
+                                    children[i].clone()
+                                },
+                                Op::Matrix(matrix) => {
+                                    let children = matrix.children().borrow().deref().clone();
+                                    children[i].clone()
+                                },*/
+                                Op::Parameter(_parameter) => {
+                                    let new_accessor = Accessor::create(
+                                        accessor.indexable.clone(),
+                                        AccessType::Index(i),
+                                        0,
+                                        accessor.span(),
+                                    );
+                                    new_accessor
+                                }
+                                _ => {
+                                    unreachable!("got: {:?}", accessor.indexable); // Raise diag
+                                    //op.clone()
+                                }
+                            }
+                        },
+                        _ => {
+                            op.clone()
+                        }
+                    }
+                        
+                        
                     })
                     .collect::<Vec<_>>();
                 let selector = if let Op::None(_) = selector.borrow().deref() {

@@ -104,6 +104,27 @@ struct AirBuilder<'a> {
     buses: BTreeMap<Identifier, Bus>,
 }
 
+fn indexed_accessor(mir_node: &Link<Op>) -> Link<Op> {
+    if let Some(accessor) = mir_node.as_accessor() {
+        if let AccessType::Index(index) = accessor.access_type {
+            if let Some(vec) = accessor.indexable.as_vector() {
+                let children = vec.elements.borrow().deref().clone();
+                if index >= children.len() {
+                    panic!("Index out of bounds during indexed accessor translation from MIR to AIR: {}", index);
+                }
+                let child = children[index].clone();
+                child
+            } else {
+                mir_node.clone()
+            }
+        } else {
+            mir_node.clone()
+        }
+    } else {
+        mir_node.clone()
+    }
+}
+
 /// Helper function to remove the vector wrapper from a scalar operation
 /// Will panic if the node is a vector of size > 1 (should not happen after unrolling)
 fn vec_to_scalar(mir_node: &Link<Op>) -> Link<Op> {
@@ -111,10 +132,11 @@ fn vec_to_scalar(mir_node: &Link<Op>) -> Link<Op> {
         let size = vector.size;
         let children = vector.elements.borrow().deref().clone();
         if size != 1 {
-            panic!("Vector of len >1 after unrolling");
+            panic!("Vector of len >1 after unrolling: {:?}", mir_node);
         }
         let child = children.first().unwrap();
-        let child = vec_to_scalar(child);
+        let child = indexed_accessor(child);
+        let child = vec_to_scalar(&child);
         child.clone()
     } else {
         mir_node.clone()
@@ -154,7 +176,8 @@ impl AirBuilder<'_> {
     /// Will panic when encountering an unexpected operation
     /// (i.e. that is not a binary operation, a value, enf node or an accessor)
     fn insert_mir_operation(&mut self, mir_node: &Link<Op>) -> Result<NodeIndex, CompileError> {
-        let mir_node = vec_to_scalar(mir_node);
+        let mir_node = indexed_accessor(mir_node);
+        let mir_node = vec_to_scalar(&mir_node);
         let mir_node_ref = mir_node.borrow();
         match mir_node_ref.deref() {
             Op::Add(add) => {
@@ -277,9 +300,10 @@ impl AirBuilder<'_> {
             Op::Accessor(accessor) => {
                 let offset = accessor.offset;
                 let child = accessor.indexable.clone();
+                let child = indexed_accessor(&child);
 
                 let Some(value) = child.as_value() else {
-                    unreachable!();
+                    unreachable!("Expected value in accessor, found: {:?}", child);
                 };
 
                 let mir_value = &value.value.value;
@@ -351,6 +375,7 @@ impl AirBuilder<'_> {
             }
             Op::Enf(enf) => {
                 let child_op = enf.expr.clone();
+                let child_op = indexed_accessor(&child_op);
                 let child_op = vec_to_scalar(&child_op);
 
                 self.build_boundary_constraint(&child_op)?;
@@ -359,8 +384,10 @@ impl AirBuilder<'_> {
             Op::Sub(sub) => {
                 // Check that lhs is a Bounded trace access
                 let lhs = sub.lhs.clone();
+                let lhs = indexed_accessor(&lhs);
                 let lhs = vec_to_scalar(&lhs);
                 let rhs = sub.rhs.clone();
+                let rhs = indexed_accessor(&rhs);
                 let rhs = vec_to_scalar(&rhs);
                 let lhs_span = lhs.span();
                 let rhs_span = rhs.span();
@@ -504,6 +531,7 @@ impl AirBuilder<'_> {
             }
             Op::Enf(enf) => {
                 let child_op = enf.expr.clone();
+                let child_op = indexed_accessor(&child_op);
                 let child_op = vec_to_scalar(&child_op);
                 let child_op = enf_to_scalar(&child_op);
                 match child_op.clone().borrow().deref() {
