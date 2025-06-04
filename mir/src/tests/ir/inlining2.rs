@@ -53,6 +53,5 @@ mod tests {
         }
         ";
         let _mir = compile(code).unwrap();
-        //eprintln!("{:#?}", mir);
     }
 }

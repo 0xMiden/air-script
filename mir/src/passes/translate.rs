@@ -46,7 +46,6 @@ impl Pass for AstToMir<'_> {
     type Error = CompileError;
 
     fn run<'a>(&mut self, program: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
-        eprintln!("Running Mir::passes::translate: program = {:#?}", program);
         let mut builder = MirBuilder::new(&program, self.diagnostics);
         builder.translate_program()?;
         Ok(builder.mir)
@@ -702,9 +701,7 @@ impl<'a> MirBuilder<'a> {
             }
             // This must be one of public inputs or trace columns
             ast::ResolvableIdentifier::Global(ident) | ast::ResolvableIdentifier::Local(ident) => {
-                let accessor = self.translate_symbol_access_global_or_local(&ident, access);
-                dbg!(&accessor);
-                accessor
+                self.translate_symbol_access_global_or_local(&ident, access)
             }
             // These should have been eliminated by previous compiler passes
             ast::ResolvableIdentifier::Unresolved(_ident) => {
@@ -937,21 +934,16 @@ impl<'a> MirBuilder<'a> {
         &mut self,
         list_comp: &'a ast::ListComprehension,
     ) -> Result<Link<Op>, CompileError> {
-        dbg!(&list_comp);
         let iterator_nodes = Link::new(Vec::new());
         for iterator in list_comp.iterables.iter() {
             let iterator_node = self.translate_expr(iterator)?;
             iterator_nodes.borrow_mut().push(iterator_node);
         }
-        dbg!(&iterator_nodes);
         self.bindings.enter();
-        dbg!(&self.bindings);
         let mut params = Vec::new();
         for (index, binding) in list_comp.bindings.iter().enumerate() {
-            eprintln!("{}: binding: {:#?}", index, binding);
             let binding_node = Parameter::create(index, ast::Type::Felt.into(), binding.span());
             params.push(binding_node.clone());
-            eprintln!("{}: binding_node: {:#?}", index, binding_node);
             self.bindings.insert(binding, binding_node);
         }
 
@@ -1142,10 +1134,6 @@ impl<'a> MirBuilder<'a> {
         ident: &ast::Identifier,
         access: &ast::SymbolAccess,
     ) -> Result<Link<Op>, CompileError> {
-        eprintln!(
-            "translate_symbol_access_global_or_local: access = {:#?}",
-            access
-        );
         // Special identifiers are those which are `$`-prefixed, and must refer to the names of trace segments (e.g. `$main`)
         if ident.is_special() {
             // Must be a trace segment name
@@ -1177,7 +1165,6 @@ impl<'a> MirBuilder<'a> {
 
         //    // If we reach here, this must be a let-bound variable
         if let Some(let_bound_access_expr) = self.bindings.get(access.name.as_ref()).cloned() {
-            dbg!(&let_bound_access_expr);
             // If the let-bound variable is a parameter, we probably already have the type
             //
             // In that case, replacing the default type (Felt) with the one from the access

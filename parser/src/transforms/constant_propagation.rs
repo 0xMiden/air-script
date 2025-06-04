@@ -43,7 +43,6 @@ impl Pass for ConstantPropagation<'_> {
             ControlFlow::Continue(()) => Ok(program),
             ControlFlow::Break(err) => {
                 self.diagnostics.emit(err.clone());
-                eprintln!("Constant propagation failed, see diagnostics for details",);
                 Err(err)
             }
         }
