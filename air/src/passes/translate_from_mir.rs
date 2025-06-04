@@ -104,6 +104,8 @@ struct AirBuilder<'a> {
     buses: BTreeMap<Identifier, Bus>,
 }
 
+/// In case of nested list comprehension, we may not have entirely unrolled outer loops iterators
+/// so we need to ensure these cases are properly indexed.
 fn indexed_accessor(mir_node: &Link<Op>) -> Link<Op> {
     if let Some(accessor) = mir_node.as_accessor() {
         if let AccessType::Index(index) = accessor.access_type {

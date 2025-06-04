@@ -790,25 +790,15 @@ impl UnrollingFirstPass<'_> {
                             }
                             Op::Accessor(accessor) => {
                                 match accessor.indexable.borrow().deref() {
-                                    /*Op::Vector(vector) => {
-                                        let children = vector.children().borrow().deref().clone();
-                                        children[i].clone()
-                                    },
-                                    Op::Matrix(matrix) => {
-                                        let children = matrix.children().borrow().deref().clone();
-                                        children[i].clone()
-                                    },*/
+                                    // If we access an outer loop parameter in the body of an inner loop,
+                                    // we need to create an Accessor for the correct index in this parameter
                                     Op::Parameter(_parameter) => Accessor::create(
                                         accessor.indexable.clone(),
                                         AccessType::Index(i),
                                         0,
                                         accessor.span(),
                                     ),
-                                    _ => {
-                                        unreachable!("got: {:?}", accessor.indexable);
-                                        // Raise diag
-                                        //op.clone()
-                                    }
+                                    _ => op.clone(),
                                 }
                             }
                             _ => op.clone(),
