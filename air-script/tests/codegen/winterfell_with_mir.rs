@@ -219,9 +219,10 @@ fn list_comprehension() {
 
 #[test]
 fn list_comprehension_nested() {
-    let generated_air = Test::new("tests/list_comprehension/list_comprehension_nested.air".to_string())
-        .transpile(Target::Winterfell, Pipeline::WithMIR)
-        .unwrap();
+    let generated_air =
+        Test::new("tests/list_comprehension/list_comprehension_nested.air".to_string())
+            .transpile(Target::Winterfell, Pipeline::WithMIR)
+            .unwrap();
 
     let expected = expect_file!["../list_comprehension/list_comprehension_nested.rs"];
     expected.assert_eq(&generated_air);

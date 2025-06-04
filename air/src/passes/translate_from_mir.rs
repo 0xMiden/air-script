@@ -112,8 +112,7 @@ fn indexed_accessor(mir_node: &Link<Op>) -> Link<Op> {
                 if index >= children.len() {
                     panic!("Index out of bounds during indexed accessor translation from MIR to AIR: {}", index);
                 }
-                let child = children[index].clone();
-                child
+                children[index].clone()
             } else {
                 mir_node.clone()
             }

@@ -721,9 +721,9 @@ impl UnrollingFirstPass<'_> {
                                 unreachable!(); // Raise diag
                             }
                         }
-                    },
+                    }
                     _ => unreachable!(), // Raise diag
-                }
+                },
                 AccessType::Matrix(_, _) => 1,
             },
             Op::Parameter(parameter) => match parameter.ty {
@@ -780,45 +780,39 @@ impl UnrollingFirstPass<'_> {
                     .iter()
                     .map(|op| {
                         match op.borrow().deref() {
-                        Op::Vector(vector) => {
-                            let children = vector.children().borrow().deref().clone();
-                           children[i].clone()
-                        },
-                        Op::Matrix(matrix) => {
-                            let children = matrix.children().borrow().deref().clone();
-                            children[i].clone()
-                        },
-                        Op::Accessor(accessor) => {
-                            match accessor.indexable.borrow().deref() {
-                                /*Op::Vector(vector) => {
-                                    let children = vector.children().borrow().deref().clone();
-                                    children[i].clone()
-                                },
-                                Op::Matrix(matrix) => {
-                                    let children = matrix.children().borrow().deref().clone();
-                                    children[i].clone()
-                                },*/
-                                Op::Parameter(_parameter) => {
-                                    let new_accessor = Accessor::create(
+                            Op::Vector(vector) => {
+                                let children = vector.children().borrow().deref().clone();
+                                children[i].clone()
+                            }
+                            Op::Matrix(matrix) => {
+                                let children = matrix.children().borrow().deref().clone();
+                                children[i].clone()
+                            }
+                            Op::Accessor(accessor) => {
+                                match accessor.indexable.borrow().deref() {
+                                    /*Op::Vector(vector) => {
+                                        let children = vector.children().borrow().deref().clone();
+                                        children[i].clone()
+                                    },
+                                    Op::Matrix(matrix) => {
+                                        let children = matrix.children().borrow().deref().clone();
+                                        children[i].clone()
+                                    },*/
+                                    Op::Parameter(_parameter) => Accessor::create(
                                         accessor.indexable.clone(),
                                         AccessType::Index(i),
                                         0,
                                         accessor.span(),
-                                    );
-                                    new_accessor
-                                }
-                                _ => {
-                                    unreachable!("got: {:?}", accessor.indexable); // Raise diag
-                                    //op.clone()
+                                    ),
+                                    _ => {
+                                        unreachable!("got: {:?}", accessor.indexable);
+                                        // Raise diag
+                                        //op.clone()
+                                    }
                                 }
                             }
-                        },
-                        _ => {
-                            op.clone()
+                            _ => op.clone(),
                         }
-                    }
-                        
-                        
                     })
                     .collect::<Vec<_>>();
                 let selector = if let Op::None(_) = selector.borrow().deref() {
