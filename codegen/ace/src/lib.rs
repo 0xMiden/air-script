@@ -4,6 +4,7 @@ mod dot;
 mod encoded;
 mod inputs;
 mod layout;
+mod masm;
 #[cfg(test)]
 mod tests;
 
@@ -15,7 +16,7 @@ pub use crate::layout::Layout as AirLayout;
 use crate::builder::{CircuitBuilder, LinearCombination};
 use crate::layout::StarkVar;
 use air_ir::{Air, ConstraintDomain};
-use miden_core::{Felt, QuadExtension};
+use miden_core::{Felt, FieldElement, QuadExtension, StarkField};
 
 type QuadFelt = QuadExtension<Felt>;
 
