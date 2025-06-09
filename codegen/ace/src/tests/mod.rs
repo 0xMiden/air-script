@@ -24,7 +24,8 @@ pub fn generate_circuit(source: &str) -> (Air, Circuit, Node) {
                 .chain(mir::passes::AstToMir::new(&diagnostics))
                 .chain(mir::passes::Inlining::new(&diagnostics))
                 .chain(mir::passes::Unrolling::new(&diagnostics))
-                .chain(air_ir::passes::MirToAir::new(&diagnostics));
+                .chain(air_ir::passes::MirToAir::new(&diagnostics))
+                .chain(air_ir::passes::BusOpExpand::new(&diagnostics));
             pipeline.run(ast)
         })
         .expect("lowering failed");

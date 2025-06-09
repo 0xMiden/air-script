@@ -1,9 +1,6 @@
-use air_ir::{Air, BusType, TraceSegmentId};
+use air_ir::{Air, TraceSegmentId};
 
-use super::{
-    buses_helper::{expand_logup_constraints, expand_multiset_constraints},
-    Codegen, ElemType, Impl,
-};
+use super::{Codegen, ElemType, Impl};
 
 // HELPERS TO GENERATE THE WINTERFELL TRANSITION CONSTRAINT METHODS
 // ================================================================================================
@@ -51,7 +48,7 @@ pub(super) fn add_fn_evaluate_aux_transition(impl_ref: &mut Impl, ir: &Air) {
     evaluate_aux_transition.line("let aux_next = aux_frame.next();");
 
     // output the constraints.
-    add_buses_constraints(evaluate_aux_transition, ir);
+    add_main_constraints(evaluate_aux_transition, ir, 1);
 }
 
 /// Iterates through the integrity constraints in the IR, and appends a line of generated code to
@@ -69,20 +66,5 @@ fn add_main_constraints(
                 .node_index()
                 .to_string(ir, ElemType::Ext, trace_segment)
         ));
-    }
-}
-
-/// Iterates through the integrity constraints in the IR, and appends a line of generated code to
-/// the provided codegen function body for each constraint.
-fn add_buses_constraints(func_body: &mut codegen::Function, ir: &Air) {
-    for (idx, (_bus_name, bus)) in ir.buses.iter().enumerate() {
-        let index = idx; // TODO: match how it is added?
-
-        let bus_constraint = match bus.bus_type {
-            BusType::Multiset => expand_multiset_constraints(ir, bus, index),
-            BusType::Logup => expand_logup_constraints(ir, bus, index),
-        };
-
-        func_body.line(format!("result[{}] = {};", idx, bus_constraint));
     }
 }

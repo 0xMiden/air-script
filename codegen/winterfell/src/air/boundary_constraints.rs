@@ -4,7 +4,9 @@ use air_ir::{
     Air, AlgebraicGraph, ConstraintDomain, NodeIndex, Operation, TraceAccess, TraceSegmentId, Value,
 };
 
-use super::{buses_helper::call_bus_boundary_varlen_pubinput, Codegen, ElemType, Impl};
+use crate::air::call_bus_boundary_varlen_pubinput;
+
+use super::{Codegen, ElemType, Impl};
 
 // HELPERS TO GENERATE THE WINTERFELL BOUNDARY CONSTRAINT METHODS
 // ================================================================================================
@@ -74,7 +76,7 @@ fn add_assertions(func_body: &mut codegen::Function, ir: &Air, trace_segment: Tr
         func_body.line(assertion);
     }
 
-    // add the buses boundary constraints
+    // add the buses boundary constraints for variable length public inputs
     if trace_segment == 1 {
         let domains = [ConstraintDomain::FirstRow, ConstraintDomain::LastRow];
 
@@ -86,26 +88,26 @@ fn add_assertions(func_body: &mut codegen::Function, ir: &Air, trace_segment: Tr
                     _ => unreachable!("Invalid domain for bus boundary constraint"),
                 };
 
-                let expr_root_string = match bus_boundary {
+                match bus_boundary {
                     air_ir::BusBoundary::PublicInputTable(air_ir::PublicInputTableAccess {
                         bus_name,
                         table_name,
                         ..
-                    }) => call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name),
-                    air_ir::BusBoundary::Null => match bus.bus_type {
-                        air_ir::BusType::Multiset => "E::ONE".to_string(),
-                        air_ir::BusType::Logup => "E::ZERO".to_string(),
-                    },
-                };
+                    }) => {
+                        let expr_root_string =
+                            call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name);
 
-                let assertion = format!(
-                    "result.push(Assertion::single({}, {}, {}));",
-                    index,
-                    domain_to_str(*domain),
-                    expr_root_string
-                );
+                        let assertion = format!(
+                            "result.push(Assertion::single({}, {}, {}));",
+                            index,
+                            domain_to_str(*domain),
+                            expr_root_string
+                        );
 
-                func_body.line(assertion);
+                        func_body.line(assertion);
+                    }
+                    air_ir::BusBoundary::Null => {}
+                }
             }
         }
     }

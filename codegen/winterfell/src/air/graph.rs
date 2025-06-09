@@ -2,7 +2,7 @@ use air_ir::{
     Air, IntegrityConstraintDegree, NodeIndex, Operation, TraceAccess, TraceSegmentId, Value,
 };
 
-use super::{buses_helper::OperationStr, ElemType};
+use super::ElemType;
 
 // RUST STRING GENERATION FOR THE CONSTRAINT GRAPH
 // ================================================================================================
@@ -102,13 +102,10 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             }
+            Value::RandomValue(idx) => {
+                format!("aux_rand_elements.rand_elements()[{idx}]")
+            }
         }
-    }
-}
-
-impl Codegen for OperationStr {
-    fn to_string(&self, _ir: &Air, _elem_type: ElemType, _trace_segment: TraceSegmentId) -> String {
-        self.inner()
     }
 }
 

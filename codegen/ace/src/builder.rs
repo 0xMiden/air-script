@@ -135,6 +135,11 @@ impl CircuitBuilder {
                 Value::PublicInput(pi) => self.layout.public_inputs[&pi.name]
                     .as_node(pi.index)
                     .expect("invalid public input access"),
+                Value::RandomValue(idx) => self
+                    .layout
+                    .random_values
+                    .as_node(*idx)
+                    .expect("invalid random value index"),
             },
             AirOperation::Add(l_idx, r_idx) => {
                 let node_l = self.node_from_index(air, l_idx);

@@ -100,7 +100,8 @@ impl Compiler {
                             .chain(mir::passes::AstToMir::new(&self.diagnostics))
                             .chain(mir::passes::Inlining::new(&self.diagnostics))
                             .chain(mir::passes::Unrolling::new(&self.diagnostics))
-                            .chain(crate::passes::MirToAir::new(&self.diagnostics));
+                            .chain(crate::passes::MirToAir::new(&self.diagnostics))
+                            .chain(crate::passes::BusOpExpand::new(&self.diagnostics));
                     pipeline.run(ast)
                 }),
             Pipeline::WithoutMIR => {

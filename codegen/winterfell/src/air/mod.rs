@@ -1,6 +1,5 @@
 mod public_inputs;
 
-use buses_helper::{compute_logup_degree, compute_multiset_degree, num_bus_boundary_constraints};
 use public_inputs::{add_public_inputs_struct, public_input_type_to_string};
 
 mod buses_helper;
@@ -18,7 +17,7 @@ use boundary_constraints::{add_fn_get_assertions, add_fn_get_aux_assertions};
 mod transition_constraints;
 use transition_constraints::{add_fn_evaluate_aux_transition, add_fn_evaluate_transition};
 
-use air_ir::{Air, BusBoundary, BusType, TraceSegmentId};
+use air_ir::{Air, BusBoundary, BusType, Identifier, TraceSegmentId};
 
 use super::{Impl, Scope};
 
@@ -230,10 +229,10 @@ fn add_fn_new(impl_ref: &mut Impl, ir: &Air) {
         .ret("Self");
 
     // define the integrity constraint degrees of the main trace `main_degrees`.
-    add_main_constraint_degrees(new, ir, 0, "main_degrees");
+    add_constraint_degrees(new, ir, 0, "main_degrees");
 
-    // define the integrity constraint degrees of the aux trace `aux_degrees`.
-    add_buses_constraint_degrees(new, ir, "aux_degrees");
+    // define the integrity constraint degrees of the main trace `main_degrees`.
+    add_constraint_degrees(new, ir, 1, "aux_degrees");
 
     // define the number of main trace boundary constraints `num_main_assertions`.
     new.line(format!(
@@ -272,7 +271,7 @@ let context = AirContext::new_multi_segment(
 
 /// Iterates through the degrees of the integrity constraints in the IR, and appends a line of
 /// generated code to the function body that declares all of the constraint degrees.
-fn add_main_constraint_degrees(
+fn add_constraint_degrees(
     func_body: &mut codegen::Function,
     ir: &Air,
     trace_segment: TraceSegmentId,
@@ -287,20 +286,24 @@ fn add_main_constraint_degrees(
     func_body.line(format!("let {decl_name} = vec![{}];", degrees.join(", ")));
 }
 
-/// Iterates through the degrees of the integrity constraints in the IR, and appends a line of
-/// generated code to the function body that declares all of the constraint degrees.
-fn add_buses_constraint_degrees(func_body: &mut codegen::Function, ir: &Air, decl_name: &str) {
-    let degrees: Vec<_> = ir
-        .buses
-        .values()
-        .map(|bus| {
-            let degree = match bus.bus_type {
-                BusType::Multiset => compute_multiset_degree(ir, bus),
-                BusType::Logup => compute_logup_degree(ir, bus),
-            };
-            degree.to_string(ir, ElemType::Ext, 1)
-        })
-        .collect();
+pub(crate) fn call_bus_boundary_varlen_pubinput(
+    ir: &Air,
+    bus_name: Identifier,
+    table_name: Identifier,
+) -> String {
+    let bus = ir.buses.get(&bus_name).expect("bus not found");
+    match bus.bus_type {
+        BusType::Multiset => format!(
+            "Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.{}.iter())",
+            table_name
+        ),
+        BusType::Logup => format!(
+            "Self::bus_logup_boundary_varlen(aux_rand_elements, &self.{}.iter())",
+            table_name
+        ),
+    }
+}
 
-    func_body.line(format!("let {decl_name} = vec![{}];", degrees.join(", ")));
+pub(crate) fn num_bus_boundary_constraints(ir: &Air) -> usize {
+    ir.buses.len() * 2
 }

@@ -104,6 +104,7 @@ impl AlgebraicGraph {
         match self.node(index).op() {
             Operation::Value(value) => match value {
                 Value::Constant(_) => Ok((DEFAULT_SEGMENT, default_domain)),
+                Value::RandomValue(_) => Ok((AUX_SEGMENT, default_domain)),
                 Value::PeriodicColumn(_) => {
                     assert!(
                         !default_domain.is_boundary(),
@@ -171,7 +172,7 @@ impl AlgebraicGraph {
         // recursively walk the subgraph and compute the degree from the operation and child nodes
         match self.node(index).op() {
             Operation::Value(value) => match value {
-                Value::Constant(_) | Value::PublicInput(_) => 0,
+                Value::Constant(_) | Value::PublicInput(_) | Value::RandomValue(_) => 0,
                 Value::TraceAccess(_) => 1,
                 Value::PeriodicColumn(pc) => {
                     cycles.insert(pc.name, pc.cycle);
