@@ -1231,7 +1231,6 @@ impl<'a> MirBuilder<'a> {
             )
             .emit();
         Err(CompileError::Failed)
-        //panic!("undefined variable: {:?}", access);
     }
 
     // Check assumptions, probably this assumed that the inlining pass did some work
