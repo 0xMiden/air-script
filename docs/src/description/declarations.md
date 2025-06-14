@@ -36,7 +36,7 @@ In the above example, the main execution trace for the AIR has 6 columns with 4 
 
 A `public_inputs` section contains declarations for public inputs. Currently, each public input must be provided as a vector of a fixed size, but there is no limit to how many of them can be declared within the `public_inputs` section.
 
-**Public inputs are required.** There must be at least one pubic input declared.
+**Public inputs are required.** There must be at least one public input declared.
 
 Each public input is described by an identifier and an array length (`n`) in the following format:
 

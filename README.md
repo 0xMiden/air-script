@@ -22,7 +22,7 @@ The project is organized into several crates as follows:
 | [Parser](parser) | Contains the parser for AirScript. The parser is used to parse the constraints written in AirScript into an AST. |
 | [IR](ir) | Contains the IR for AirScript, `AirIR`. `AirIR` is initialized with an AirScript AST, which it converts to an internal representation that can be optimized and used to generate code in multiple target languages. |
 | [Winterfell code generator](codegen/winterfell/) | Contains a code generator targeting the [Winterfell prover](https://github.com/novifinancial/winterfell) Rust library. The Winterfell code generator converts a provided AirScript `AirIR` into Rust code that represents the AIR as a new custom struct that implements Winterfell's `Air` trait. |
-| [AirScript Core](air-script-core) | Exports commonly used constants and structs used by the other crates. |
+| [Miden assembly code generator](codegen/masm/) | Contains code generator targeting the [Miden VM](https://github.com/0xPolygonMiden/miden-vm). Miden assembly code generator converts `AirIR` into Miden assembly module contain constraint evaluation and related logic. |
 | [AirScript](air-script) | Aggregates all components of the AirScript compiler into a single place and provides a CLI as an executable to transpile AIRs defined in AirScript to the specified target language. Also contains integration tests for AirScript. |
 
 ## Contributing to AirScript
