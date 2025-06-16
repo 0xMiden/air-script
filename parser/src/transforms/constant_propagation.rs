@@ -246,10 +246,10 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                     Err(SemanticAnalysisError::InvalidExpr(
                         InvalidExprError::NonConstantExponent(_),
                     )) if self.in_list_comprehension => {
-                        // If we are in a list comprehension, we do not know iterators' lengths
-                        // yet.
-                        // TODO: Add semantic analysis pass in Mir after all passes are done to
-                        // check for non-constant exponents in list comprehensions
+                        // If we are in a list comprehension, we do not know iterators'
+                        // lengths yet, since loop unrolling happens during MIR passes.
+                        // The check for non-constant exponents in list comprehensions is done
+                        // during lowering from MIR to AIR, so we can safely silence it here.
                         ControlFlow::Continue(())
                     }
                     Err(err) => ControlFlow::Break(err),
@@ -420,10 +420,10 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 Err(SemanticAnalysisError::InvalidExpr(InvalidExprError::NonConstantExponent(
                     _,
                 ))) if self.in_list_comprehension => {
-                    // If we are in a list comprehension, we do not know iterators' lengths
-                    // yet.
-                    // TODO: Add semantic analysis pass in Mir after all passes are done to
-                    // check for non-constant exponents in list comprehensions
+                    // If we are in a list comprehension, we do not know iterators'
+                    // lengths yet, since loop unrolling happens during MIR passes.
+                    // The check for non-constant exponents in list comprehensions is done
+                    // during lowering from MIR to AIR, so we can safely silence it here.
                     ControlFlow::Continue(())
                 }
                 Err(err) => ControlFlow::Break(err),
