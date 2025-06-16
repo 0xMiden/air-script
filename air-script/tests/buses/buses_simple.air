@@ -14,7 +14,6 @@ public_inputs {
 }
 
 boundary_constraints {
-    enf p.first = null;
     enf q.first = null;
     enf p.last = null;
     enf q.last = null;

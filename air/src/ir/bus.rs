@@ -26,6 +26,8 @@ pub enum BusBoundary {
     PublicInputTable(PublicInputTableAccess),
     /// A reference to an empty bus
     Null,
+    /// An unconstrained bus boundary
+    Unconstrained,
 }
 
 /// Represents an access of a public input table, similar in nature to [TraceAccess].
