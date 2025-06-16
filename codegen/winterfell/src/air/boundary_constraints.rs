@@ -1,8 +1,6 @@
 use core::panic;
 
-use air_ir::{
-    Air, AlgebraicGraph, ConstraintDomain, NodeIndex, Operation, TraceAccess, TraceSegmentId, Value,
-};
+use air_ir::{Air, AlgebraicGraph, ConstraintDomain, NodeIndex, Operation, TraceAccess, Value};
 
 use crate::air::call_bus_boundary_varlen_pubinput;
 
@@ -22,7 +20,7 @@ pub(super) fn add_fn_get_assertions(impl_ref: &mut Impl, ir: &Air) {
         .ret("Vec<Assertion<Felt>>");
 
     // add the boundary constraints
-    add_assertions(get_assertions, ir, 0);
+    add_main_trace_assertions(get_assertions, ir);
 
     // return the result
     get_assertions.line("result");
@@ -40,31 +38,56 @@ pub(super) fn add_fn_get_aux_assertions(impl_ref: &mut Impl, ir: &Air) {
         .ret("Vec<Assertion<E>>");
 
     // add the boundary constraints
-    add_assertions(get_aux_assertions, ir, 1);
+    add_aux_trace_assertions(get_aux_assertions, ir);
 
     // return the result
     get_aux_assertions.line("result");
 }
 
-/// Declares a result vector and adds assertions for boundary constraints to it for the specified
+/// Declares a result vector and adds assertions for boundary constraints to it for the main
 /// trace segment
-fn add_assertions(func_body: &mut codegen::Function, ir: &Air, trace_segment: TraceSegmentId) {
-    let elem_type = if trace_segment == 0 {
-        ElemType::Base
-    } else {
-        ElemType::Ext
-    };
+fn add_main_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
+    let elem_type = ElemType::Base;
+    let main_trace_segment = 0;
 
     // declare the result vector to be returned.
     func_body.line("let mut result = Vec::new();");
 
     // add the main boundary constraints
-    for constraint in ir.boundary_constraints(trace_segment) {
+    for constraint in ir.boundary_constraints(main_trace_segment) {
         let (trace_access, expr_root) =
             split_boundary_constraint(ir.constraint_graph(), constraint.node_index());
-        debug_assert_eq!(trace_access.segment, trace_segment);
+        debug_assert_eq!(trace_access.segment, main_trace_segment);
 
-        let expr_root_string = expr_root.to_string(ir, elem_type, trace_segment);
+        let expr_root_string = expr_root.to_string(ir, elem_type, main_trace_segment);
+
+        let assertion = format!(
+            "result.push(Assertion::single({}, {}, {}));",
+            trace_access.column,
+            domain_to_str(constraint.domain()),
+            expr_root_string
+        );
+
+        func_body.line(assertion);
+    }
+}
+
+/// Declares a result vector and adds assertions for boundary constraints to it for the aux
+/// trace segment (used for buses boundary constraints for variable length public inputs)
+fn add_aux_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
+    let elem_type = ElemType::Ext;
+    let aux_trace_segment = 1;
+
+    // declare the result vector to be returned.
+    func_body.line("let mut result = Vec::new();");
+
+    // add the boundary constraints
+    for constraint in ir.boundary_constraints(aux_trace_segment) {
+        let (trace_access, expr_root) =
+            split_boundary_constraint(ir.constraint_graph(), constraint.node_index());
+        debug_assert_eq!(trace_access.segment, aux_trace_segment);
+
+        let expr_root_string = expr_root.to_string(ir, elem_type, aux_trace_segment);
 
         let assertion = format!(
             "result.push(Assertion::single({}, {}, {}));",
@@ -76,38 +99,37 @@ fn add_assertions(func_body: &mut codegen::Function, ir: &Air, trace_segment: Tr
         func_body.line(assertion);
     }
 
-    // add the buses boundary constraints for variable length public inputs
-    if trace_segment == 1 {
-        let domains = [ConstraintDomain::FirstRow, ConstraintDomain::LastRow];
+    let domains = [ConstraintDomain::FirstRow, ConstraintDomain::LastRow];
 
-        for domain in &domains {
-            for (index, bus) in ir.buses.values().enumerate() {
-                let bus_boundary = match domain {
-                    ConstraintDomain::FirstRow => &bus.first,
-                    ConstraintDomain::LastRow => &bus.last,
-                    _ => unreachable!("Invalid domain for bus boundary constraint"),
-                };
+    for domain in &domains {
+        for (index, bus) in ir.buses.values().enumerate() {
+            let bus_boundary = match domain {
+                ConstraintDomain::FirstRow => &bus.first,
+                ConstraintDomain::LastRow => &bus.last,
+                _ => unreachable!("Invalid domain for bus boundary constraint"),
+            };
 
-                match bus_boundary {
-                    air_ir::BusBoundary::PublicInputTable(air_ir::PublicInputTableAccess {
-                        bus_name,
-                        table_name,
-                        ..
-                    }) => {
-                        let expr_root_string =
-                            call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name);
+            println!("Processing bus boundary: {:?}", bus_boundary);
 
-                        let assertion = format!(
-                            "result.push(Assertion::single({}, {}, {}));",
-                            index,
-                            domain_to_str(*domain),
-                            expr_root_string
-                        );
+            match bus_boundary {
+                air_ir::BusBoundary::PublicInputTable(air_ir::PublicInputTableAccess {
+                    bus_name,
+                    table_name,
+                    ..
+                }) => {
+                    let expr_root_string =
+                        call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name);
 
-                        func_body.line(assertion);
-                    }
-                    air_ir::BusBoundary::Null => {}
+                    let assertion = format!(
+                        "result.push(Assertion::single({}, {}, {}));",
+                        index,
+                        domain_to_str(*domain),
+                        expr_root_string
+                    );
+
+                    func_body.line(assertion);
                 }
+                air_ir::BusBoundary::Null => {}
             }
         }
     }

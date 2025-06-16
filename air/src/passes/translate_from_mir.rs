@@ -519,36 +519,12 @@ impl AirBuilder<'_> {
         Ok(())
     }
 
-    fn bus_boundary(
-        &mut self,
-        mir_bus_boundary_node: &Link<Op>,
-    ) -> Result<BusBoundary, CompileError> {
-        let mir_node = vec_to_scalar(mir_bus_boundary_node);
-        let mir_node_ref = mir_node.borrow();
-        match mir_node_ref.deref() {
-            Op::Value(value) => match &value.value.value {
-                MirValue::PublicInputTable(public_input_table) => {
-                    Ok(crate::ir::BusBoundary::PublicInputTable(
-                        crate::ir::PublicInputTableAccess::new(
-                            public_input_table.table_name,
-                            public_input_table.bus_name(),
-                            public_input_table.num_cols,
-                        ),
-                    ))
-                }
-                MirValue::Null => Ok(crate::ir::BusBoundary::Null),
-                _ => Err(CompileError::Failed),
-            },
-            _ => unreachable!("Unexpected Mir Op in bus boundary: {:#?}", mir_node_ref),
-        }
-    }
-
-    /// Builds the bus boundary constraints.
+    /// Builds the bus struct, containing the bus operations and boundaries.
     fn build_bus(&mut self, mir_bus: &Link<mir::ir::Bus>) -> Result<(), CompileError> {
         let mir_bus = mir_bus.borrow();
 
-        let first = self.bus_boundary(&mir_bus.get_first())?;
-        let last = self.bus_boundary(&mir_bus.get_last())?;
+        let first = bus_boundary(&mir_bus.get_first())?;
+        let last = bus_boundary(&mir_bus.get_last())?;
 
         let mut bus_ops = vec![];
         for (mir_column, mir_latch) in mir_bus.columns.iter().zip(mir_bus.latches.iter()) {
@@ -576,5 +552,30 @@ impl AirBuilder<'_> {
     #[inline]
     fn insert_op(&mut self, op: Operation) -> NodeIndex {
         self.air.constraint_graph_mut().insert_node(op)
+    }
+}
+
+// HELPERS FUNCTIONS
+// ================================
+
+/// Helper function to convert a MIR bus boundary node into an AIR bus boundary.
+fn bus_boundary(mir_bus_boundary_node: &Link<Op>) -> Result<BusBoundary, CompileError> {
+    let mir_node = vec_to_scalar(mir_bus_boundary_node);
+    let mir_node_ref = mir_node.borrow();
+    match mir_node_ref.deref() {
+        Op::Value(value) => match &value.value.value {
+            // This represents public input table boundary
+            MirValue::PublicInputTable(public_input_table) => Ok(
+                crate::ir::BusBoundary::PublicInputTable(crate::ir::PublicInputTableAccess::new(
+                    public_input_table.table_name,
+                    public_input_table.bus_name(),
+                    public_input_table.num_cols,
+                )),
+            ),
+            // This represents an empty bus
+            MirValue::Null => Ok(crate::ir::BusBoundary::Null),
+            _ => Err(CompileError::Failed),
+        },
+        _ => unreachable!("Unexpected Mir Op in bus boundary: {:#?}", mir_node_ref),
     }
 }

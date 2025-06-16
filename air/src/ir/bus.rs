@@ -17,13 +17,9 @@ pub struct Bus {
     pub last: BusBoundary,
     /// The operations (insertions and removals) of this bus
     pub bus_ops: Vec<BusOp>,
-    /*// Alternatively, separate the insertions and removals into two vectors
-    /// The insertions into the bus
-    pub inserted: Vec<BusOp>,
-    /// The removals from the bus
-    pub removed: Vec<BusOp>,*/
 }
 
+/// Represents the boundaries of a bus, which can be either a public input table or an empty bus.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BusBoundary {
     /// A reference to a public input table.
@@ -39,7 +35,9 @@ pub enum BusBoundary {
 pub struct PublicInputTableAccess {
     /// The name of the public input to bind
     pub table_name: Identifier,
+    /// The name of the bus
     pub bus_name: Identifier,
+    /// The number of columns in the public input table
     pub num_cols: usize,
 }
 impl PublicInputTableAccess {
@@ -52,7 +50,11 @@ impl PublicInputTableAccess {
     }
 }
 
-/// An Air struct to represent a Bus definition
+/// Represent an operation on a bus, such as inserting or removing values.
+///
+/// * columns: The [NodeIndex] of each value in the tuple being inserted or removed.
+/// * latch: The [NodeIndex] of the selector
+/// * op_kind: The kind of operation (insert or remove)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BusOp {
     pub columns: Vec<NodeIndex>,

@@ -2,9 +2,6 @@ mod public_inputs;
 
 use public_inputs::{add_public_inputs_struct, public_input_type_to_string};
 
-mod buses_helper;
-//use buses_helper::*;
-
 mod periodic_columns;
 use periodic_columns::add_fn_get_periodic_column_values;
 
@@ -231,7 +228,7 @@ fn add_fn_new(impl_ref: &mut Impl, ir: &Air) {
     // define the integrity constraint degrees of the main trace `main_degrees`.
     add_constraint_degrees(new, ir, 0, "main_degrees");
 
-    // define the integrity constraint degrees of the main trace `main_degrees`.
+    // define the integrity constraint degrees of the aux trace `aux_degrees`.
     add_constraint_degrees(new, ir, 1, "aux_degrees");
 
     // define the number of main trace boundary constraints `num_main_assertions`.
@@ -286,7 +283,7 @@ fn add_constraint_degrees(
     func_body.line(format!("let {decl_name} = vec![{}];", degrees.join(", ")));
 }
 
-pub(crate) fn call_bus_boundary_varlen_pubinput(
+fn call_bus_boundary_varlen_pubinput(
     ir: &Air,
     bus_name: Identifier,
     table_name: Identifier,
@@ -304,6 +301,6 @@ pub(crate) fn call_bus_boundary_varlen_pubinput(
     }
 }
 
-pub(crate) fn num_bus_boundary_constraints(ir: &Air) -> usize {
+fn num_bus_boundary_constraints(ir: &Air) -> usize {
     ir.buses.len() * 2
 }

@@ -22,7 +22,7 @@ pub(super) fn add_fn_evaluate_transition(impl_ref: &mut Impl, ir: &Air) {
     evaluate_transition.line("let main_next = frame.next();");
 
     // output the constraints.
-    add_main_constraints(evaluate_transition, ir, 0);
+    add_constraints(evaluate_transition, ir, 0);
 }
 
 /// Adds an implementation of the "evaluate_aux_transition" method to the referenced Air implementation
@@ -48,16 +48,12 @@ pub(super) fn add_fn_evaluate_aux_transition(impl_ref: &mut Impl, ir: &Air) {
     evaluate_aux_transition.line("let aux_next = aux_frame.next();");
 
     // output the constraints.
-    add_main_constraints(evaluate_aux_transition, ir, 1);
+    add_constraints(evaluate_aux_transition, ir, 1);
 }
 
 /// Iterates through the integrity constraints in the IR, and appends a line of generated code to
 /// the provided codegen function body for each constraint.
-fn add_main_constraints(
-    func_body: &mut codegen::Function,
-    ir: &Air,
-    trace_segment: TraceSegmentId,
-) {
+fn add_constraints(func_body: &mut codegen::Function, ir: &Air, trace_segment: TraceSegmentId) {
     for (idx, constraint) in ir.integrity_constraints(trace_segment).iter().enumerate() {
         func_body.line(format!(
             "result[{}] = {};",
