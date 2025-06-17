@@ -1,5 +1,5 @@
 pub use air_parser::ast::BusType;
-use air_parser::ast::{self, Identifier};
+use air_parser::ast::Identifier;
 pub use mir::ir::BusOpKind;
 
 use crate::NodeIndex;
@@ -8,9 +8,9 @@ use crate::NodeIndex;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bus {
     /// The [Identifier] of the bus
-    pub name: ast::Identifier,
+    pub name: Identifier,
     /// The type of bus:
-    pub bus_type: ast::BusType,
+    pub bus_type: BusType,
     /// The initial state of the bus
     pub first: BusBoundary,
     /// The final state of the bus
@@ -73,8 +73,8 @@ impl BusOp {
 
 impl Bus {
     pub fn new(
-        name: ast::Identifier,
-        bus_type: ast::BusType,
+        name: Identifier,
+        bus_type: BusType,
         first: BusBoundary,
         last: BusBoundary,
         bus_ops: Vec<BusOp>,
