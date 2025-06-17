@@ -530,7 +530,10 @@ impl AirBuilder<'_> {
         for (mir_column, mir_latch) in mir_bus.columns.iter().zip(mir_bus.latches.iter()) {
             let mut column = vec![];
 
-            let mir_bus_op = mir_column.as_bus_op().unwrap();
+            // Note: we have checked this will not panic in the MIR pass
+            let mir_bus_op = mir_column
+                .as_bus_op()
+                .expect("Bus column should be a bus operation");
             let mir_bus_op_args = mir_bus_op.args.clone();
             for arg in mir_bus_op_args.iter() {
                 let arg = self.insert_mir_operation(arg)?;
