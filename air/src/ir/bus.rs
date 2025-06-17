@@ -50,15 +50,14 @@ impl PublicInputTableAccess {
     }
 }
 
-/// Represent an operation on a bus, such as inserting or removing values.
-///
-/// * columns: The [NodeIndex] of each value in the tuple being inserted or removed.
-/// * latch: The [NodeIndex] of the selector
-/// * op_kind: The kind of operation (insert or remove)
+/// Represent an operation on a bus, such as inserting or removing values.  
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BusOp {
+    /// The [NodeIndex] of each value in the tuple being inserted or removed.  
     pub columns: Vec<NodeIndex>,
+    // The [NodeIndex] of the selector which defines when this bus operation is activated.
     pub latch: NodeIndex,
+    /// The kind of operation (insert or remove).  
     pub op_kind: BusOpKind,
 }
 

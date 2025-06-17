@@ -150,92 +150,88 @@ impl<'a> BusOpExpand<'a> {
         bus_access: NodeIndex,
         bus_access_with_offset: NodeIndex,
     ) {
-        let root;
-        {
-            let graph = ir.constraint_graph_mut();
+        let graph = ir.constraint_graph_mut();
 
-            let mut p_factor = None;
-            let mut p_prime_factor = None;
+        let mut p_factor = None;
+        let mut p_prime_factor = None;
 
-            for bus_op in bus_ops {
-                // Expand bus operations
-                let columns = bus_op.columns.clone(); // columns are the bus_operations (insert or remove of a Vec of arguments)
-                let latch = bus_op.latch; // latch is the selector
-                let bus_op_kind = bus_op.op_kind; // kind is either insert or remove
+        for bus_op in bus_ops {
+            // Expand bus operations
+            let columns = bus_op.columns.clone(); // columns are the bus_operations (insert or remove of a Vec of arguments)
+            let latch = bus_op.latch; // latch is the selector
+            let bus_op_kind = bus_op.op_kind; // kind is either insert or remove
 
-                // Example:
-                // p.insert(a, b) when s
-                // p.remove(c, d) when (1 - s)
-                // => p' * (( A0 + A1 c + A2 d ) ( 1 - s ) + s) = p * ( A0 + A1 a + A2 b ) s + 1 - s
+            // Example:
+            // p.insert(a, b) when s
+            // p.remove(c, d) when (1 - s)
+            // => p' * (( A0 + A1 c + A2 d ) ( 1 - s ) + s) = p * ( A0 + A1 a + A2 b ) s + 1 - s
 
-                // p' * ( columns removed combined with alphas ) = p * ( columns inserted combined with alphas )
-                let mut args_combined =
-                    graph.insert_node(Operation::Value(crate::Value::RandomValue(0)));
+            // p' * ( columns removed combined with alphas ) = p * ( columns inserted combined with alphas )
+            let mut args_combined =
+                graph.insert_node(Operation::Value(crate::Value::RandomValue(0)));
 
-                for (col_index, column) in columns.iter().enumerate() {
-                    // 1. Combine args with alphas
-                    // 1.1 Start with the first alpha
+            for (col_index, column) in columns.iter().enumerate() {
+                // 1. Combine args with alphas
+                // 1.1 Start with the first alpha
 
-                    // 1.2 Create corresponding alpha
-                    let alpha = graph
-                        .insert_node(Operation::Value(crate::Value::RandomValue(col_index + 1)));
+                // 1.2 Create corresponding alpha
+                let alpha =
+                    graph.insert_node(Operation::Value(crate::Value::RandomValue(col_index + 1)));
 
-                    // 1.3 Multiply arg with alpha
-                    let arg_times_alpha = graph.insert_node(Operation::Mul(*column, alpha));
+                // 1.3 Multiply arg with alpha
+                let arg_times_alpha = graph.insert_node(Operation::Mul(*column, alpha));
 
-                    // 1.4 Combine with other args
-                    args_combined =
-                        graph.insert_node(Operation::Add(args_combined, arg_times_alpha));
-                }
-
-                // 2. Multiply by latch
-                let args_combined_with_latch =
-                    graph.insert_node(Operation::Mul(args_combined, latch));
-
-                // 3. add inverse of latch
-                let one = graph.insert_node(Operation::Value(crate::Value::Constant(1)));
-                let inverse_latch = graph.insert_node(Operation::Sub(one, latch));
-                let args_combined_with_latch_and_latch_inverse =
-                    graph.insert_node(Operation::Add(args_combined_with_latch, inverse_latch));
-
-                // 4. Multiply them to p_factor or p_prime_factor (depending on bus_op_kind: insert: p, remove: p_prime)
-                match bus_op_kind {
-                    BusOpKind::Insert => {
-                        p_factor = match p_factor {
-                            Some(p_factor) => Some(graph.insert_node(Operation::Mul(
-                                p_factor,
-                                args_combined_with_latch_and_latch_inverse,
-                            ))),
-                            None => Some(args_combined_with_latch_and_latch_inverse),
-                        };
-                    }
-                    BusOpKind::Remove => {
-                        p_prime_factor = match p_prime_factor {
-                            Some(p_prime_factor) => Some(graph.insert_node(Operation::Mul(
-                                p_prime_factor,
-                                args_combined_with_latch_and_latch_inverse,
-                            ))),
-                            None => Some(args_combined_with_latch_and_latch_inverse),
-                        };
-                    }
-                }
+                // 1.4 Combine with other args
+                args_combined = graph.insert_node(Operation::Add(args_combined, arg_times_alpha));
             }
 
-            // 5. Multiply the factors with the bus column (with and without offset for p' and p respectively)
-            let p_prod = match p_factor {
-                Some(p_factor) => graph.insert_node(Operation::Mul(p_factor, bus_access)),
-                None => bus_access,
-            };
-            let p_prime_prod = match p_prime_factor {
-                Some(p_prime_factor) => {
-                    graph.insert_node(Operation::Mul(p_prime_factor, bus_access_with_offset))
-                }
-                None => bus_access_with_offset,
-            };
+            // 2. Multiply by latch
+            let args_combined_with_latch = graph.insert_node(Operation::Mul(args_combined, latch));
 
-            // 6. Create the resulting constraint and insert it into the graph
-            root = graph.insert_node(Operation::Sub(p_prod, p_prime_prod));
+            // 3. add inverse of latch
+            let one = graph.insert_node(Operation::Value(crate::Value::Constant(1)));
+            let inverse_latch = graph.insert_node(Operation::Sub(one, latch));
+            let args_combined_with_latch_and_latch_inverse =
+                graph.insert_node(Operation::Add(args_combined_with_latch, inverse_latch));
+
+            // 4. Multiply them to p_factor or p_prime_factor (depending on bus_op_kind: insert: p, remove: p_prime)
+            match bus_op_kind {
+                BusOpKind::Insert => {
+                    p_factor = match p_factor {
+                        Some(p_factor) => Some(graph.insert_node(Operation::Mul(
+                            p_factor,
+                            args_combined_with_latch_and_latch_inverse,
+                        ))),
+                        None => Some(args_combined_with_latch_and_latch_inverse),
+                    };
+                }
+                BusOpKind::Remove => {
+                    p_prime_factor = match p_prime_factor {
+                        Some(p_prime_factor) => Some(graph.insert_node(Operation::Mul(
+                            p_prime_factor,
+                            args_combined_with_latch_and_latch_inverse,
+                        ))),
+                        None => Some(args_combined_with_latch_and_latch_inverse),
+                    };
+                }
+            }
         }
+
+        // 5. Multiply the factors with the bus column (with and without offset for p' and p respectively)
+        let p_prod = match p_factor {
+            Some(p_factor) => graph.insert_node(Operation::Mul(p_factor, bus_access)),
+            None => bus_access,
+        };
+        let p_prime_prod = match p_prime_factor {
+            Some(p_prime_factor) => {
+                graph.insert_node(Operation::Mul(p_prime_factor, bus_access_with_offset))
+            }
+            None => bus_access_with_offset,
+        };
+
+        // 6. Create the resulting constraint and insert it into the graph
+        let root = graph.insert_node(Operation::Sub(p_prod, p_prime_prod));
+
         ir.constraints
             .insert_constraint(AUX_SEGMENT, root, ConstraintDomain::EveryRow);
     }
@@ -248,136 +244,130 @@ impl<'a> BusOpExpand<'a> {
         bus_access: NodeIndex,
         bus_access_with_offset: NodeIndex,
     ) {
-        let root;
-        {
-            let graph = ir.constraint_graph_mut();
-            // Example:
-            // q.insert(a, b, c) with d
-            // q.remove(e, f, g) when s
-            // => q' + s / ( A0 + A1 e + A2 f + A3 g ) = q + d / ( A0 + A1 a + A2 b + A3 c )
+        let graph = ir.constraint_graph_mut();
+        // Example:
+        // q.insert(a, b, c) with d
+        // q.remove(e, f, g) when s
+        // => q' + s / ( A0 + A1 e + A2 f + A3 g ) = q + d / ( A0 + A1 a + A2 b + A3 c )
 
-            //  q' + s / ( columns removed combined with alphas ) = q + d / ( columns inserted combined with alphas )
-            // PROD * q' + s * ( columns inserted combined with alphas ) = PROD * q + d * ( columns removed combined with alphas )
+        //  q' + s / ( columns removed combined with alphas ) = q + d / ( columns inserted combined with alphas )
+        // PROD * q' + s * ( columns inserted combined with alphas ) = PROD * q + d * ( columns removed combined with alphas )
 
-            // 1. Compute all the factors
+        // 1. Compute all the factors
 
-            let mut factors = vec![];
-            for bus_op in bus_ops.iter() {
-                // Expand bus operations
-                let columns = bus_op.columns.clone(); // columns are the bus_operations (insert or remove of a Vec of arguments)
+        let mut factors = vec![];
+        for bus_op in bus_ops.iter() {
+            // Expand bus operations
+            let columns = bus_op.columns.clone(); // columns are the bus_operations (insert or remove of a Vec of arguments)
 
-                // 1. Combine args with alphas
-                // 1.1 Start with the first alpha
-                let mut args_combined =
-                    graph.insert_node(Operation::Value(crate::Value::RandomValue(0)));
+            // 1. Combine args with alphas
+            // 1.1 Start with the first alpha
+            let mut args_combined =
+                graph.insert_node(Operation::Value(crate::Value::RandomValue(0)));
 
-                for (col_index, column) in columns.iter().enumerate() {
-                    // 1.2 Create corresponding alpha
-                    let alpha = graph
-                        .insert_node(Operation::Value(crate::Value::RandomValue(col_index + 1)));
+            for (col_index, column) in columns.iter().enumerate() {
+                // 1.2 Create corresponding alpha
+                let alpha =
+                    graph.insert_node(Operation::Value(crate::Value::RandomValue(col_index + 1)));
 
-                    // 1.3 Multiply arg with alpha
-                    let arg_times_alpha = graph.insert_node(Operation::Mul(*column, alpha));
+                // 1.3 Multiply arg with alpha
+                let arg_times_alpha = graph.insert_node(Operation::Mul(*column, alpha));
 
-                    // 1.4 Combine with other args
-                    args_combined =
-                        graph.insert_node(Operation::Add(args_combined, arg_times_alpha));
-                }
-                factors.push(args_combined);
+                // 1.4 Combine with other args
+                args_combined = graph.insert_node(Operation::Add(args_combined, arg_times_alpha));
             }
-
-            // 2. Compute the product of all factors (will be used to multiply q and q')
-            let mut total_factors = None;
-            for factor in factors.iter() {
-                total_factors = match total_factors {
-                    Some(total_factors) => {
-                        Some(graph.insert_node(Operation::Mul(total_factors, *factor)))
-                    }
-                    None => Some(*factor),
-                };
-            }
-
-            // 3. For each column, compute the product of all factors except the one of the current column, and multiply it with the latch
-            let mut terms_added_to_bus = None;
-            let mut terms_removed_from_bus = None;
-
-            for (bus_index, bus_op) in bus_ops.iter().enumerate() {
-                let latch = bus_op.latch;
-                let bus_op_kind = bus_op.op_kind;
-
-                // 3.1 Compute the product of all factors except the one of the current columns
-                let mut factors_without_current = None;
-                for (i, factor) in factors.iter().enumerate() {
-                    if i != bus_index {
-                        factors_without_current = match factors_without_current {
-                            Some(factors_without_current) => Some(
-                                graph.insert_node(Operation::Mul(factors_without_current, *factor)),
-                            ),
-                            None => Some(*factor),
-                        };
-                    }
-                }
-
-                // 3.2 Multiply by latch
-                let factors_without_current_with_latch = match factors_without_current {
-                    Some(factors_without_current) => {
-                        graph.insert_node(Operation::Mul(factors_without_current, latch))
-                    }
-                    None => latch,
-                };
-
-                // 3.3 Depending on the bus_op_kind, add to q_factor or q_prime_factor
-                match bus_op_kind {
-                    BusOpKind::Insert => {
-                        terms_added_to_bus = match terms_added_to_bus {
-                            Some(terms_added_to_bus) => Some(graph.insert_node(Operation::Add(
-                                terms_added_to_bus,
-                                factors_without_current_with_latch,
-                            ))),
-                            None => Some(factors_without_current_with_latch),
-                        };
-                    }
-                    BusOpKind::Remove => {
-                        terms_removed_from_bus = match terms_removed_from_bus {
-                            Some(terms_removed_from_bus) => {
-                                Some(graph.insert_node(Operation::Add(
-                                    terms_removed_from_bus,
-                                    factors_without_current_with_latch,
-                                )))
-                            }
-                            None => Some(factors_without_current_with_latch),
-                        };
-                    }
-                }
-            }
-
-            // 4. Add all the terms together
-            let q_prod = match total_factors {
-                Some(total_factors) => graph.insert_node(Operation::Mul(total_factors, bus_access)),
-                None => bus_access,
-            };
-            let q_prime_prod = match total_factors {
-                Some(total_factors) => {
-                    graph.insert_node(Operation::Mul(total_factors, bus_access_with_offset))
-                }
-                None => bus_access_with_offset,
-            };
-            let q_term = match terms_added_to_bus {
-                Some(terms_added_to_bus) => {
-                    graph.insert_node(Operation::Add(q_prod, terms_added_to_bus))
-                }
-                None => q_prod,
-            };
-            let q_prime_term = match terms_removed_from_bus {
-                Some(terms_removed_from_bus) => {
-                    graph.insert_node(Operation::Add(q_prime_prod, terms_removed_from_bus))
-                }
-                None => q_prime_prod,
-            };
-
-            // 5. Create the resulting constraint
-            root = graph.insert_node(Operation::Sub(q_term, q_prime_term));
+            factors.push(args_combined);
         }
+
+        // 2. Compute the product of all factors (will be used to multiply q and q')
+        let mut total_factors = None;
+        for factor in factors.iter() {
+            total_factors = match total_factors {
+                Some(total_factors) => {
+                    Some(graph.insert_node(Operation::Mul(total_factors, *factor)))
+                }
+                None => Some(*factor),
+            };
+        }
+
+        // 3. For each column, compute the product of all factors except the one of the current column, and multiply it with the latch
+        let mut terms_added_to_bus = None;
+        let mut terms_removed_from_bus = None;
+
+        for (bus_index, bus_op) in bus_ops.iter().enumerate() {
+            let latch = bus_op.latch;
+            let bus_op_kind = bus_op.op_kind;
+
+            // 3.1 Compute the product of all factors except the one of the current columns
+            let mut factors_without_current = None;
+            for (i, factor) in factors.iter().enumerate() {
+                if i != bus_index {
+                    factors_without_current = match factors_without_current {
+                        Some(factors_without_current) => Some(
+                            graph.insert_node(Operation::Mul(factors_without_current, *factor)),
+                        ),
+                        None => Some(*factor),
+                    };
+                }
+            }
+
+            // 3.2 Multiply by latch
+            let factors_without_current_with_latch = match factors_without_current {
+                Some(factors_without_current) => {
+                    graph.insert_node(Operation::Mul(factors_without_current, latch))
+                }
+                None => latch,
+            };
+
+            // 3.3 Depending on the bus_op_kind, add to q_factor or q_prime_factor
+            match bus_op_kind {
+                BusOpKind::Insert => {
+                    terms_added_to_bus = match terms_added_to_bus {
+                        Some(terms_added_to_bus) => Some(graph.insert_node(Operation::Add(
+                            terms_added_to_bus,
+                            factors_without_current_with_latch,
+                        ))),
+                        None => Some(factors_without_current_with_latch),
+                    };
+                }
+                BusOpKind::Remove => {
+                    terms_removed_from_bus = match terms_removed_from_bus {
+                        Some(terms_removed_from_bus) => Some(graph.insert_node(Operation::Add(
+                            terms_removed_from_bus,
+                            factors_without_current_with_latch,
+                        ))),
+                        None => Some(factors_without_current_with_latch),
+                    };
+                }
+            }
+        }
+
+        // 4. Add all the terms together
+        let q_prod = match total_factors {
+            Some(total_factors) => graph.insert_node(Operation::Mul(total_factors, bus_access)),
+            None => bus_access,
+        };
+        let q_prime_prod = match total_factors {
+            Some(total_factors) => {
+                graph.insert_node(Operation::Mul(total_factors, bus_access_with_offset))
+            }
+            None => bus_access_with_offset,
+        };
+        let q_term = match terms_added_to_bus {
+            Some(terms_added_to_bus) => {
+                graph.insert_node(Operation::Add(q_prod, terms_added_to_bus))
+            }
+            None => q_prod,
+        };
+        let q_prime_term = match terms_removed_from_bus {
+            Some(terms_removed_from_bus) => {
+                graph.insert_node(Operation::Add(q_prime_prod, terms_removed_from_bus))
+            }
+            None => q_prime_prod,
+        };
+
+        // 5. Create the resulting constraint
+        let root = graph.insert_node(Operation::Sub(q_term, q_prime_term));
         ir.constraints
             .insert_constraint(AUX_SEGMENT, root, ConstraintDomain::EveryRow);
     }

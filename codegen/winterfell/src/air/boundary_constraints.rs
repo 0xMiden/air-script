@@ -81,7 +81,8 @@ fn add_aux_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
     // declare the result vector to be returned.
     func_body.line("let mut result = Vec::new();");
 
-    // add the boundary constraints
+    // add the boundary constraints that have already be expanded in the algebraic graph
+    // (currently, empty buses constraints)
     for constraint in ir.boundary_constraints(aux_trace_segment) {
         let (trace_access, expr_root) =
             split_boundary_constraint(ir.constraint_graph(), constraint.node_index());
@@ -108,8 +109,6 @@ fn add_aux_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
                 ConstraintDomain::LastRow => &bus.last,
                 _ => unreachable!("Invalid domain for bus boundary constraint"),
             };
-
-            println!("Processing bus boundary: {:?}", bus_boundary);
 
             match bus_boundary {
                 air_ir::BusBoundary::PublicInputTable(air_ir::PublicInputTableAccess {
