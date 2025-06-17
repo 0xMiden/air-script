@@ -32,6 +32,23 @@ let x = [m + n + o for (m, n, o) in (a, 0..5, c[0..5])];
 ```
 Slices can also be used as iterables. This will create a new vector with length 5 and each element will be the sum of the corresponding elements in `a`, the range 0 to 5, and the first 5 elements of `c`. This will throw an error if `a` is not of length 5 or if `c` is of length less than 5.
 
+```
+const Y = [
+    [1, 2],
+    [3, 4],
+    [5, 6]
+];
+const X = [1, 2];
+let c = [sum([x * y for (x, y) in (X, row_y)]) for row_y in Y];
+```
+List comprehensions can be nested. The above example creates a new vector `c` where each element is the sum of the products of corresponding elements in `X` and each row of `Y`. The outer list comprehension iterates over each row of `Y`, while the inner list comprehension iterates over each element in `X` and the current row of `Y`.
+
+```
+# The following will result in a parsing error:
+let c = [[x * y for (x, y) in (X, row_y)] for row_y in Y];
+```
+List comprehensions can only have a scalar expression as their body. This means that the comprehension must always result in a vector of scalars. If the body of the comprehension is not a scalar expression, it will throw an error, like in the example above: notice that we removed the `sum` function from the body of the comprehension, which makes the outer comprehension's body a vector instead of a scalar expression. This is not valid syntax currently and will throw a parsing error.
+
 ## List folding
 
 List folding provides syntactic convenience for folding vectors into expressions. It is similar to the list folding syntax in Python. List folding can be applied to vectors, list comprehension or identifiers referring to vectors and list comprehension. The following examples show how to use list folding in AirScript.
