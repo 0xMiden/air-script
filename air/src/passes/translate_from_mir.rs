@@ -74,10 +74,13 @@ impl Pass for MirToAir<'_> {
             air: &mut air,
             trace_columns: trace_columns.clone(),
             bus_bindings_map,
-            buses: BTreeMap::new(),
         };
 
         let graph = mir.constraint_graph();
+
+        for bus in buses.values() {
+            builder.build_bus(bus)?;
+        }
 
         for bc in graph.boundary_constraints_roots.borrow().deref().iter() {
             builder.build_boundary_constraint(bc)?;
@@ -86,12 +89,6 @@ impl Pass for MirToAir<'_> {
         for ic in graph.integrity_constraints_roots.borrow().deref().iter() {
             builder.build_integrity_constraint(ic)?;
         }
-
-        for bus in buses.values() {
-            builder.build_bus(bus)?;
-        }
-        air.buses = builder.buses;
-
         Ok(air)
     }
 }
@@ -101,7 +98,6 @@ struct AirBuilder<'a> {
     air: &'a mut Air,
     trace_columns: Vec<TraceSegment>,
     bus_bindings_map: BTreeMap<Identifier, usize>,
-    buses: BTreeMap<Identifier, Bus>,
 }
 
 /// Helper function to remove the vector wrapper from a scalar operation
@@ -257,14 +253,6 @@ impl AirBuilder<'_> {
                             index: public_input_access.index,
                         })
                     }
-                    MirValue::PublicInputTable(public_input_table) => {
-                        crate::ir::Value::PublicInputTable(crate::ir::PublicInputTableAccess::new(
-                            public_input_table.table_name,
-                            public_input_table.bus_name(),
-                            public_input_table.num_cols,
-                        ))
-                    }
-                    MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
                     _ => unreachable!("Unexpected MirValue: {:#?}", mir_value),
                 };
 
@@ -320,7 +308,6 @@ impl AirBuilder<'_> {
                             index: public_input_access.index,
                         })
                     }
-                    MirValue::RandomValue(rv) => crate::ir::Value::RandomValue(*rv),
                     _ => unreachable!(),
                 };
 
@@ -532,14 +519,34 @@ impl AirBuilder<'_> {
         Ok(())
     }
 
-    /// Builds the bus boundary constraints.
+    /// Builds the bus struct, containing the bus operations and boundaries.
     fn build_bus(&mut self, mir_bus: &Link<mir::ir::Bus>) -> Result<(), CompileError> {
         let mir_bus = mir_bus.borrow();
-        let first = self.insert_mir_operation(&mir_bus.get_first())?;
-        let last = self.insert_mir_operation(&mir_bus.get_last())?;
-        self.buses.insert(
+
+        let first = build_bus_boundary(&mir_bus.get_first())?;
+        let last = build_bus_boundary(&mir_bus.get_last())?;
+
+        let mut bus_ops = vec![];
+        for (mir_column, mir_latch) in mir_bus.columns.iter().zip(mir_bus.latches.iter()) {
+            let mut column = vec![];
+
+            // Note: we have checked this will not panic in the MIR pass
+            let mir_bus_op = mir_column
+                .as_bus_op()
+                .expect("Bus column should be a bus operation");
+            let mir_bus_op_args = mir_bus_op.args.clone();
+            for arg in mir_bus_op_args.iter() {
+                let arg = self.insert_mir_operation(arg)?;
+                column.push(arg);
+            }
+            let latch = self.insert_mir_operation(mir_latch)?;
+
+            let bus_op = BusOp::new(column, latch, mir_bus_op.kind);
+            bus_ops.push(bus_op);
+        }
+        self.air.buses.insert(
             mir_bus.name(),
-            Bus::new(mir_bus.name(), mir_bus.bus_type, first, last),
+            Bus::new(mir_bus.name(), mir_bus.bus_type, first, last, bus_ops),
         );
         Ok(())
     }
@@ -548,5 +555,30 @@ impl AirBuilder<'_> {
     #[inline]
     fn insert_op(&mut self, op: Operation) -> NodeIndex {
         self.air.constraint_graph_mut().insert_node(op)
+    }
+}
+
+// HELPERS FUNCTIONS
+// ================================================================================================
+
+/// Helper function to convert a MIR bus boundary node into an AIR bus boundary.
+fn build_bus_boundary(mir_bus_boundary_node: &Link<Op>) -> Result<BusBoundary, CompileError> {
+    let mir_node = vec_to_scalar(mir_bus_boundary_node);
+    let mir_node_ref = mir_node.borrow();
+    match mir_node_ref.deref() {
+        Op::Value(value) => match &value.value.value {
+            // This represents public input table boundary
+            MirValue::PublicInputTable(public_input_table) => Ok(
+                crate::ir::BusBoundary::PublicInputTable(crate::ir::PublicInputTableAccess::new(
+                    public_input_table.table_name,
+                    public_input_table.bus_name(),
+                    public_input_table.num_cols,
+                )),
+            ),
+            // This represents an empty bus
+            MirValue::Null => Ok(crate::ir::BusBoundary::Null),
+            _ => Err(CompileError::Failed),
+        },
+        _ => unreachable!("Unexpected Mir Op in bus boundary: {:#?}", mir_node_ref),
     }
 }

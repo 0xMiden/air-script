@@ -1,4 +1,5 @@
 mod public_inputs;
+
 use public_inputs::{add_public_inputs_struct, public_input_type_to_string};
 
 mod periodic_columns;
@@ -13,7 +14,7 @@ use boundary_constraints::{add_fn_get_assertions, add_fn_get_aux_assertions};
 mod transition_constraints;
 use transition_constraints::{add_fn_evaluate_aux_transition, add_fn_evaluate_transition};
 
-use air_ir::{Air, BusType, Operation, TraceSegmentId, Value};
+use air_ir::{Air, BusBoundary, BusType, Identifier, TraceSegmentId};
 
 use super::{Impl, Scope};
 
@@ -73,12 +74,9 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
     let (mut add_bus_multiset_boundary_varlen, mut add_bus_logup_boundary_varlen) = (false, false);
     for bus in ir.buses.values() {
         // Check which bus type is refering to variable length public inputs
-        let bus_constraints = [
-            ir.constraint_graph().node(&bus.first),
-            ir.constraint_graph().node(&bus.last),
-        ];
+        let bus_constraints = [&bus.first, &bus.last];
         for fl in bus_constraints {
-            if let Operation::Value(Value::PublicInputTable(_)) = fl.op() {
+            if let BusBoundary::PublicInputTable(_) = fl {
                 match bus.bus_type {
                     BusType::Multiset => {
                         add_bus_multiset_boundary_varlen = true;
@@ -242,7 +240,7 @@ fn add_fn_new(impl_ref: &mut Impl, ir: &Air) {
     // define the number of aux trace boundary constraints `num_aux_assertions`.
     new.line(format!(
         "let num_aux_assertions = {};",
-        ir.num_boundary_constraints(1)
+        num_bus_boundary_constraints(ir)
     ));
 
     // define the context.
@@ -281,5 +279,28 @@ fn add_constraint_degrees(
         .iter()
         .map(|degree| degree.to_string(ir, ElemType::Ext, trace_segment))
         .collect::<Vec<_>>();
+
     func_body.line(format!("let {decl_name} = vec![{}];", degrees.join(", ")));
+}
+
+fn call_bus_boundary_varlen_pubinput(
+    ir: &Air,
+    bus_name: Identifier,
+    table_name: Identifier,
+) -> String {
+    let bus = ir.buses.get(&bus_name).expect("bus not found");
+    match bus.bus_type {
+        BusType::Multiset => format!(
+            "Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.{}.iter())",
+            table_name
+        ),
+        BusType::Logup => format!(
+            "Self::bus_logup_boundary_varlen(aux_rand_elements, &self.{}.iter())",
+            table_name
+        ),
+    }
+}
+
+fn num_bus_boundary_constraints(ir: &Air) -> usize {
+    ir.buses.len() * 2
 }

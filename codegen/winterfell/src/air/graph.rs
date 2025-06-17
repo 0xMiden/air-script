@@ -1,6 +1,5 @@
 use air_ir::{
-    Air, BusType, Identifier, IntegrityConstraintDegree, NodeIndex, Operation, TraceAccess,
-    TraceSegmentId, Value,
+    Air, IntegrityConstraintDegree, NodeIndex, Operation, TraceAccess, TraceSegmentId, Value,
 };
 
 use super::ElemType;
@@ -103,11 +102,6 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             }
-            Value::PublicInputTable(air_ir::PublicInputTableAccess {
-                bus_name,
-                table_name,
-                ..
-            }) => call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name),
             Value::RandomValue(idx) => {
                 format!("aux_rand_elements.rand_elements()[{idx}]")
             }
@@ -151,23 +145,5 @@ fn binary_op_to_string(
             format!("{lhs} * {rhs}")
         }
         _ => panic!("unsupported operation"),
-    }
-}
-
-fn call_bus_boundary_varlen_pubinput(
-    ir: &Air,
-    bus_name: Identifier,
-    table_name: Identifier,
-) -> String {
-    let bus = ir.buses.get(&bus_name).expect("bus not found");
-    match bus.bus_type {
-        BusType::Multiset => format!(
-            "Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.{}.iter())",
-            table_name
-        ),
-        BusType::Logup => format!(
-            "Self::bus_logup_boundary_varlen(aux_rand_elements, &self.{}.iter())",
-            table_name
-        ),
     }
 }

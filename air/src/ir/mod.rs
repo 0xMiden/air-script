@@ -5,12 +5,12 @@ mod operation;
 mod trace;
 mod value;
 
-pub use self::bus::{Bus, BusType};
+pub use self::bus::{Bus, BusBoundary, BusOp, BusOpKind, BusType, PublicInputTableAccess};
 pub use self::constraints::{ConstraintDomain, ConstraintError, ConstraintRoot, Constraints};
 pub use self::degree::IntegrityConstraintDegree;
 pub use self::operation::Operation;
 pub use self::trace::TraceAccess;
-pub use self::value::{PeriodicColumnAccess, PublicInputAccess, PublicInputTableAccess, Value};
+pub use self::value::{PeriodicColumnAccess, PublicInputAccess, Value};
 
 pub use air_parser::{
     ast::{

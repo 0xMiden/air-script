@@ -494,6 +494,22 @@ impl<'a> MirBuilder<'a> {
         list_comp: &'a ast::ListComprehension,
     ) -> Result<Link<Op>, CompileError> {
         let bus_op = self.translate_scalar_expr(&list_comp.body)?;
+        if bus_op.as_bus_op().is_none() {
+            // Should not happen as bus enforce format should have been checked in the parser
+            self.diagnostics
+                .diagnostic(Severity::Error)
+                .with_message("expected a bus operation in bus enforce")
+                .with_primary_label(
+                    list_comp.span(),
+                    format!(
+                        "expected a bus operation in bus enforce, got this instead: \n{:#?}",
+                        bus_op
+                    ),
+                )
+                .emit();
+            return Err(CompileError::Failed);
+        }
+
         if list_comp.iterables.len() != 1 {
             self.diagnostics
                 .diagnostic(Severity::Error)
@@ -555,6 +571,7 @@ impl<'a> MirBuilder<'a> {
                 return Err(CompileError::Failed);
             }
         };
+        // Note: safe to unwrap because we checked that bus_op is a BusOp above
         bus_op
             .as_bus_op_mut()
             .unwrap()
@@ -571,6 +588,11 @@ impl<'a> MirBuilder<'a> {
     }
 
     fn insert_enforce(&mut self, node: Link<Op>) -> Result<Link<Op>, CompileError> {
+        let node_is_none = matches!(node.borrow().deref(), Op::None(_));
+        if node_is_none {
+            return Ok(node);
+        }
+
         let node_to_add = if let Op::Enf(_) = node.clone().borrow().deref() {
             node
         } else {
@@ -758,6 +780,7 @@ impl<'a> MirBuilder<'a> {
                             })?;
                         }
                     }
+                    return Ok(Op::None(bin_op.span()).into());
                 }
             }
         }

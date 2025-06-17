@@ -1,9 +1,7 @@
-mod bus_op_expand;
 mod inlining;
 mod translate;
 mod unrolling;
 mod visitor;
-pub use bus_op_expand::BusOpExpand;
 pub use inlining::Inlining;
 pub use translate::AstToMir;
 pub use unrolling::Unrolling;
@@ -178,7 +176,7 @@ pub fn duplicate_node(
         }
         Op::BusOp(bus_op) => {
             let bus = bus_op.bus.clone();
-            let kind = bus_op.kind.clone();
+            let kind = bus_op.kind;
             let args: Vec<Link<Op>> = bus_op
                 .args
                 .iter()
@@ -430,7 +428,7 @@ pub fn duplicate_node_or_replace(
         }
         Op::BusOp(bus_op) => {
             let bus = bus_op.bus.clone();
-            let kind = bus_op.kind.clone();
+            let kind = bus_op.kind;
             let args = bus_op.args.clone();
             let new_node = BusOp::create(bus, kind, args, bus_op.span());
             current_replace_map.insert(node.get_ptr(), (node.clone(), new_node));
