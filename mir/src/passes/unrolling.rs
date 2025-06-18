@@ -119,7 +119,6 @@ impl Pass for Unrolling<'_> {
             first_pass.all_for_nodes.clone(),
         );
         Visitor::run(&mut second_pass, ir.constraint_graph_mut())?;
-
         Ok(ir)
     }
 }
@@ -702,6 +701,40 @@ impl UnrollingFirstPass<'_> {
         Ok(updated_accessor)
     }
 
+    fn compute_iterator_len(iterator: Link<Op>) -> usize {
+        match iterator.borrow().deref() {
+            Op::Vector(vector) => vector.size,
+            Op::Matrix(matrix) => matrix.size,
+            Op::Accessor(accessor) => match &accessor.access_type {
+                AccessType::Default => Self::compute_iterator_len(accessor.indexable.clone()),
+                AccessType::Slice(range_expr) => range_expr.to_slice_range().count(),
+                AccessType::Index(_) => match accessor.indexable.borrow().deref() {
+                    Op::Vector(_) => 1,
+                    Op::Matrix(matrix) => {
+                        let children = matrix.children().borrow().deref().clone();
+                        match children.first() {
+                            Some(first_row) => match first_row.as_vector() {
+                                Some(row_vector) => row_vector.size,
+                                _ => unreachable!(), // Raise diag
+                            },
+                            None => {
+                                unreachable!(); // Raise diag
+                            }
+                        }
+                    }
+                    _ => unreachable!(), // Raise diag
+                },
+                AccessType::Matrix(_, _) => 1,
+            },
+            Op::Parameter(parameter) => match parameter.ty {
+                MirType::Felt => 1,
+                MirType::Vector(l) => l,
+                MirType::Matrix(l, _) => l,
+            },
+            _ => 1,
+        }
+    }
+
     fn visit_for_bis(
         &mut self,
         _graph: &mut Graph,
@@ -726,20 +759,13 @@ impl UnrollingFirstPass<'_> {
             if iterators.is_empty() {
                 unreachable!(); // Raise diag
             }
-
-            let iterator_expected_len = match iterators[0].clone().as_vector() {
-                Some(vec) => vec.children().borrow().len(),
-                _ => 1,
-            };
+            let iterator_expected_len = Self::compute_iterator_len(iterators[0].clone());
 
             for iterator in iterators.iter().skip(1) {
-                let iterator_len = match iterator.clone().as_vector() {
-                    Some(vec) => vec.children().borrow().len(),
-                    _ => 1,
-                };
-
+                let iterator_len = Self::compute_iterator_len(iterator.clone());
                 if iterator_len != iterator_expected_len {
-                    unreachable!(); // Raise diag
+                    unreachable!()
+                    // Raise diag
                 }
             }
 
@@ -752,9 +778,31 @@ impl UnrollingFirstPass<'_> {
 
                 let iterators_i = iterators
                     .iter()
-                    .map(|op| match op.clone().as_vector() {
-                        Some(vec) => vec.children().borrow()[i].clone(),
-                        _ => op.clone(),
+                    .map(|op| {
+                        match op.borrow().deref() {
+                            Op::Vector(vector) => {
+                                let children = vector.children().borrow().deref().clone();
+                                children[i].clone()
+                            }
+                            Op::Matrix(matrix) => {
+                                let children = matrix.children().borrow().deref().clone();
+                                children[i].clone()
+                            }
+                            Op::Accessor(accessor) => {
+                                match accessor.indexable.borrow().deref() {
+                                    // If we access an outer loop parameter in the body of an inner loop,
+                                    // we need to create an Accessor for the correct index in this parameter
+                                    Op::Parameter(_parameter) => Accessor::create(
+                                        accessor.indexable.clone(),
+                                        AccessType::Index(i),
+                                        0,
+                                        accessor.span(),
+                                    ),
+                                    _ => op.clone(),
+                                }
+                            }
+                            _ => op.clone(),
+                        }
                     })
                     .collect::<Vec<_>>();
                 let selector = if let Op::None(_) = selector.borrow().deref() {

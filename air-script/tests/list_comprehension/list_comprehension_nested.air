@@ -1,0 +1,29 @@
+def ListComprehensionAir
+
+const MDS = [
+  [1, 2],
+  [2, 3],
+  [3, 4]
+];
+
+trace_columns {
+    main: [a[2]],
+}
+
+public_inputs {
+    input: [1],
+}
+
+boundary_constraints {
+    enf a[0].first = 0;
+}
+
+integrity_constraints {
+    let state = a;
+    let expected = [3, 5, 7];
+    enf apply_mds(state) = expected;
+}
+
+fn apply_mds(state: felt[2]) -> felt[3] {
+    return [sum([s * m for (s, m) in (state, mds_row)]) for mds_row in MDS];
+}

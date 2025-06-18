@@ -1252,6 +1252,7 @@ impl fmt::Debug for ListComprehension {
             .field("iterables", &self.iterables)
             .field("body", self.body.as_ref())
             .field("selector", &self.selector)
+            .field("ty", &self.ty)
             .finish()
     }
 }

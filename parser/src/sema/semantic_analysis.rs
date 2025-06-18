@@ -638,6 +638,11 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
         }
 
         // Store the result type of this comprehension
+        result_ty = match result_ty {
+            Some(Type::Vector(_)) => result_ty,
+            Some(Type::Matrix(rows, _)) => Some(Type::Vector(rows)),
+            _ => None,
+        };
         expr.ty = result_ty;
 
         // Restore the original lexical scope

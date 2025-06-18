@@ -22,6 +22,7 @@ pub type Env<K, V> = Box<HashMap<K, V>>;
 /// When searching for keys, the search begins in the current scope, and searches upwards
 /// in the scope tree until either the root is reached and the search terminates, or the
 /// key is found in some intervening scope.
+#[derive(Debug)]
 pub enum LexicalScope<K, V> {
     /// An empty scope, this is the default state in which all [LexicalScope] start
     Empty,

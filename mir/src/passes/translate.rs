@@ -856,11 +856,28 @@ impl<'a> MirBuilder<'a> {
                 .get_function_root(&resolved_callee)
             {
                 callee_node = callee.clone();
+                let mut errors = Vec::with_capacity(call.args.len());
                 arg_nodes = call
                     .args
                     .iter()
-                    .map(|arg| self.translate_expr(arg).unwrap())
+                    .map(|arg| {
+                        self.translate_expr(arg).unwrap_or_else(|e| {
+                            errors.push(e);
+                            Link::default()
+                        })
+                    })
                     .collect();
+                if !errors.is_empty() {
+                    self.diagnostics
+                        .diagnostic(Severity::Error)
+                        .with_message("failed to translate arguments")
+                        .with_primary_label(
+                            call.span(),
+                            format!("failed to translate {} arguments", errors.len()),
+                        )
+                        .emit();
+                    return Err(errors.swap_remove(0));
+                }
                 // safe to unwrap because we know it is a Function due to get_function
                 let callee_ref = callee.as_function().unwrap();
                 if callee_ref.parameters.len() != arg_nodes.len() {
@@ -945,7 +962,6 @@ impl<'a> MirBuilder<'a> {
             let iterator_node = self.translate_expr(iterator)?;
             iterator_nodes.borrow_mut().push(iterator_node);
         }
-
         self.bindings.enter();
         let mut params = Vec::new();
         for (index, binding) in list_comp.bindings.iter().enumerate() {
@@ -1172,6 +1188,14 @@ impl<'a> MirBuilder<'a> {
 
         //    // If we reach here, this must be a let-bound variable
         if let Some(let_bound_access_expr) = self.bindings.get(access.name.as_ref()).cloned() {
+            // If the let-bound variable is a parameter, we probably already have the type
+            //
+            // In that case, replacing the default type (Felt) with the one from the access
+            if let Some(mut param) = let_bound_access_expr.as_parameter_mut() {
+                if let Some(access_ty) = &access.ty {
+                    param.ty = self.translate_type(access_ty);
+                }
+            }
             let accessor: Link<Op> = Accessor::create(
                 duplicate_node(let_bound_access_expr, &mut Default::default()),
                 access.access_type.clone(),
@@ -1221,7 +1245,15 @@ impl<'a> MirBuilder<'a> {
             _ => {}
         }
 
-        panic!("undefined variable: {:?}", access);
+        self.diagnostics
+            .diagnostic(Severity::Error)
+            .with_message("undefined variable")
+            .with_primary_label(
+                access.span(),
+                format!("undefined variable `{:?}` in this expression", access.name),
+            )
+            .emit();
+        Err(CompileError::Failed)
     }
 
     // Check assumptions, probably this assumed that the inlining pass did some work
