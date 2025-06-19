@@ -121,6 +121,8 @@ pub enum Token {
     Logup,
     /// Used to represent an empty bus
     Null,
+    /// Used to represent an unconstrained bus
+    Unconstrained,
     /// Used to represent the insertion of a given tuple into a bus
     Insert,
     /// Used to represent the removal of a given tuple from a bus
@@ -200,6 +202,7 @@ impl Token {
             "multiset" => Self::Multiset,
             "logup" => Self::Logup,
             "null" => Self::Null,
+            "unconstrained" => Self::Unconstrained,
             "insert" => Self::Insert,
             "remove" => Self::Remove,
             "boundary_constraints" => Self::BoundaryConstraints,
@@ -278,6 +281,7 @@ impl fmt::Display for Token {
             Self::Multiset => write!(f, "multiset"),
             Self::Logup => write!(f, "logup"),
             Self::Null => write!(f, "null"),
+            Self::Unconstrained => write!(f, "unconstrained"),
             Self::Insert => write!(f, "insert"),
             Self::Remove => write!(f, "remove"),
             Self::BoundaryConstraints => write!(f, "boundary_constraints"),

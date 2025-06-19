@@ -1390,8 +1390,11 @@ impl SemanticAnalysis<'_> {
                             };
 
                         match (found.clone().item, expr.rhs.as_mut()) {
-                            // Buses boundaries can be constrained by null
-                            (BindingType::Bus(_), ScalarExpr::Null(_)) => {}
+                            // Buses boundaries can be constrained by null or unconstrained
+                            (
+                                BindingType::Bus(_),
+                                ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_),
+                            ) => {}
                             (BindingType::Bus(_), ScalarExpr::SymbolAccess(access)) => {
                                 self.visit_mut_resolvable_identifier(&mut access.name)?;
                                 self.visit_mut_access_type(&mut access.access_type)?;
@@ -1422,8 +1425,6 @@ impl SemanticAnalysis<'_> {
                                         .emit();
                                     }
                                 }
-
-                                // Buses boundaries can be constrained to null, nothing to do
                             }
                             (BindingType::Bus(_), _) => {
                                 // Buses cannot be constrained otherwise
@@ -1438,8 +1439,8 @@ impl SemanticAnalysis<'_> {
                                     )
                                     .emit();
                             }
-                            (_, ScalarExpr::Null(_)) => {
-                                // Only buses can be constrained to null
+                            (_, ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_)) => {
+                                // Only buses can be constrained to null or unconstrained
                                 self.has_type_errors = true;
                                 self.invalid_constraint(
                                     expr.lhs.span(),
@@ -1447,9 +1448,9 @@ impl SemanticAnalysis<'_> {
                                 )
                                 .with_secondary_label(
                                     expr.rhs.span(),
-                                    "but this expression is only valid to constrain buses",
+                                    "but this expression is only valid to for bus boundaries",
                                 )
-                                .with_note("The null value is only valid for defining empty buses")
+                                .with_note("The null / unconstrained value is only valid for defining empty buses")
                                 .emit();
                             }
                             _ => {
@@ -1799,7 +1800,7 @@ impl SemanticAnalysis<'_> {
                 Err(InvalidAccessError::InvalidBinding)
             }
             Expr::BusOperation(ref _expr) => Ok(BindingType::Local(Type::Felt)),
-            Expr::Null(_) => Ok(BindingType::Local(Type::Felt)),
+            Expr::Null(_) | Expr::Unconstrained(_) => Ok(BindingType::Local(Type::Felt)),
         }
     }
 
