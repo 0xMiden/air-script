@@ -1,0 +1,392 @@
+use std::collections::HashMap;
+
+use crate::{
+    masm::{generate_with_map_sections, MasmVerifierParameters, DOUBLE_WORD_SIZE},
+    ProofOptions,
+};
+
+/// Generate the MASM module of the STARK verifier for computing the queries to the DEEP
+/// composition polynomial.
+///
+/// The main logic for generating the module needs to determine the need for adding a section
+/// to process the part of the query related to the auxiliary trace in addition to the sizes
+/// of each of the three sections, namely the main, auxilary and constraints composition polynomials
+/// trace sections. Once this is determined, we can assign the values to the loops
+/// processing each of the sections involved in the query computation.
+pub fn generate_deep_queries_module(
+    masm_verifier_parameters: &MasmVerifierParameters,
+    proof_options: &ProofOptions,
+) -> String {
+    let num_iterations_main_trace_part =
+        (masm_verifier_parameters.main_trace_width() as usize).div_ceil(DOUBLE_WORD_SIZE);
+    let num_iterations_cc_trace_part = (masm_verifier_parameters
+        .constraints_composition_trace_width()
+        * proof_options.field_extension_degree())
+    .div_ceil(DOUBLE_WORD_SIZE);
+
+    let mut file = DEEP_QUERIES
+        .to_string()
+        .replace(
+            "NUM_ITERATIONS_MAIN_TRACE_PART",
+            &num_iterations_main_trace_part.to_string(),
+        )
+        .replace(
+            "NUM_ITERATIONS_CONSTRAINTS_COMPOSITION_TRACE_PART",
+            &num_iterations_cc_trace_part.to_string(),
+        );
+
+    if let Some(aux_trace_width) = masm_verifier_parameters.aux_trace_width {
+        let num_iterations_aux_trace_part = (aux_trace_width as usize
+            * proof_options.field_extension_degree())
+        .div_ceil(DOUBLE_WORD_SIZE);
+
+        file = file.replace(
+            "NUM_ITERATIONS_AUX_TRACE_PART",
+            &num_iterations_aux_trace_part.to_string(),
+        );
+        let mut sections_map = HashMap::new();
+        sections_map.insert(
+            "PROCESS_AUX_TRACE_PART",
+            AUX_TRACE_PART_PROCESSING.to_string(),
+        );
+
+        generate_with_map_sections(&mut file, sections_map);
+    }
+
+    file
+}
+
+const DEEP_QUERIES: &str = r#"
+use.std::crypto::stark::constants
+
+#! Loads the next query rows in the main, auxiliary and constraint composition polynomials traces
+#! and computes the values of the DEEP code word at the index corresponding to the query.
+#!
+#! It takes a pointer to the current random query index and returns that index, together with
+#! the value
+#!
+#! Q^x(alpha) = (q_x_at_alpha_0, q_x_at_alpha_1) = \sum_{i=0}^{n+m+l} T_i * alpha^i
+#!
+#! where:
+#!
+#! 1. n, m and l are the widths of the main segment, auxiliary segment and constraint composition
+#!    traces, respectively.
+#! 2. T_i are the values of columns in the main segment, auxiliary segment and constraint composition
+#!    traces, for the query.
+#! 3. alpha is the randomness used in order to build the DEEP polynomial.
+#!
+#! Input: [Y, query_ptr, ...]
+#! Output: [Y, q_x_at_alpha_1, q_x_at_alpha_0, q_x_at_alpha_1, q_x_at_alpha_0, index, query_ptr, ...]
+#!
+#! where:
+#! - Y is a "garbage" word.
+proc.load_query_row
+    # I) Process the main segment of the execution trace portion of the query
+
+    ## 1) Load the query index
+    dup.4
+    mem_loadw
+    #=> [index, depth, y, y, query_ptr, ...] where y are "garbage" values here and throughout
+
+    ## 2) Get commitment to main segment of the execution trace
+    movdn.3 movdn.2
+    push.0.0
+    exec.constants::main_trace_com_ptr mem_loadw
+    #=>[R, depth, index, query_ptr, ...]
+
+    ## 3) Use the commitment to get the leaf and save it
+    dup.5 dup.5
+    mtree_get
+    exec.constants::tmp3 mem_storew
+    adv.push_mapval
+    #=>[V, R, depth, index, query_ptr, ...]
+    exec.constants::tmp2 mem_loadw
+    swapw
+    #=>[V, ptr_x, ptr_alpha_inv, acc1, acc0, depth, index, query_ptr, ...]
+
+    ## 4) Load the values of the main segment of the execution trace at the current query. We also
+    ##    compute their hashing and the value of their random linear combination using powers of
+    ##    a single random value alpha.
+
+    ### Load main trace portion
+    padw
+    swapw
+    padw
+    #=> [Y, Y, 0, 0, 0, 0, ptr, y, y, y]
+    repeat.NUM_ITERATIONS_MAIN_TRACE_PART
+        adv_pipe
+        horner_eval_base      
+        hperm
+    end
+    #=> [Y, L, C, ptr_x, ptr_alpha_inv, acc1, acc0, depth, index, query_ptr, ...]
+ 
+    ## 5) Load the leaf value we got using `mtree_get` and compare it against the hash
+    ##    we just computed
+    exec.constants::tmp3 mem_loadw
+    movup.4
+    assert_eq
+    movup.3
+    assert_eq
+    movup.2
+    assert_eq
+    assert_eq
+    #=> [Y, ptr_x, ptr_alpha_inv, acc1, acc0, depth, index, query_ptr, ...]
+
+
+    # II) Process the auxiliary segment, if existing, of the execution trace portion of the query
+
+    # BEGIN_SECTION:PROCESS_AUX_TRACE_PART
+    # END_SECTION:PROCESS_AUX_TRACE_PART
+
+    # III) Process the constraint trace portion of the query
+
+    ## 1) Load the commitment to the constraint trace
+    exec.constants::composition_poly_com_ptr mem_loadw
+    #=> [R, ptr_x, ptr_alpha_inv, acc1, acc0, depth, index, query_ptr, ...]
+
+    ## 2) Get the leaf against the commitment
+    dup.9
+    movup.9
+    mtree_get
+    exec.constants::tmp3 mem_storew
+    adv.push_mapval
+    #=>[L, R, ptr_x, ptr_alpha_inv, acc1, acc0, index, query_ptr, ...]
+
+    ## 3) Load the columns as quadratic extension field elements in batches of 4. 
+    padw
+    swapw.2
+    repeat.NUM_ITERATIONS_CONSTRAINTS_COMPOSITION_TRACE_PART
+        adv_pipe
+        horner_eval_ext        
+        hperm
+    end
+    #=> [Y, L, Y, ptr_x, ptr_alpha_inv, acc1, acc0, index, query_ptr, ...]
+
+    ## 4) Load the leaf value we got using `mtree_get` and compare it against the hash
+    ##    we just computed
+    exec.constants::tmp3 mem_loadw
+    movup.4
+    assert_eq
+    movup.3
+    assert_eq
+    movup.2
+    assert_eq
+    assert_eq
+    #=> [Y, ptr_x, ptr_alpha_inv, acc1, acc0, index, query_ptr, ...]
+
+    ## 5) Re-order the stack
+    swapw
+    drop drop
+    dup.1 dup.1
+    swapw
+    #=> [Y, q_x_at_alpha_1, q_x_at_alpha_0, q_x_at_alpha_1, q_x_at_alpha_0, index, query_ptr, ...]
+end
+
+#! Takes a query index and computes x := offset * domain_gen^index. It also computes the denominators
+#! (x - z) and (x - gz).
+#!
+#! Input: [Y, Y, index, ...]
+#! Output: [Z, Y, x, index, ...]  
+#!
+#! where:
+#! - Z := [-gz1, x -gz0, -z1, x - z0]
+#! - Y is a "garbage" word
+proc.compute_denominators
+    # Compute x = offset * domain_gen^index
+    exec.constants::get_lde_domain_info_word
+    #=> [lde_size, depth, domain_gen, 0, Y, index, ...]
+    movup.2
+    dup.8
+    exp.u32
+    exec.constants::get_domain_offset mul
+    #=> [x, lde_size, depth, 0, Y, index, ...]
+
+    # Get z and gz from memory
+    movdn.3
+    #=> [lde_size, depth, 0, x, Y, index, ...]
+    push.0
+    exec.constants::tmp1 mem_loadw
+    #=> [-z0, -gz0, -gz1, -z1, x, Y, index, ...]
+
+    dup.4 add
+    #=> [x-z0, -gz0, -gz1, -z1, x, Y, index, ...]
+    movdn.3
+    #=> [-gz0, -gz1, -z1, x-z0, x, Y, index, ...]
+
+    movup.4 dup movdn.9
+    #=> [x, -gz0, -gz1, -z1, x-z0, Y, x, index, ...]
+
+    add swap
+    #=> [-gz1, x - gz0, -z1, x-z0, Y, x, index, ...]
+end
+
+#! Computes the DEEP query.
+#!
+#! Input: [Z, X, Y, W, query_ptr, ...]
+#! Ouput: [eval1, eval0, Y, query_ptr, ...]
+#!
+#! where:
+#!
+#! 1. X is [q_x_at_alpha_1, q_x_at_alpha_0, q_x_at_alpha_1, q_x_at_alpha_0]
+#! 2. W is [q_gz_1, q_gz_0, q_z_1, q_z_0]
+proc.divide_and_add
+    swapw
+    #=> [X, Z, Y, W, query_ptr, ...]
+    dupw.3
+    #=> [W, X, Z, Y, query_ptr, ...]
+    #=> [q_gz_1, q_gz_0, q_z_1, q_z_0, q_x_at_alpha_1, q_x_at_alpha_0, q_x_at_alpha_1, q_x_at_alpha_0, Z, Y, query_ptr, ...]
+
+    movup.5 movup.5
+    movup.5 movup.5
+    #=> [q_z_1, q_z_0, q_x_at_alpha_1, q_x_at_alpha_0, p_gz_1, p_gz_0, q_x_at_alpha_1, q_x_at_alpha_0, Z, Y, query_ptr, ...]
+
+    ext2add
+    #=> [num0_1, num0_0, p_gz_1, p_gz_0, q_x_at_alpha_1, q_x_at_alpha_0, Z, Y, query_ptr, ...]
+
+    movdn.9 movdn.9
+    #=> [p_gz_1, p_gz_0, q_x_at_alpha_1, q_x_at_alpha_0, Z, num0_1, num0_0, Y, query_ptr, ...]
+
+    ext2add
+    #=> [num1_1, num1_0, Z, num0_1, num0_0, Y, query_ptr, ...]
+
+    movup.3 movup.3
+    ext2div
+    #=> [res1_1, res1_0, z0_1, z0_0, num0_1, num0_0, Y, query_ptr, ...]
+    movdn.5 movdn.5
+    #=> [z0_1, z0_0, num0_1, num0_0, res1_1, res1_0, Y, query_ptr, ...]
+    ext2div
+    #=> [res0_1, res0_0, res1_1, res1_0, Y, query_ptr, ...]
+
+    ext2add
+    # => [eval1, eval0, Y, query_ptr, ...]
+end
+
+#! Compute the DEEP composition polynomial FRI queries.
+#!
+#! Input: [...]
+#! Output: [...]
+export.compute_deep_composition_polynomial_queries
+
+    exec.constants::get_fri_queries_address
+    # => [query_ptr, ...]
+
+    padw exec.constants::ood_fixed_term_horner_evaluations_ptr mem_loadw
+    # => [q_gz_1, q_gz_0, q_z_1, q_z_0, query_ptr, ...]
+    # => [W, query_ptr, ...] where W is [q_gz_1, q_gz_0, q_z_1, q_z_0]
+
+    # Get pointer to help test for the last query to be processed
+    exec.constants::fri_com_ptr
+    # => [query_end_ptr, W, query_ptr, ...]
+    dup.5
+    # => [query_ptr, query_end_ptr, W, query_ptr, ...]
+
+    # Store pointers to alpha, memory region to store trace row for current query and a fresh
+    # accumulator value i.e., (0, 0).
+    push.0.0
+    exec.constants::deep_rand_alpha_nd_ptr
+    exec.constants::current_trace_row_ptr
+    exec.constants::tmp2 mem_storew
+
+    # Compute the negations of z and gz where z is the OOD point
+    # We do it here as this computation is common to all queries.
+    exec.constants::z_ptr mem_loadw
+    # => [zN_1, zN_0, z1, z0, query_ptr, query_end_ptr, W, query_ptr, ...]
+    drop drop
+    neg swap neg  
+    # => [-z0, -z1, query_ptr, query_end_ptr, W, query_ptr, ...]
+    dup.1 exec.constants::get_trace_domain_generator mul
+    # => [-gz1, -z0, -z1, query_ptr, query_end_ptr, W, query_ptr, ...]
+    swap
+    # => [-z0, -gz1, -z1, query_ptr, query_end_ptr, W, query_ptr, ...]
+    dup exec.constants::get_trace_domain_generator mul
+    # => [-gz0, -z0, -gz1, -z1, query_ptr, query_end_ptr, W, query_ptr, ...]
+    swap
+    # => [-z0, -gz0, -gz1, -z1, query_ptr, query_end_ptr, W, query_ptr, ...]
+    # Save to temporary location `tmp1` for later use when computing the denominators
+    exec.constants::tmp1 mem_storew
+    # => [Y, query_ptr, query_end_ptr, W, query_ptr, ...]
+
+    push.1
+    while.true
+        # I)
+        #
+        # Load the (main, aux, constraint)-traces rows associated with the current query and get
+        # the index of the query.
+        exec.load_query_row
+        #=>[Y, X, index, query_ptr, query_end_ptr, W, query_ptr, ...]
+
+        # II)
+        #
+        # Compute x := offset * domain_gen^index and denominators (x - z) and (x - gz)
+        exec.compute_denominators
+        #=> [Z, X, x, index, query_ptr, query_end_ptr, W, query_ptr, ...] where Z := [-gz1, x - gz0, -z1, x - z0]
+
+        # III)
+        # Compute final result
+        exec.divide_and_add
+        #=> [eval1, eval0, x, index, query_ptr, query_end_ptr, W, query_ptr, ...]
+
+        # IV)
+        #
+        # Store [poe, index, eval_1, eval_0] where poe := g^index = x / offset and prepare stack
+        # for next iteration.
+
+        ## a) Compute poe
+        movup.3 movup.3
+        exec.constants::get_domain_offset_inv mul
+        #=> [poe, index, eval1, eval0, query_ptr, query_end_ptr, W, query_ptr, ...]
+
+        ## b) Store [eval0, eval1, index, poe]
+        dup.4 add.4 swap.5
+        mem_storew
+        #=> [poe, index, eval1, eval0, query_ptr+1, query_end_ptr, W, query_ptr, ...]
+
+        ## c) Prepare stack for next iteration
+        dup.5 dup.5
+        neq
+        #=> [?, Y, query_ptr+1, query_end_ptr, ...]
+    end
+    dropw dropw drop drop drop
+end
+"#;
+
+const AUX_TRACE_PART_PROCESSING: &str = r#"
+    ## 1) Load aux trace commitment and get leaf
+    exec.constants::aux_trace_com_ptr mem_loadw
+
+    ## 2) Get the leaf against the auxiliary trace commitment for the current query
+    dup.9
+    dup.9
+    mtree_get
+    exec.constants::tmp3 mem_storew
+    adv.push_mapval
+    #=> [L, R, ptr_x, ptr_alpha_inv, acc1, acc0, depth, index, query_ptr, ...]
+
+    ## 3) Load the values of the auxiliary segment of the execution trace at the current query.
+    
+    ### a) Set up the stack
+    exec.constants::zero_word_ptr mem_loadw
+    swapw
+    padw
+    #=> [Y, Y, C, ptr_x, ptr_alpha_inv, acc1, acc0, depth, index, query_ptr, ...]
+
+    ### b) Load the columns in batches of 4 quadratic extension field elements.
+    repeat.NUM_ITERATIONS_AUX_TRACE_PART
+        adv_pipe
+        horner_eval_ext      
+        hperm
+    end
+    #=> [Y, D, C, ptr_x, ptr_alpha_inv, acc1, acc0, depth, index, query_ptr, ...]
+
+    ## 4) Load the leaf value we got using `mtree_get` and compare it against the hash
+    ##    we just computed
+    exec.constants::tmp3 mem_loadw
+    movup.4
+    assert_eq
+    movup.3
+    assert_eq
+    movup.2
+    assert_eq
+    assert_eq
+    #=> [Y, ptr_x, ptr_alpha_inv, acc1, acc0, depth, index, query_ptr, ...]
+"#;

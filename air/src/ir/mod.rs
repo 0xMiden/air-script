@@ -118,6 +118,11 @@ impl Air {
         self.constraints.boundary_constraints(trace_segment)
     }
 
+    /// Return the number of integrity constraints
+    pub fn num_integrity_constraints(&self, trace_segment: TraceSegmentId) -> usize {
+        self.constraints.num_integrity_constraints(trace_segment)
+    }
+
     /// Return the set of [ConstraintRoot] corresponding to the integrity constraints
     pub fn integrity_constraints(&self, trace_segment: TraceSegmentId) -> &[ConstraintRoot] {
         self.constraints.integrity_constraints(trace_segment)

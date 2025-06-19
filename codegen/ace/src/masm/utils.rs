@@ -1,0 +1,211 @@
+use std::ops::Div;
+
+use crate::{
+    masm::{add_section, DOUBLE_WORD_SIZE},
+    EncodedAceCircuit,
+};
+
+/// Generates the MASM module of the STARK verifier for defining some utility procedures.
+pub fn generate_utils_module(circuit: &EncodedAceCircuit) -> String {
+    let circuit_description = circuit.instructions();
+    let num_iterations_hash_ace_circuit = circuit_description.len().div(DOUBLE_WORD_SIZE);
+    assert_eq!(circuit_description.len() % DOUBLE_WORD_SIZE, 0);
+
+    let mut file = UTILS.to_string().replace(
+        "NUM_ITERATIONS_HASH_ACE_CIRCUIT",
+        &num_iterations_hash_ace_circuit.to_string(),
+    );
+
+    let advice_map_circuit_description_section: String = format_circuit_description(circuit);
+    add_section(
+        &mut file,
+        "ADVICE_MAP_CIRCUIT_DESCRIPTION",
+        &advice_map_circuit_description_section,
+    );
+
+    file
+}
+
+fn format_circuit_description(circuit: &EncodedAceCircuit) -> String {
+    let circuit_digest = circuit.circuit_hash();
+    let mut result: String = format!("adv_map.CIRCUIT_DIGEST(0x{circuit_digest})=").to_string();
+    result += &circuit
+        .instructions()
+        .iter()
+        .map(|elem| format!("{}", elem.as_int()))
+        .collect::<Vec<_>>()
+        .join(".");
+    result
+}
+
+const UTILS: &str = r#"
+use.std::crypto::stark::constants
+use.std::crypto::hashes::rpo
+
+# BEGIN_SECTION:ADVICE_MAP_CIRCUIT_DESCRIPTION
+# END_SECTION:ADVICE_MAP_CIRCUIT_DESCRIPTION
+
+#! Compute the LDE domain generator from the log2 of its size.
+#!
+#! Input: [log2(domain_size), ..]
+#! Output: [domain_gen, ..]
+#! Cycles: 63
+export.compute_lde_generator
+    push.32
+    swap
+    sub
+    pow2
+    exec.constants::get_root_unity
+    swap
+    exp.u32
+    # => [domain_gen, ..]
+end
+
+#! Validates the inputs to the recursive verifier.
+#!
+#! Input: [log(trace_length), num_queries, grinding, ...]
+#! Output: [log(trace_length), num_queries, grinding, ...]
+#!
+#! Cycles: 45
+export.validate_inputs
+    # 1) Assert that all inputs are u32 so that we can use u32 operations in what follows
+    push.0
+    dupw
+    u32assertw
+    # => [0, log(trace_length), num_queries, grinding, 0, log(trace_length), num_queries, grinding, ...]
+
+    # 2) Assert that the trace length is at most 29. The 2-adicity of our field is 32 and since
+    #    the blowup factor is 8, we need to make sure that the LDE size is at most 2^32.
+    #    We also check that the trace length is greater than the minimal length supported i.e., 2^6.
+    drop
+    dup u32lt.30 assert
+    u32gt.5 assert
+
+    # 3) Assert that the number of FRI queries is at most 150. This restriction is a soft one
+    #    and is due to the memory layout in the `constants.masm` files but can be updated
+    #    therein.
+    #    We also make sure that the number of FRI queries is at least 7.
+    dup u32lt.151 assert
+    u32gt.6 assert
+
+    # 4) Assert that the grinding factor is at most 31
+    u32lt.32 assert
+
+    # 5) Clean up the stack
+    drop
+end
+
+#! Sets up auxiliary inputs to the arithmetic circuit for the constraint evaluation check.
+#!
+#! These inputs are:
+#!
+#! 1) OOD evaluation point z,
+#! 2) random challenge used in computing the DEEP composition polynomial,
+#! 3) z^N where N is the execution trace length
+#! 4) z^k where k = min_num_cycles = trace_len / max_cycle_len and max_cycle_len is the longest cycle
+#!    among all the cycles of periodic columns.
+#! 5) g^{-1} where g is the trace domain generator.
+#!
+#! Input: [...]
+#! Output: [...]
+export.set_up_auxiliary_inputs_ace
+    padw exec.constants::composition_coef_ptr mem_loadw
+
+    # z and z^N
+    push.0.0 exec.constants::z_ptr mem_loadw
+    # => [(z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...]
+
+    exec.constants::get_trace_length_log
+    exec.constants::get_max_cycle_length_log
+    sub
+    # => [log(min_num_cycles), (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...] where min_num_cycles = trace_len / max_cycle_len
+
+    dup.4 dup.4
+    # => [z_1, z_0, k, (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...] where k = min_num_cycles
+
+    push.1
+    while.true
+        dup.1 dup.1
+        # => [z_1, z_0, z_1, z_0, k, (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...] where k = min_num_cycles
+        ext2mul
+        # => [z_exp_1, z_exp_0, k, (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...] where k = min_num_cycles
+        dup.2 sub.1 swap.3
+        push.1 neq
+    end
+
+    movup.2 drop
+    # => [z_k_1, z_k_0, (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...] where k = min_num_cycles
+
+    exec.constants::get_trace_domain_generator
+    inv
+    # => [g^-1, z_k_1, z_k_0, (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...] where k = min_num_cycles
+    movdn.2
+    push.0
+    movdn.2
+    # => [z_k_1, z_k_0, 0, g^-1, (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...] where k = min_num_cycles
+
+    exec.constants::get_trace_domain_generator
+    inv dup mul
+    push.0
+    # => [0, g^-2, z_k_1, z_k_0, 0, g^-1, (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...] where k = min_num_cycles
+
+    # Save [z_k_0, z_k_1, g^-2, 0]
+    exec.constants::auxiliary_ace_inputs_ptr add.8
+    mem_storew
+    dropw
+    # => [0, g^-1, (z_1, z_0)^n, z_1, z_0, alpha1, alpha0, ...]
+
+    # Save [(z_0, z_1)^n, g^-1, 0]
+    exec.constants::auxiliary_ace_inputs_ptr add.4
+    mem_storew
+    dropw
+
+    # Save [alpha0, alpha1, z_0, z_1]
+    exec.constants::auxiliary_ace_inputs_ptr
+    mem_storew
+    dropw
+    # => [...]
+end
+
+#! Executes the constraints evaluation logic based on arithmetic circuit evaluation.
+#!
+#! Input: [...]
+#! Output: [...]
+export.constraint_evaluation_check
+    # 1) Compute and store at the appropriate memory location the auxiliary inputs needed by
+    #    the arithmetic circuit.
+    exec.set_up_auxiliary_inputs_ace
+    # => [...]
+
+    # 2) Load the circuit description from the advice tape and check that it matches the hardcoded digest.
+    push.CIRCUIT_DIGEST
+    adv.push_mapval
+    exec.constants::get_arithmetic_circuit_ptr
+    padw padw padw
+    repeat.NUM_ITERATIONS_HASH_ACE_CIRCUIT
+        adv_pipe
+        hperm
+    end
+    exec.rpo::squeeze_digest
+    movup.4 drop
+    assert_eqw
+    # => [...]
+
+    # 3) Set up the inputs to the "arithmetic_circuit_eval" op. Namely:
+    #    1. a pointer to the inputs of the circuit in memory,
+    #    2. the number of inputs to the circuit,
+    #    3. the number of evaluation gates in the circuit.
+    exec.constants::get_arithmetic_circuit_eval_number_eval_gates
+    exec.constants::get_arithmetic_circuit_eval_number_inputs
+    exec.constants::public_inputs_address_ptr mem_load
+    # => [...]
+
+    # 4) Perform the constraint evaluation check by checking that the circuit evaluates to zero, which
+    #    boils down to the "arithmetic_circuit_eval" returning.
+    # arithmetic_circuit_eval
+
+    # 5) Clean up the stack.
+    drop drop drop
+    # => [...]
+end
+"#;
