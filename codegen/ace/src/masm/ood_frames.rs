@@ -1,0 +1,156 @@
+use std::ops::Div;
+
+use crate::{masm::DOUBLE_WORD_SIZE, ProofOptions};
+
+use super::MasmVerifierParameters;
+
+/// Generate the MASM module of the STARK verifier for processing the out-of-domain (OOD) evaluations.
+pub fn generate_ood_frames_module(
+    masm_verifier_parameters: &MasmVerifierParameters,
+    proof_options: &ProofOptions,
+) -> String {
+    let main_trace_width = masm_verifier_parameters.main_trace_width();
+    let aux_trace_width = masm_verifier_parameters.aux_trace_width().unwrap_or(0);
+    let num_constraints_composition_polys =
+        masm_verifier_parameters.constraints_composition_trace_width();
+
+    // we are loading and hashing extension field elements and hence we need to first compute
+    // the number of extension field elements to process and thereafter convert this to
+    // a number over base field elements
+    let num_extension_field_elements =
+        main_trace_width + aux_trace_width + num_constraints_composition_polys as u16;
+    let num_base_field_elements =
+        num_extension_field_elements * proof_options.field_extension_degree() as u16;
+
+    let num_iterations = num_base_field_elements.div(DOUBLE_WORD_SIZE as u16);
+
+    // we check double-word alignment
+    debug_assert_eq!(
+        num_base_field_elements % DOUBLE_WORD_SIZE as u16,
+        0,
+        "each of trace is expected to be double-word aligned"
+    );
+
+    OOD_FRAMES.to_string().replace(
+        "NUM_ITERATIONS_PROCESS_OOD_EVALS",
+        &num_iterations.to_string(),
+    )
+}
+
+const OOD_FRAMES: &str = r#"
+use.std::crypto::stark::constants
+use.std::crypto::hashes::rpo
+use.std::crypto::stark::random_coin
+
+#! Loads the execution trace and the quotient trace evaluation frames.
+#! 
+#! This also computes Q^z(alpha) and Q^gz(alpha) where:
+#!
+#! Q^z(alpha) = (q_z_0, q_z_1) = \sum_{i=0}^{n+m+l} S_i * alpha^i
+#!
+#! and 
+#!
+#! Q^gz(alpha) = (q_gz_0, q_gz_1) = \sum_{i=0}^{n+m+l} T_i * alpha^i 
+#!
+#! where:
+#!
+#! 1. n, m and l are the widths of the main segment, auxiliary segment and constraint composition
+#!    traces, respectively.
+#! 2. S_i are the evaluations of columns in the main segment, auxiliary segment and constraint composition
+#!    at the the out-of-domain point z.
+#! 3. T_i are the evaluations of columns in the main segment, auxiliary segment and constraint composition
+#!    at the the out-of-domain point gz.
+#! 4. alpha is the randomness used in order to build the DEEP polynomial.
+export.load_and_horner_eval_ood_frames
+    # I) Load the random challenge used in computing the DEEP polynomial.
+    #    We use this challenge to compute the constant terms needed in the computation of the DEEP queries.
+    #    Although this challenge is generated only after all the OOD evaluations are received by the verifier,
+    #    we use non-determinism to generate it before doing so. This is done so that we can hash, memory store
+    #    and Horner evaluate in parallel.
+    
+    ## 1) Load the random challenge non-deterministically
+    adv_push.2
+    # => [alpha_1, alpha_0, ...]
+
+    ## 2) Save the random challenge
+    dup.1 dup.1
+    exec.constants::deep_rand_alpha_nd_ptr mem_storew
+    # => [Y, ...]
+
+    # II) Compute Q^z(alpha)
+
+    ## 1) Set up the stack for `horner_eval_ext` to compute Q^z(alpha)
+
+    ### a) Set up the initial accumulator and the pointers to alpha and a pointer to some memory region
+    ###    to which we save the OOD.
+    push.0.0
+    exec.constants::deep_rand_alpha_nd_ptr
+    exec.constants::ood_evaluations_ptr
+    # => [ood_evaluations_ptr, deep_rand_alpha_ptr, 0, 0, Y, ...]
+    # => [U, Y, ...]
+
+    ## 2) Process the fully aligned OOD `current` evaluations at z of the execution trace
+    ##    and constraints polynomials evaluations. 
+    ##    Since there are (80 + 8 + 8) * 2 = 24 * 8 base field elements, there are 24 fully double-word aligned batches.
+    ## Note: the first word is the capacity, where its first element is initialized with the number of elements to hash MODULO 8.
+
+    ### a) Set up the hasher state
+    padw
+    padw     
+    # => [ZERO, 0, 0, 0, 0, U, Y, ...]
+    movupw.3
+    # => [Y, ZERO, 0, 0, 0, 0, U, ...]
+
+    ### b) Process the `current` OOD evaluations
+    repeat.NUM_ITERATIONS_PROCESS_OOD_EVALS
+        adv_pipe
+        horner_eval_ext
+        hperm
+    end
+    # => [Y, Y, C, ood_frame_ptr, alpha_ptr, acc1, acc0, ...]
+
+    ### c) Save -Q^z(alpha)
+    swapw.3
+    # => [ood_frame_ptr, alpha_ptr, acc1, acc0, Y, C, Y, ...]
+    movup.3
+    neg
+    movup.3
+    neg
+    push.0.0
+    exec.constants::ood_fixed_term_horner_evaluations_ptr mem_storew
+    # => [0, 0, -acc1, -acc0, ood_frame_ptr, alpha_ptr, Y, C, Y, ...]
+
+    # III) Compute Q^gz(alpha)
+
+    ## 1) Reset the Horner accumulator
+    movdn.5
+    movdn.5
+    drop drop
+    # => [ood_frame_ptr, alpha_ptr, 0, 0, Y, C, Y, ...]
+
+    ## 2) Load the `next` trace polynomials OOD evaluations.
+    swapw.3
+    # => [Y, Y, C, ood_frame_ptr, alpha_ptr, 0, 0, ...]
+    repeat.NUM_ITERATIONS_PROCESS_OOD_EVALS
+        adv_pipe
+        horner_eval_ext
+        hperm
+    end
+    # => [Y, D, C, ood_frame_ptr, alpha_ptr, acc1, acc0, ...]
+
+    ## 3) Reseed with the digest of the OOD evaluations
+    swapw
+    exec.random_coin::reseed
+    # => [Y, C, ood_frame_ptr, alpha_ptr, acc1, acc0, ...]
+
+    ## 4) Negate Q^z(alpha) and save it
+    dropw dropw drop drop
+    # => [acc1, acc0, ...]
+    neg
+    exec.constants::ood_fixed_term_horner_evaluations_ptr add.3 mem_store
+    # => [acc0, ...]
+    neg
+    exec.constants::ood_fixed_term_horner_evaluations_ptr add.2 mem_store
+    # => [...]
+end
+"#;

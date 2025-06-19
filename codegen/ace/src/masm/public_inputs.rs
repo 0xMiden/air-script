@@ -1,0 +1,493 @@
+use super::MasmVerifierParameters;
+use crate::masm::{generate_with_map_sections, DOUBLE_WORD_SIZE};
+use std::collections::HashMap;
+
+/// Generates the MASM module of the STARK verifier for handling public inputs.
+///
+/// There are two main components to this module:
+///
+/// 1. Fixed length public inputs processing: this takes as input the total number of fixed length
+///    public inputs (as base field elements) which is used in order to determine the number of
+///    iterations of the loop loading-storing-hashing the fixed length public inputs,
+/// 2. Variable length public inputs processing: this takes as input the map from identifiers to
+///    sizes/width of the so-called variable length tables, also called messages widths. This
+///    is used in order to generate procedures, one per variable length table, in order to
+///    reduce each table, using auxiliary randomness, to an element in the extension field.
+///    Currently, only `multiset` buses are supported.
+pub fn generate_public_inputs(masm_verifier_parameters: &MasmVerifierParameters) -> String {
+    let num_iter_load_fixed_len_pub_inputs =
+        (masm_verifier_parameters.fixed_len_pub_inputs_total_size()).div_ceil(DOUBLE_WORD_SIZE);
+
+    // procedures to reduce variable length inputs tables
+    let mut var_len_pi_reduction_procedures = String::new();
+    // code section for calling the above procedures
+    let mut calls_var_len_pi_section = String::new();
+
+    // for each variable length public input group, we create a procedure to reduce the variable
+    // length inputs and add a call to the said procedure
+    for (identifier, message_width) in masm_verifier_parameters
+        .variable_len_pub_inputs_sizes()
+        .iter()
+    {
+        let procedure = REDUCE_VARIABLE_LEN_PUB_INPUTS_PROCEDURE
+            .to_string()
+            .replace("INDEX_VAR_LEN_PUB_INPUTS", &identifier.to_string())
+            .replace(
+                "NUM_ITER_REDUCE_MSG",
+                &((*message_width).div_ceil(DOUBLE_WORD_SIZE)).to_string(),
+            );
+
+        var_len_pi_reduction_procedures.push_str(&procedure);
+
+        calls_var_len_pi_section += &format!("\t\nexec.{identifier}_th_var_len_pub_inputs_reduce",);
+    }
+
+    let mut sections_map = HashMap::new();
+    sections_map.insert("REDUCE_VARIABLE_LEN_PUB_INPUTS", calls_var_len_pi_section);
+    sections_map.insert(
+        "DEFINITION_PROCEDURES_REDUCE_VARIABLE_LEN_PUB_INPUTS",
+        var_len_pi_reduction_procedures,
+    );
+
+    let mut file = PUBLIC_INPUTS.to_string().replace(
+        "NUM_ITER_LOAD_FIXED_LEN_PUB_INPUTS",
+        &num_iter_load_fixed_len_pub_inputs.to_string(),
+    );
+
+    generate_with_map_sections(&mut file, sections_map);
+
+    file
+}
+
+const PUBLIC_INPUTS: &str = r#"
+use.std::crypto::stark::constants
+use.std::crypto::hashes::rpo
+use.std::crypto::stark::random_coin
+
+
+#! Processes the public inputs.
+#! 
+#! This involves:
+#!
+#! 1. Loading from the advice stack the fixed-length public inputs and storing them in memory
+#! starting from the address pointed to by `public_inputs_address_ptr`.
+#! 2. Loading from the advice stack the variable-length public inputs, storing them temporarily
+#! in memory, and then reducing them to an element in the challenge field using the auxiliary
+#! randomness. This reduced value is then used to impose a boundary condition on the relevant
+#! auxiliary column. 
+#!
+#! Note that the fixed length public inputs are stored as extension field elements while
+#! the variable length ones are stored as base field elements.
+#! Note also that, while loading the above, we compute the hash of the public inputs. The hashing
+#! starts with capacity registers of the hash function set to `C` that is the result of hashing
+#! the proof context.
+#!
+#! The output D, that is the digest of the above hashing, is then used in order to reseed
+#! the random coin.
+#!
+#! It is worth noting that:
+#!
+#! 1. Only the fixed-length public inputs are stored for the lifetime of the verification procedure.
+#!    The variable-length public inputs are stored temporarily, as this simplifies the task of
+#!    reducing them using the auxiliary randomness. On the other hand, the resulting values from
+#!    the aforementioned reductions are stored right after the fixed-length public inputs. These
+#!    are stored in a word-aligned manner and padded with zeros if needed.
+#! 2. The public inputs address is computed in such a way so as we end up with the following
+#!    memory layout:
+#!
+#!    [..., a_0...a_{m-1}, b_0...b_{n-1}, alpha0, alpha1, beta0, beta1, OOD-evaluations-start, ...]
+#!
+#!    where:
+#!
+#!    1. [a_0...a_{m-1}] are the fixed-length public inputs stored as extension field elements. This
+#!       section is double-word-aligned.
+#!    2. [b_0...b_{n-1}] are the results of reducing the variable length public inputs using
+#!       auxiliary randomness. This section is word-aligned.
+#!    3. [alpha0, alpha1, beta0, beta1] is the auxiliary randomness.
+#!    4. `OOD-evaluations-start` is the first field element of the section containing the OOD
+#!       evaluations.
+#! 3. Note that for each bus message in a group in the variable length public inputs, each
+#!    message is expected to be padded to the next multiple of 8 and provided in reverse order.
+#!    This has the benefit of making the reduction using the auxiliary randomness more efficient
+#!    using `horner_eval_base`.
+#!
+#!
+#! Input: [C, ...]
+#! Output: [...]
+export.process_public_inputs
+    # 1) Compute the address where the public inputs will be stored and store it.
+    #    This also computes the address where the reduced variable-length public inputs will be stored.
+    exec.compute_and_store_public_inputs_address
+    # => [C, ...]
+
+    # 2) Load the public inputs.
+    #    This will also hash them so that we can absorb them in the transcript.
+    exec.load_public_inputs
+    # => [D, ...]
+
+    # 3) Absorb into the transcript
+    exec.random_coin::reseed
+    # => [...]
+
+    # 4) Reduce the variable-length public inputs using randomness.
+    exec.reduce_variable_length_public_inputs
+end
+
+#! Loads from the advice stack the public inputs and stores them in memory starting from address
+#! pointed to by `public_inputs_address_ptr`.
+#! Note that the public inputs are stored as extension field elements.
+#! In parallel, it computes the hash of the public inputs being loaded. The hashing starts with
+#! capacity registers of the hash function set to `C` resulting from hashing the proof context.
+#! The output D is the digest of the hashing of the public inputs.
+#!
+#! Input: [C, ...]
+#! Output: [D, ...]
+export.load_public_inputs
+    # 1) Load and hash the fixed length public inputs
+    exec.constants::public_inputs_address_ptr mem_load
+    movdn.4
+    padw padw
+    repeat.NUM_ITER_LOAD_FIXED_LEN_PUB_INPUTS
+        exec.load_base_store_extension_double_word
+        hperm
+    end
+ 
+    # 2) Load and hash the variable length public inputs
+
+    ## a) Compute the number of base field elements in total in the variable length public inputs
+    exec.constants::num_public_inputs_ptr mem_load
+    exec.constants::get_num_fixed_len_public_inputs
+    sub
+    # => [num_var_len_pi, R2, R1, C, ptr, ...]
+
+    ## b) Compute the number of hash iteration needed to hash the variable length public inputs.
+    ##    We also check the double-word alignment.
+    u32divmod.8
+    # => [rem, num_iter, R2, R1, C, ptr, ...]
+    push.0 assert_eq
+    # => [num_iter, R2, R1, C, ptr, ...]
+    
+    ## c) Prepare the stack for hashing
+    movdn.13
+    # => [R2, R1, C, ptr, num_iter, ...]
+    dup.13 sub.1 swap.14
+    push.0 neq
+    # => [(num_iter == 0), R2, R1, C, ptr, num_iter - 1, ...]
+
+    ## d) Hash the variable length public inputs
+    while.true
+        adv_pipe
+        hperm
+        # => [R2, R1, C, ptr, num_iter, ...]
+        dup.13 sub.1 swap.14
+        push.0 neq
+    end
+    # => [R2, R1, C, ptr, num_iter, ...]
+
+    # 3) Return the final digest
+    exec.rpo::squeeze_digest
+    # => [D, ptr, num_iter, ...] where D = R1 the digest
+    movup.4 drop
+    movup.4 drop
+    # => [D, ...]
+end
+
+#! Reduces the variable-length public inputs using the auxiliary randomness.
+#!
+#! The procedure non-deterministically loads the auxiliary randomness from the advice tape and
+#! stores it at `aux_rand_nd_ptr` so that it can be later checked for correctness. After this,
+#! the procedure uses the auxiliary randomness in order to reduce the variable-length public
+#! inputs to a single element in the challenge field. The resulting values are then stored
+#! contiguously after the fixed-length public inputs.
+#!
+#! Currently, the only variable-length public inputs are the kernel procedure digests.
+#!
+#! Input: 
+#!      - Operand stack: [...]
+#!      - Advice stack: [beta0, beta1, alpha0, alpha1, var_len_pi_1_len, ..., var_len_pi_k_len, ...]
+#! Output: [D, ...]
+proc.reduce_variable_length_public_inputs
+    # 1) Load the auxiliary randomness i.e., alpha and beta
+    #    We store them as [beta0, beta1, alpha0, alpha1] since `horner_eval_ext` requires memory
+    #    word-alignment.
+    adv_push.4
+    exec.constants::aux_rand_nd_ptr mem_storew
+    # => [alpha1, alpha0, beta1, beta0, ...]
+    dropw
+    # => [...]
+
+    # 2) Get the pointer to the variable-length public inputs.
+    #    This is also the pointer to the first address at which we will store the results of
+    #    the reductions.
+    exec.constants::variable_length_public_inputs_address_ptr mem_load
+    dup
+    # => [next_var_len_pub_inputs_ptr, var_len_pub_inputs_res_ptr, ...] where
+    # `next_var_len_pub_inputs_ptr` points to the next chunk of variable public inputs to be reduced,
+    # and `var_len_pub_inputs_res_ptr` points to the next available memory location where the result
+    # of the reduction can be stored.
+    # Note that, as mentioned in the top of this module, the variable-length public inputs are only
+    # stored temporarily and they will be over-written by, among other data, the result of reducing
+    # the variable public inputs. 
+
+    # 3) Reduce and store the variable-length public inputs.
+    # BEGIN_SECTION:REDUCE_VARIABLE_LEN_PUB_INPUTS
+    # END_SECTION:REDUCE_VARIABLE_LEN_PUB_INPUTS
+    
+    # 4) Clean up the stack.
+    drop drop
+    # => [...]
+end
+
+#! Computes the address where the public inputs are to be stored and returns it.
+#!
+#! In order to be able to call `arithmetic_circuit_eval`, we need to layout the inputs to
+#! the constraint evaluation circuit in a contiguous region of memory (called `READ` section
+#! in the ACE chiplet documentation) right before the region of memory storing the circuit
+#! description (called `EVAL` section in the ACE chiplet documentation).
+#! As the number of public inputs is a per-instance parameter, while the sizes of the OOD
+#! evaluation frames and the number of auxiliary random values are fixed, we can lay out
+#! the public inputs right before the auxiliary random values and OOD evaluations.
+#! Hence the address where public inputs are stored is computed using a negative offset
+#! from the address where the OOD are stored.
+#! We compute two pointers, one to the public inputs and the other is for the portion
+#! within the public inputs region storing the variable length public inputs. This will be
+#! the region storing, temporarily, the variable length public inputs that are to be reduced
+#! by the auxiliary randomness and, permanently, the results of the aforementioned reductions.
+#!
+#! Input: [...]
+#! Output: [...]
+proc.compute_and_store_public_inputs_address
+    # 1) Get a pointer to where OOD evaluations are stored
+    exec.constants::ood_evaluations_ptr
+    # => [ood_evals_ptr, ...]
+
+    # 2) Compute the pointer to the reductions of the variable length public inputs
+    #
+    # We need to account for the number of variable-length
+    # public inputs groups. For each group we allocate 2 slots and we pad with zeros so that
+    # things are word aligned. As of now, we only have one group.
+    # We also need to account for the auxiliary randomness i.e., 4 base field elements.
+    sub.4       # 2 auxiliary random values
+    sub.4       # 1 variable length public input reduced value, with padding for word-alignment
+    # => [res_var_len_pi_reductions_ptr, ...]
+
+    # 3) Compute the pointer to the public inputs
+    #
+    # We need to account for the fact that fixed-length public inputs are stored as extension field
+    # elements. 
+    dup
+    exec.constants::get_num_fixed_len_public_inputs
+    mul.2
+    sub
+    # => [public_inputs_ptr, res_var_len_pi_reductions_ptr, ...]
+
+    # 4) Store both pointers
+    exec.constants::public_inputs_address_ptr mem_store
+    exec.constants::variable_length_public_inputs_address_ptr mem_store
+end
+
+#! Loads 8 base field elements from the advice stack and saves them as extension field elements.
+#!
+#!
+#! Input: [Y, Y, C, ptr, ...]
+#! Output: [A1, A0, C, ptr + 16, ..]
+proc.load_base_store_extension_double_word
+    # 1) Load the first 4 base elements from the advice stack and save them temporarily 
+    adv_loadw
+    exec.constants::tmp1 mem_storew
+
+    # 2) Represent the first 4 base field elements as elements in the quadratic extension field
+    swapw
+    exec.constants::zeroize_stack_word
+    # => [0, 0, 0, 0, a3, a2, a1, a0, C, ptr, ...]
+    movdn.6
+    # => [0, 0, 0, a3, a2, a1, 0, a0, C, ptr, ...]
+    movdn.4
+    # => [0, 0, a3, a2, 0, a1, 0, a0, C, ptr, ...]
+    movdn.2
+    # => [0, a3, 0, a2, 0, a1, 0, a0, C, ptr, ...]
+
+    # 3) Save the first 2 extension field elements
+    swapw
+    dup.12
+    mem_storew
+
+    # 4) Load the second 4 base elements from the advice stack and save them temporarily
+    adv_loadw
+    exec.constants::tmp2 mem_storew
+    swapw
+    # => [0, a3, 0, a2, a7, a6, a5, a4, C, ptr, ...]
+
+    # 5) Save the second 2 extension field elements
+    dup.12 add.4
+    mem_storew
+
+    
+    # 6) Represent the second 4 base field elements as elements in the quadratic extension field
+    exec.constants::zeroize_stack_word
+    # => [0, 0, 0, 0, a7, a6, a5, a4, C, ptr, ...]
+    movdn.6
+    movdn.4
+    movdn.2
+    # => [0, a7, 0, a6, 0, a5, 0, a4, C, ptr, ...]
+
+    # 7) Save the third 2 extension field elements
+    #    We also load the first 4 base elements as a word for use by `hperm`
+    swapw
+    dup.12
+    add.8
+    mem_storew
+    exec.constants::tmp1 mem_loadw
+    swapw
+
+    # 8) Save the fourth 2 extension field elements
+    #    We also load the second 4 base elements as a word for use by `hperm` and update the pointer
+    dup.12
+    add.16 swap.13
+    add.12
+    mem_storew
+    exec.constants::tmp2 mem_loadw
+    # => [a7, a6, a5, a4, a3, a2, a1, a0, C, ptr, ...]
+end
+
+
+# BEGIN_SECTION:DEFINITION_PROCEDURES_REDUCE_VARIABLE_LEN_PUB_INPUTS
+# END_SECTION:DEFINITION_PROCEDURES_REDUCE_VARIABLE_LEN_PUB_INPUTS
+"#;
+
+const REDUCE_VARIABLE_LEN_PUB_INPUTS_PROCEDURE: &str = r#"
+#! Reduces the INDEX_VAR_LEN_PUB_INPUTS-th variable length public inputs using auxiliary randomness.
+#!
+#! Input: [num_messages, msg_ptr, var_len_pub_inputs_res_ptr, ...]
+#! Output: [res1, res0, nxt_msg_ptr, nxt_var_len_pub_inputs_res_ptr, ...]
+#!
+#! where:
+#!  1. `msg_ptr` is a pointer to the kernel procedures digests, and
+#!  2. `res = (res0, res1)` is the resulting reduced value.
+proc.INDEX_VAR_LEN_PUB_INPUTS_th_var_len_pub_inputs_reduce
+    # Assert that the number of messages is at most 1023
+    dup u32lt.1024 assert
+
+    # Store number of messages to reduce
+    push.0.0 dup.2
+    exec.constants::tmp1 mem_storew
+    # => [num_messages, 0, 0, num_messages, msg_ptr, var_len_pub_inputs_res_ptr, ...]
+
+    # Load alpha
+    exec.constants::aux_rand_nd_ptr mem_loadw
+    # => [alpha1, alpha0, beta1, beta0, msg_ptr, var_len_pub_inputs_res_ptr, ...]
+
+    # We will keep [beta0, beta1, alpha0 + op_label, alpha1] on the stack so that we can compute
+    # the final result, where op_label is a unique label to domain separate the interaction with
+    # the chiplets` bus.
+    # The final result is then computed as:
+    #
+    #   alpha + op_label * beta^0 + beta * (r_0 * beta^0 + r_1 * beta^1 + r_2 * beta^2 + r_3 * beta^3)
+    swap
+    exec.constants::INDEX_VAR_LEN_PUB_INPUTS_th_var_len_pub_inputs_op_label
+    add
+    swap
+    # => [alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, var_len_pub_inputs_res_ptr, ...]
+
+    # Push the `horner_eval_ext` accumulator
+    push.0.0
+    # => [acc1, acc0, alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, var_len_pub_inputs_res_ptr, ...]
+
+    # Push the pointer to the evaluation point beta
+    exec.constants::aux_rand_nd_ptr
+    # => [beta_ptr, acc1, acc0, alpha1, alpha0 + op_label, beta1, beta0,  msg_ptr, var_len_pub_inputs_res_ptr, ...]
+
+    # Get the pointer to the messages
+    movup.7
+    # => [msg_ptr, beta_ptr, acc1, acc0, alpha1, alpha0 + op_label, beta1, beta0, var_len_pub_inputs_res_ptr, ...]
+
+    # Set up the stack for `mem_stream` + `horner_eval_ext`
+    swapw
+    padw padw
+    # => [Y, Y, alpha1, alpha0 + op_label, beta1, beta0,  msg_ptr, beta_ptr, acc1, acc0, var_len_pub_inputs_res_ptr, ...]
+    # where `Y` is a garbage word.
+
+    exec.constants::tmp1 mem_loadw dup
+    push.0
+    neq
+
+    while.true
+        repeat.NUM_ITER_REDUCE_MSG
+            mem_stream
+            horner_eval_base
+        end
+        # => [Y, Y, alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, acc1, acc0, var_len_pub_inputs_res_ptr, ...]
+
+        swapdw
+        # => [alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, acc1, acc0, Y, Y, var_len_pub_inputs_res_ptr, ...]
+
+        movup.7 movup.7
+        # => [acc1, acc0, alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, Y, Y, var_len_pub_inputs_res_ptr, ...]
+        
+        dup.5 dup.5
+        # => [beta1, beta0, acc1, acc0, alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, Y, Y, var_len_pub_inputs_res_ptr, ...]
+        ext2mul
+        # => [tmp1', tmp0', alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, Y, Y, var_len_pub_inputs_res_ptr, ...]
+
+        dup.3 dup.3
+        ext2add
+        # => [term1', term0', alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, Y, Y, var_len_pub_inputs_res_ptr, ...]
+  
+        movdn.15
+        movdn.15
+        # => [alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, Y, Y, term1', term0', var_len_pub_inputs_res_ptr, ...]
+
+        push.0 movdn.6
+        push.0 movdn.6
+        # => [alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, 0, 0, Y, Y, term1', term0', var_len_pub_inputs_res_ptr, ...]
+ 
+        swapdw
+        # => [Y, Y, alpha1, alpha0 + op_label, beta1, beta0, msg_ptr, beta_ptr, 0, 0, term1', term0', var_len_pub_inputs_res_ptr, ...]
+
+        exec.constants::tmp1 mem_loadw sub.1
+        exec.constants::tmp1 mem_storew
+ 
+        dup
+        push.0
+        neq
+    end
+    # => [Y, Y, alpha1, alpha0 + op_label, beta1, beta0, nxt_msg_ptr, beta_ptr, 0, 0, term1', term0', var_len_pub_inputs_res_ptr, ...]
+    dropw dropw dropw
+    # => [nxt_msg_ptr, beta_ptr, 0, 0, term1', term0', var_len_pub_inputs_res_ptr, ...]
+    dup exec.constants::tmp2 mem_store
+    exec.constants::tmp1 mem_loadw drop drop drop
+
+    push.1.0
+    movup.2
+    dup
+    push.0
+    neq
+    # => [loop, n, acc1, acc0, term1_1, term1_0, ..., termn_1, termn_0, var_len_pub_inputs_res_ptr, ...]
+
+    while.true
+        sub.1 movdn.4
+        # => [acc1, acc0, term1_1, term1_0, n - 1, ..., termn_1, termn_0, var_len_pub_inputs_res_ptr, ...]
+        ext2mul
+        # => [acc1', acc0', n - 1, ..., termn_1, termn_0, var_len_pub_inputs_res_ptr, ...]
+        movup.2
+        dup
+        push.0
+        neq
+        # => [loop, n - 1, acc1', acc0', term1_1, term1_0, ..., termn_1, termn_0, var_len_pub_inputs_res_ptr, ...]
+    end
+
+    drop
+    exec.constants::tmp2 mem_load movdn.2
+    # => [prod_acc1, prod_acc0, nxt_msg_ptr, var_len_pub_inputs_res_ptr, ...]
+
+
+    # Store the results of the reductions.
+    # This is stored in a word-aligned manner with zero padding if needed.
+    push.0.0
+    # => [0, 0, prod_acc1, prod_acc0, nxt_msg_ptr, var_len_pub_inputs_res_ptr, ...]
+    dup.5 add.4 swap.6
+    mem_storew
+    dropw
+    # => [nxt_msg_ptr, nxt_var_len_pub_inputs_res_ptr, ...]
+end
+"#;

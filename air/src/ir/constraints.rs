@@ -71,6 +71,15 @@ impl Constraints {
         &self.boundary_constraints[trace_segment]
     }
 
+    /// Returns the number of integrity constraints applied against the specified trace segment.
+    pub fn num_integrity_constraints(&self, trace_segment: TraceSegmentId) -> usize {
+        if self.integrity_constraints.len() <= trace_segment {
+            return 0;
+        }
+
+        self.integrity_constraints[trace_segment].len()
+    }
+
     /// Returns a vector of the degrees of the integrity constraints for the specified trace segment.
     pub fn integrity_constraint_degrees(
         &self,
