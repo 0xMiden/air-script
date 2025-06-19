@@ -1390,7 +1390,7 @@ impl SemanticAnalysis<'_> {
                             };
 
                         match (found.clone().item, expr.rhs.as_mut()) {
-                            // Buses boundaries can be constrained by null or unconstrained
+                            // Buses boundaries can be constrained by null or set to be unconstrained
                             (
                                 BindingType::Bus(_),
                                 ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_),
@@ -1440,7 +1440,7 @@ impl SemanticAnalysis<'_> {
                                     .emit();
                             }
                             (_, ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_)) => {
-                                // Only buses can be constrained to null or unconstrained
+                                // Only buses can be constrained to null or set to be unconstrained
                                 self.has_type_errors = true;
                                 self.invalid_constraint(
                                     expr.lhs.span(),
@@ -1448,9 +1448,9 @@ impl SemanticAnalysis<'_> {
                                 )
                                 .with_secondary_label(
                                     expr.rhs.span(),
-                                    "but this expression is only valid to for bus boundaries",
+                                    "but this expression is only valid for constraining buses",
                                 )
-                                .with_note("The null / unconstrained value is only valid for defining empty buses")
+                                .with_note("The null / unconstrained keywords are only valid for constraining buses, not columns")
                                 .emit();
                             }
                             _ => {
