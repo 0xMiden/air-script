@@ -204,6 +204,7 @@ impl UnrollingFirstPass<'_> {
                 }
                 MirValue::BusAccess(_) => {}
                 MirValue::Null => {}
+                MirValue::Unconstrained => {}
             }
         }
 
