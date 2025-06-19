@@ -1,7 +1,5 @@
 use std::ops::Div;
 
-use miden_core::StarkField;
-
 use crate::{
     masm::{add_section, DOUBLE_WORD_SIZE},
     EncodedAceCircuit,
