@@ -552,8 +552,8 @@ impl AirBuilder<'_> {
     fn build_bus(&mut self, mir_bus: &Link<mir::ir::Bus>) -> Result<(), CompileError> {
         let mir_bus = mir_bus.borrow();
 
-        let first = build_bus_boundary(&mir_bus.get_first())?;
-        let last = build_bus_boundary(&mir_bus.get_last())?;
+        let first = build_bus_boundary(self.diagnostics, mir_bus.span(), &mir_bus.get_first())?;
+        let last = build_bus_boundary(self.diagnostics, mir_bus.span(), &mir_bus.get_last())?;
 
         let mut bus_ops = vec![];
         for (mir_column, mir_latch) in mir_bus.columns.iter().zip(mir_bus.latches.iter()) {
@@ -591,7 +591,11 @@ impl AirBuilder<'_> {
 // ================================================================================================
 
 /// Helper function to convert a MIR bus boundary node into an AIR bus boundary.
-fn build_bus_boundary(mir_bus_boundary_node: &Link<Op>) -> Result<BusBoundary, CompileError> {
+fn build_bus_boundary(
+    diagnostics: &DiagnosticsHandler,
+    bus_span: SourceSpan,
+    mir_bus_boundary_node: &Link<Op>,
+) -> Result<BusBoundary, CompileError> {
     let mir_node = vec_to_scalar(mir_bus_boundary_node);
     let mir_node_ref = mir_node.borrow();
     match mir_node_ref.deref() {
@@ -606,11 +610,19 @@ fn build_bus_boundary(mir_bus_boundary_node: &Link<Op>) -> Result<BusBoundary, C
             ),
             // This represents an empty bus
             MirValue::Null => Ok(crate::ir::BusBoundary::Null),
+            MirValue::Unconstrained => Ok(crate::ir::BusBoundary::Unconstrained),
             _ => Err(CompileError::Failed),
         },
         Op::None(_) => {
-            // This is an unconstrained bus boundary
-            Ok(crate::ir::BusBoundary::Unconstrained)
+            diagnostics
+                .diagnostic(Severity::Error)
+                .with_message("invalid bus boundary")
+                .with_primary_label(bus_span, "this bus has unconstrained boundaries")
+                .with_note(
+                    "Bus boundaries must be either a public input table or null for empty buses.",
+                )
+                .emit();
+            Err(CompileError::Failed)
         }
         _ => unreachable!("Unexpected Mir Op in bus boundary: {:#?}", mir_node_ref),
     }
