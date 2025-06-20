@@ -1,4 +1,4 @@
-use super::{expect_diagnostic, Pipeline};
+use super::{Pipeline, expect_diagnostic};
 
 #[test]
 fn err_trace_cols_empty() {

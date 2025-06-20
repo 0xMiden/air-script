@@ -1,9 +1,9 @@
-use air_parser::{ast, LexicalScope};
+use air_parser::{LexicalScope, ast};
 use air_pass::Pass;
 
 use miden_diagnostics::{DiagnosticsHandler, Severity, Span, Spanned};
 
-use crate::{graph::NodeIndex, ir::*, CompileError};
+use crate::{CompileError, graph::NodeIndex, ir::*};
 
 /// This pass creates the [Air] from the [ast::Program].
 ///  

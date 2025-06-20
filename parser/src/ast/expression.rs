@@ -262,10 +262,10 @@ impl AsRef<Identifier> for ResolvableIdentifier {
 impl fmt::Display for ResolvableIdentifier {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Local(id) => write!(f, "{}", id),
-            Self::Global(id) => write!(f, "{}", id),
-            Self::Resolved(qid) => write!(f, "{}", qid),
-            Self::Unresolved(nid) => write!(f, "{}", nid),
+            Self::Local(id) => write!(f, "{id}"),
+            Self::Global(id) => write!(f, "{id}"),
+            Self::Resolved(qid) => write!(f, "{qid}"),
+            Self::Unresolved(nid) => write!(f, "{nid}"),
         }
     }
 }
@@ -370,7 +370,7 @@ impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Const(expr) => write!(f, "{}", &expr),
-            Self::Range(range) => write!(f, "{}", range),
+            Self::Range(range) => write!(f, "{range}"),
             Self::Vector(expr) => write!(f, "{}", DisplayList(expr.as_slice())),
             Self::Matrix(expr) => {
                 f.write_str("[")?;
@@ -382,9 +382,9 @@ impl fmt::Display for Expr {
                 }
                 f.write_str("]")
             }
-            Self::SymbolAccess(expr) => write!(f, "{}", expr),
-            Self::Binary(expr) => write!(f, "{}", expr),
-            Self::Call(expr) => write!(f, "{}", expr),
+            Self::SymbolAccess(expr) => write!(f, "{expr}"),
+            Self::Binary(expr) => write!(f, "{expr}"),
+            Self::Call(expr) => write!(f, "{expr}"),
             Self::ListComprehension(expr) => write!(f, "{}", DisplayBracketed(expr)),
             Self::Let(let_expr) => {
                 let display = DisplayLet {
@@ -394,7 +394,7 @@ impl fmt::Display for Expr {
                 };
                 write!(f, "{display}")
             }
-            Self::BusOperation(expr) => write!(f, "{}", expr),
+            Self::BusOperation(expr) => write!(f, "{expr}"),
             Self::Null(_expr) => write!(f, "null"),
             Self::Unconstrained(_expr) => write!(f, "unconstrained"),
         }
@@ -607,7 +607,7 @@ impl fmt::Debug for ScalarExpr {
             }
             Self::Binary(expr) => f.debug_tuple("Binary").field(expr).finish(),
             Self::Call(expr) => f.debug_tuple("Call").field(expr).finish(),
-            Self::Let(expr) => write!(f, "{:#?}", expr),
+            Self::Let(expr) => write!(f, "{expr:#?}"),
             Self::BusOperation(expr) => f.debug_tuple("BusOp").field(expr).finish(),
             Self::Null(expr) => f.debug_tuple("Null").field(expr).finish(),
             Self::Unconstrained(expr) => f.debug_tuple("Unconstrained").field(expr).finish(),
@@ -617,11 +617,11 @@ impl fmt::Debug for ScalarExpr {
 impl fmt::Display for ScalarExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Const(value) => write!(f, "{}", value),
-            Self::SymbolAccess(expr) => write!(f, "{}", expr),
+            Self::Const(value) => write!(f, "{value}"),
+            Self::SymbolAccess(expr) => write!(f, "{expr}"),
             Self::BoundedSymbolAccess(expr) => write!(f, "{}.{}", &expr.column, &expr.boundary),
-            Self::Binary(expr) => write!(f, "{}", expr),
-            Self::Call(call) => write!(f, "{}", call),
+            Self::Binary(expr) => write!(f, "{expr}"),
+            Self::Call(call) => write!(f, "{call}"),
             Self::Let(let_expr) => {
                 let display = DisplayLet {
                     let_expr,
@@ -630,7 +630,7 @@ impl fmt::Display for ScalarExpr {
                 };
                 write!(f, "{display}")
             }
-            Self::BusOperation(expr) => write!(f, "{}", expr),
+            Self::BusOperation(expr) => write!(f, "{expr}"),
             Self::Null(_value) => write!(f, "null"),
             Self::Unconstrained(_value) => write!(f, "unconstrained"),
         }
@@ -1146,9 +1146,9 @@ impl fmt::Display for SymbolAccess {
         write!(f, "{}", self.name)?;
         match &self.access_type {
             AccessType::Default => (),
-            AccessType::Index(idx) => write!(f, "[{}]", idx)?,
+            AccessType::Index(idx) => write!(f, "[{idx}]")?,
             AccessType::Slice(range) => write!(f, "[{}..{}]", range.start, range.end)?,
-            AccessType::Matrix(row, col) => write!(f, "[{}][{}]", row, col)?,
+            AccessType::Matrix(row, col) => write!(f, "[{row}][{col}]")?,
         }
         // TODO: When we change the syntax to support arbitrary offsets, we'll need to update this
         for _ in 0..self.offset {
@@ -1286,7 +1286,7 @@ impl fmt::Display for ListComprehension {
         }
 
         if let Some(selector) = self.selector.as_ref() {
-            write!(f, " when {}", selector)
+            write!(f, " when {selector}")
         } else {
             Ok(())
         }

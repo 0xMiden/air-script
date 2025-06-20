@@ -6,7 +6,7 @@ use core::{fmt, mem, num::IntErrorKind};
 use miden_diagnostics::{Diagnostic, SourceIndex, SourceSpan, ToDiagnostic};
 use miden_parsing::{Scanner, Source};
 
-use crate::{parser::ParseError, Symbol};
+use crate::{Symbol, parser::ParseError};
 
 /// The value produced by the Lexer when iterated
 pub type Lexed = Result<(SourceIndex, Token, SourceIndex), ParseError>;
@@ -43,8 +43,10 @@ impl ToDiagnostic for LexicalError {
         match self {
             Self::InvalidInt { span, ref reason } => Diagnostic::error()
                 .with_message("invalid integer literal")
-                .with_labels(vec![Label::primary(span.source_id(), span)
-                    .with_message(format!("{}", DisplayIntErrorKind(reason)))]),
+                .with_labels(vec![
+                    Label::primary(span.source_id(), span)
+                        .with_message(format!("{}", DisplayIntErrorKind(reason))),
+                ]),
             Self::UnexpectedCharacter { start, .. } => Diagnostic::error()
                 .with_message("unexpected character")
                 .with_labels(vec![Label::primary(
@@ -64,7 +66,7 @@ impl fmt::Display for DisplayIntErrorKind<'_> {
             IntErrorKind::PosOverflow => write!(f, "value is too big"),
             IntErrorKind::NegOverflow => write!(f, "value is too big"),
             IntErrorKind::Zero => write!(f, "zero is not a valid value here"),
-            other => write!(f, "unable to parse integer value: {:?}", other),
+            other => write!(f, "unable to parse integer value: {other:?}"),
         }
     }
 }
@@ -261,10 +263,10 @@ impl fmt::Display for Token {
             Self::Eof => write!(f, "EOF"),
             Self::Error(_) => write!(f, "ERROR"),
             Self::Comment => write!(f, "COMMENT"),
-            Self::Ident(id) => write!(f, "{}", id),
-            Self::DeclIdentRef(id) => write!(f, "{}", id),
-            Self::FunctionIdent(id) => write!(f, "{}", id),
-            Self::Num(i) => write!(f, "{}", i),
+            Self::Ident(id) => write!(f, "{id}"),
+            Self::DeclIdentRef(id) => write!(f, "{id}"),
+            Self::FunctionIdent(id) => write!(f, "{id}"),
+            Self::Num(i) => write!(f, "{i}"),
             Self::Def => write!(f, "def"),
             Self::Mod => write!(f, "mod"),
             Self::Use => write!(f, "use"),
@@ -584,7 +586,7 @@ where
                 return Token::Error(LexicalError::UnexpectedCharacter {
                     start: self.span().start(),
                     found: c,
-                })
+                });
             }
         }
 

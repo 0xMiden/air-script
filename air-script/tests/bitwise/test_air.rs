@@ -2,7 +2,7 @@
 use winter_air::{Air, AuxRandElements};
 use winter_math::fields::f64::BaseElement as Felt;
 #[allow(unused_imports)]
-use winterfell::{matrix::ColMatrix, AuxTraceWithMetadata, Trace, TraceTable};
+use winterfell::{AuxTraceWithMetadata, Trace, TraceTable, matrix::ColMatrix};
 
 use crate::{
     bitwise::bitwise::{BitwiseAir, PublicInputs},

@@ -1,4 +1,4 @@
-use crate::{ir, CompileError};
+use crate::{CompileError, ir};
 use std::{
     cell::{Ref, RefMut},
     collections::BTreeMap,
@@ -51,7 +51,7 @@ impl Graph {
     }
 
     /// Queries a given function as a [ir::Function]
-    pub fn get_function(&self, ident: &QualifiedIdentifier) -> Option<Ref<ir::Function>> {
+    pub fn get_function(&self, ident: &QualifiedIdentifier) -> Option<Ref<'_, ir::Function>> {
         // Unwrap is safe as we ensure the type is correct before inserting
         self.functions.get(ident).map(|n| n.as_function().unwrap())
     }
@@ -60,7 +60,7 @@ impl Graph {
     pub fn get_function_mut(
         &mut self,
         ident: &QualifiedIdentifier,
-    ) -> Option<RefMut<ir::Function>> {
+    ) -> Option<RefMut<'_, ir::Function>> {
         // Unwrap is safe as we ensure the type is correct before inserting
         self.functions
             .get_mut(ident)
@@ -100,7 +100,7 @@ impl Graph {
     }
 
     /// Queries a given evaluator as a mutable [ir::Evaluator]
-    pub fn get_evaluator(&self, ident: &QualifiedIdentifier) -> Option<Ref<ir::Evaluator>> {
+    pub fn get_evaluator(&self, ident: &QualifiedIdentifier) -> Option<Ref<'_, ir::Evaluator>> {
         // Unwrap is safe as we ensure the type is correct before inserting
         self.evaluators
             .get(ident)
@@ -111,7 +111,7 @@ impl Graph {
     pub fn get_evaluator_mut(
         &mut self,
         ident: &QualifiedIdentifier,
-    ) -> Option<RefMut<ir::Evaluator>> {
+    ) -> Option<RefMut<'_, ir::Evaluator>> {
         // Unwrap is safe as we ensure the type is correct before inserting
         self.evaluators
             .get_mut(ident)
@@ -172,12 +172,12 @@ impl Graph {
         self.buses.get(ident).cloned()
     }
     /// Queries a given bus, returning a reference to the bus if it exists.
-    pub fn get_bus(&self, ident: &QualifiedIdentifier) -> Option<Ref<ir::Bus>> {
+    pub fn get_bus(&self, ident: &QualifiedIdentifier) -> Option<Ref<'_, ir::Bus>> {
         self.buses.get(ident).map(|n| n.borrow())
     }
 
     /// Queries a given bus, returning a mutable reference to the bus if it exists.
-    pub fn get_bus_mut(&mut self, ident: &QualifiedIdentifier) -> Option<RefMut<ir::Bus>> {
+    pub fn get_bus_mut(&mut self, ident: &QualifiedIdentifier) -> Option<RefMut<'_, ir::Bus>> {
         self.buses.get_mut(ident).map(|n| n.borrow_mut())
     }
 

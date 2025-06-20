@@ -4,8 +4,8 @@ use miden_diagnostics::DiagnosticsHandler;
 use mir::ir::BusOpKind;
 
 use crate::{
-    Air, BusBoundary, BusOp, CompileError, ConstraintDomain, NodeIndex, Operation, TraceAccess,
-    AUX_SEGMENT,
+    AUX_SEGMENT, Air, BusBoundary, BusOp, CompileError, ConstraintDomain, NodeIndex, Operation,
+    TraceAccess,
 };
 
 pub struct BusOpExpand<'a> {

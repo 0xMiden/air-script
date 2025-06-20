@@ -1,4 +1,4 @@
-use super::{compile, Pipeline};
+use super::{Pipeline, compile};
 
 #[test]
 fn bc_with_public_inputs() {

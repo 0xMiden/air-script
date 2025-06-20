@@ -1,15 +1,15 @@
 use std::{collections::BTreeMap, ops::Deref};
 
 use air_parser::{
-    ast::{self, TraceSegment},
     SemanticAnalysisError,
+    ast::{self, TraceSegment},
 };
 use air_pass::Pass;
 
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 use mir::ir::{ConstantValue, Link, Mir, MirValue, Op, Parent, SpannedMirValue};
 
-use crate::{graph::NodeIndex, ir::*, CompileError};
+use crate::{CompileError, graph::NodeIndex, ir::*};
 
 /// This pass creates the [Air] from the [Mir].
 ///  
@@ -57,10 +57,7 @@ impl Pass for MirToAir<'_> {
             if trace_columns.len() == 1 {
                 trace_columns.push(aux_trace_segment);
             } else {
-                panic!(
-                    "Expected only one trace segment, but found multiple: {:?}",
-                    trace_columns
-                );
+                panic!("Expected only one trace segment, but found multiple: {trace_columns:?}",);
             }
         }
 
@@ -108,7 +105,9 @@ fn indexed_accessor(mir_node: &Link<Op>) -> Link<Op> {
             if let Some(vec) = accessor.indexable.as_vector() {
                 let children = vec.elements.borrow().deref().clone();
                 if index >= children.len() {
-                    panic!("Index out of bounds during indexed accessor translation from MIR to AIR: {}", index);
+                    panic!(
+                        "Index out of bounds during indexed accessor translation from MIR to AIR: {index}",
+                    );
                 }
                 children[index].clone()
             } else {
@@ -129,7 +128,7 @@ fn vec_to_scalar(mir_node: &Link<Op>) -> Link<Op> {
         let size = vector.size;
         let children = vector.elements.borrow().deref().clone();
         if size != 1 {
-            panic!("Vector of len >1 after unrolling: {:?}", mir_node);
+            panic!("Vector of len >1 after unrolling: {mir_node:?}");
         }
         let child = children.first().unwrap();
         let child = indexed_accessor(child);
@@ -338,7 +337,7 @@ impl AirBuilder<'_> {
 
                 Ok(self.insert_op(Operation::Value(value)))
             }
-            _ => panic!("Should not have Mir op in graph: {:?}", mir_node),
+            _ => panic!("Should not have Mir op in graph: {mir_node:?}"),
         }
     }
 

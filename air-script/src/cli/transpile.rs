@@ -5,7 +5,7 @@ use air_pass::Pass;
 
 use clap::{Args, ValueEnum};
 use miden_diagnostics::{
-    term::termcolor::ColorChoice, CodeMap, DefaultEmitter, DiagnosticsHandler,
+    CodeMap, DefaultEmitter, DiagnosticsHandler, term::termcolor::ColorChoice,
 };
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]

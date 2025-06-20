@@ -1,4 +1,4 @@
-use super::{compile, Pipeline};
+use super::{Pipeline, compile};
 
 #[test]
 fn list_folding_on_const() {

@@ -70,7 +70,7 @@ pub fn expect_diagnostic(source: &str, expected: &str) {
     let compiler = Compiler::default();
     let err = match compiler.compile(source) {
         Ok(ref ast) => {
-            panic!("expected compilation to fail, got {:#?}", ast);
+            panic!("expected compilation to fail, got {ast:#?}");
         }
         Err(err) => err,
     };
@@ -81,8 +81,7 @@ pub fn expect_diagnostic(source: &str, expected: &str) {
     }
     assert!(
         found,
-        "expected diagnostic output to contain the string: '{}'",
-        expected
+        "expected diagnostic output to contain the string: '{expected}'",
     );
 }
 

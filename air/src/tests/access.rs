@@ -1,4 +1,4 @@
-use super::{expect_diagnostic, Pipeline};
+use super::{Pipeline, expect_diagnostic};
 
 #[test]
 fn invalid_vector_access_in_boundary_constraint() {

@@ -164,7 +164,9 @@ pub fn split_boundary_constraint(
                 debug_assert_eq!(trace_access.row_offset, 0);
                 (*trace_access, *rhs)
             } else {
-                panic!("InvalidUsage: index {index:?} is not the constraint root of a boundary constraint");
+                panic!(
+                    "InvalidUsage: index {index:?} is not the constraint root of a boundary constraint"
+                );
             }
         }
         _ => panic!("InvalidUsage: index {index:?} is not the root index of a constraint"),

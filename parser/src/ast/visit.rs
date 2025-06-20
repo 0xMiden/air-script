@@ -571,9 +571,7 @@ where
     match expr {
         ast::Statement::Let(expr) => visitor.visit_mut_let(expr),
         ast::Statement::Enforce(expr) => visitor.visit_mut_enforce(expr),
-        ast::Statement::EnforceIf(expr, selector) => {
-            visitor.visit_mut_enforce_if(expr, selector)
-        }
+        ast::Statement::EnforceIf(expr, selector) => visitor.visit_mut_enforce_if(expr, selector),
         ast::Statement::EnforceAll(expr) => visitor.visit_mut_enforce_all(expr),
         ast::Statement::Expr(expr) => visitor.visit_mut_expr(expr),
         ast::Statement::BusEnforce(expr) => visitor.visit_mut_bus_enforce(expr),
@@ -636,9 +634,7 @@ where
         | ast::ScalarExpr::Null(_)
         | ast::ScalarExpr::Unconstrained(_) => ControlFlow::Continue(()),
         ast::ScalarExpr::SymbolAccess(expr) => visitor.visit_mut_symbol_access(expr),
-        ast::ScalarExpr::BoundedSymbolAccess(expr) => {
-            visitor.visit_mut_bounded_symbol_access(expr)
-        }
+        ast::ScalarExpr::BoundedSymbolAccess(expr) => visitor.visit_mut_bounded_symbol_access(expr),
         ast::ScalarExpr::Binary(expr) => visitor.visit_mut_binary_expr(expr),
         ast::ScalarExpr::Call(expr) => visitor.visit_mut_call(expr),
         ast::ScalarExpr::Let(expr) => visitor.visit_mut_let(expr),
@@ -704,9 +700,7 @@ where
 {
     match expr {
         ast::RangeBound::Const(_) => ControlFlow::Continue(()),
-        ast::RangeBound::SymbolAccess(access) => {
-            visitor.visit_mut_const_symbol_access(access)
-        }
+        ast::RangeBound::SymbolAccess(access) => visitor.visit_mut_const_symbol_access(access),
     }
 }
 

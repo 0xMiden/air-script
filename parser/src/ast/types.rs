@@ -81,8 +81,8 @@ impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Felt => f.write_str("felt"),
-            Self::Vector(n) => write!(f, "felt[{}]", n),
-            Self::Matrix(rows, cols) => write!(f, "felt[{}, {}]", rows, cols),
+            Self::Vector(n) => write!(f, "felt[{n}]"),
+            Self::Matrix(rows, cols) => write!(f, "felt[{rows}, {cols}]"),
         }
     }
 }

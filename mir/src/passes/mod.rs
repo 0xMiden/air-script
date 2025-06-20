@@ -152,7 +152,7 @@ pub fn duplicate_node(
                 let row_children_link = row
                     .clone()
                     .as_vector()
-                    .unwrap_or_else(|| panic!("expected Vector, found {:?}", row))
+                    .unwrap_or_else(|| panic!("expected Vector, found {row:?}"))
                     .children()
                     .clone();
                 let row_children_ref = row_children_link.borrow();
@@ -188,7 +188,7 @@ pub fn duplicate_node(
             let owner_ref = parameter
                 .ref_node
                 .to_link()
-                .unwrap_or_else(|| panic!("invalid ref_node for parameter {:?}", parameter));
+                .unwrap_or_else(|| panic!("invalid ref_node for parameter {parameter:?}",));
             let new_param =
                 Parameter::create(parameter.position, parameter.ty.clone(), parameter.span());
 
@@ -398,7 +398,7 @@ pub fn duplicate_node_or_replace(
                 let row_children_link = row
                     .clone()
                     .as_vector()
-                    .unwrap_or_else(|| panic!("expected Vector, found {:?}", row))
+                    .unwrap_or_else(|| panic!("expected Vector, found {row:?}"))
                     .children()
                     .clone();
                 let row_children_ref = row_children_link.borrow();
@@ -437,7 +437,7 @@ pub fn duplicate_node_or_replace(
             let owner_ref = parameter
                 .ref_node
                 .to_link()
-                .unwrap_or_else(|| panic!("invalid ref_node for parameter {:?}", parameter));
+                .unwrap_or_else(|| panic!("invalid ref_node for parameter {parameter:?}"));
 
             let ref_owner = match ref_owner {
                 Some(owner) => owner,

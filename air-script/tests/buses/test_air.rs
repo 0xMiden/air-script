@@ -1,6 +1,6 @@
 use winter_air::{Air, AuxRandElements};
 use winter_math::fields::f64::BaseElement as Felt;
-use winterfell::{matrix::ColMatrix, AuxTraceWithMetadata, Trace, TraceTable};
+use winterfell::{AuxTraceWithMetadata, Trace, TraceTable, matrix::ColMatrix};
 
 use crate::{
     buses::buses_complex::{BusesAir, PublicInputs},

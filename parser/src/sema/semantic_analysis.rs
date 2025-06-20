@@ -270,8 +270,7 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
                 self.diagnostics
                     .diagnostic(Severity::Error)
                     .with_message(format!(
-                        "periodic column conflicts with {} declared in root module",
-                        prev_binding
+                        "periodic column conflicts with {prev_binding} declared in root module"
                     ))
                     .with_primary_label(periodic.name.span(), "this name is already in use")
                     .with_secondary_label(prev.span(), "previously declared here")
@@ -1136,16 +1135,12 @@ impl SemanticAnalysis<'_> {
                                     .with_primary_label(
                                         arg.span(),
                                         format!(
-                                            "callee expects columns from the {} trace",
-                                            expected_segment
-                                        ),
+                                            "callee expects columns from the {expected_segment} trace"),
                                     )
                                     .with_secondary_label(
                                         tr.span,
                                         format!(
-                                            "but this column is from the {} trace",
-                                            segment_name
-                                        ),
+                                            "but this column is from the {segment_name} trace"),
                                     )
                                     .emit();
                             }
@@ -1175,16 +1170,12 @@ impl SemanticAnalysis<'_> {
                                             .with_primary_label(
                                                 arg.span(),
                                                 format!(
-                                                    "callee expects columns from the {} trace",
-                                                    expected_segment
-                                                ),
+                                                    "callee expects columns from the {expected_segment} trace"),
                                             )
                                             .with_secondary_label(
                                                 tr.span,
                                                 format!(
-                                                    "but this column is from the {} trace",
-                                                    segment_name
-                                                ),
+                                                    "but this column is from the {segment_name} trace"),
                                             )
                                             .emit();
                                         return ControlFlow::Continue(());
@@ -1266,16 +1257,12 @@ impl SemanticAnalysis<'_> {
                                     .with_primary_label(
                                         arg.span(),
                                         format!(
-                                            "callee expects columns from the {} trace",
-                                            expected_segment
-                                        ),
+                                            "callee expects columns from the {expected_segment} trace"),
                                     )
                                     .with_secondary_label(
                                         elem.span(),
                                         format!(
-                                            "but this column is from the {} trace",
-                                            segment_name
-                                        ),
+                                            "but this column is from the {segment_name} trace"),
                                     )
                                     .emit();
                                 return ControlFlow::Continue(());
@@ -1310,7 +1297,7 @@ impl SemanticAnalysis<'_> {
                     self.diagnostics.diagnostic(Severity::Error)
                                 .with_message("invalid call")
                                 .with_primary_label(span, "type mismatch in function argument")
-                                .with_secondary_label(arg.span(), format!("callee expects {} trace columns here, but this argument only provides {}", param.size, size))
+                                .with_secondary_label(arg.span(), format!("callee expects {} trace columns here, but this argument only provides {size}", param.size))
                                 .emit();
                 }
             }
@@ -1319,7 +1306,7 @@ impl SemanticAnalysis<'_> {
                 self.diagnostics.diagnostic(Severity::Error)
                             .with_message("invalid call")
                             .with_primary_label(span, "invalid argument for evaluator function")
-                            .with_secondary_label(arg.span(), format!("expected a trace binding, or vector of trace bindings here, but got a {}", wrong))
+                            .with_secondary_label(arg.span(), format!("expected a trace binding, or vector of trace bindings here, but got a {wrong}"))
                             .emit();
             }
         }
@@ -1538,9 +1525,7 @@ impl SemanticAnalysis<'_> {
         // 2. That the expression is either an equality, a call to an evaluator function, or a bus operation
         //
         match expr {
-            ScalarExpr::Binary(expr) if expr.op == BinaryOp::Eq => {
-                self.visit_mut_binary_expr(expr)
-            }
+            ScalarExpr::Binary(expr) if expr.op == BinaryOp::Eq => self.visit_mut_binary_expr(expr),
             ScalarExpr::Call(expr) => {
                 // Visit the call normally, so we can resolve the callee identifier
                 self.visit_mut_call(expr)?;
@@ -1577,10 +1562,11 @@ impl SemanticAnalysis<'_> {
                                     }
                                 }
                             }
-                            // We take care to only allow constructing Call with a function identifier, but it
-                            // is possible for someone to unintentionally set the callee to a binding identifer, which is
-                            // a compiler internal error, hence the panic
-                            id => panic!("invalid callee identifier, expected function id, got binding: {:#?}", id),
+                            // We take care to only allow constructing Call with a function
+                            // identifier, but it is possible for someone to unintentionally
+                            // set the callee to a binding identifier, which is a compiler internal
+                            // error, hence the panic
+                            id => panic!("invalid callee identifier, expected function id, got binding: {id:#?}"),
                         }
                     }
                     ResolvableIdentifier::Local(id) => {
@@ -1626,7 +1612,7 @@ impl SemanticAnalysis<'_> {
                                     }
                                 }
                             }
-                            id => panic!("invalid bus identifier, expected bus, got binding: {:#?}", id),
+                            id => panic!("invalid bus identifier, expected bus, got binding: {id:#?}"),
                         }
                     }
                     ResolvableIdentifier::Local(id) => {
@@ -1725,7 +1711,7 @@ impl SemanticAnalysis<'_> {
     ) -> ControlFlow<SemanticAnalysisError> {
         self.has_type_errors = true;
         let primary_label = match inferred_type {
-            Some(t) => format!("this expression has type {}", t),
+            Some(t) => format!("this expression has type {t}"),
             None => "the type of this expression is unknown".to_string(),
         };
         self.diagnostics
@@ -1735,10 +1721,7 @@ impl SemanticAnalysis<'_> {
             .with_secondary_label(from, "which was inferred from the type of this expression")
             .with_secondary_label(
                 expected_by,
-                format!(
-                    "but this expression expects it to have type {}",
-                    expected_type
-                ),
+                format!("but this expression expects it to have type {expected_type}"),
             )
             .emit();
         ControlFlow::Break(SemanticAnalysisError::Invalid)

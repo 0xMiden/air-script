@@ -16,10 +16,9 @@ fn error_invalid_int() {
     }}
 
     integrity_constraints {{
-        enf clk' = clk + {}
+        enf clk' = clk + {num}
     }}
     "#,
-        num
     );
 
     // Integers can only be of type u64.

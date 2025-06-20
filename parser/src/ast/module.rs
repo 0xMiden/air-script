@@ -254,8 +254,7 @@ impl Module {
                                 .emit();
                         }
                         Import::Partial {
-                            items: prev_items,
-                            ..
+                            items: prev_items, ..
                         } => {
                             for item in items.drain() {
                                 if let Some(prev) = prev_items.get(&item) {
@@ -620,7 +619,7 @@ impl PartialEq for Module {
 fn invalid_section_in_library(diagnostics: &DiagnosticsHandler, ty: &str, span: SourceSpan) {
     diagnostics
         .diagnostic(Severity::Error)
-        .with_message(format!("invalid {} declaration", ty))
+        .with_message(format!("invalid {ty} declaration"))
         .with_primary_label(span, "this section is not permitted in a library module")
         .emit();
 }
@@ -633,7 +632,7 @@ fn conflicting_declaration(
 ) {
     diagnostics
         .diagnostic(Severity::Error)
-        .with_message(format!("invalid {} declaration", ty))
+        .with_message(format!("invalid {ty} declaration"))
         .with_primary_label(current, "this conflicts with a previous declaration")
         .with_secondary_label(prev, "previously defined here")
         .emit();

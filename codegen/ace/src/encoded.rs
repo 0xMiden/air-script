@@ -1,7 +1,7 @@
-use crate::circuit::{ArithmeticOp, Circuit, Node, OperationNode};
 use crate::QuadFelt;
-use miden_core::crypto::hash::{Rpo256, RpoDigest};
+use crate::circuit::{ArithmeticOp, Circuit, Node, OperationNode};
 use miden_core::Felt;
+use miden_core::crypto::hash::{Rpo256, RpoDigest};
 use winter_math::FieldElement;
 
 /// An encoded [`Circuit`] matching the required format for the ACE chiplet.

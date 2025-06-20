@@ -1,6 +1,6 @@
 use winter_air::{BatchingMethod, EvaluationFrame, FieldExtension, ProofOptions, TraceInfo};
 use winter_math::fields::f64::BaseElement as Felt;
-use winterfell::{matrix::ColMatrix, AuxTraceWithMetadata, Trace, TraceTable};
+use winterfell::{AuxTraceWithMetadata, Trace, TraceTable, matrix::ColMatrix};
 
 /// We need to encapsulate the trace table in a struct to manually implement the `aux_trace_width` method of the `Table` trait.
 /// Otherwise, using only a TraceTable<Felt> will return an `aux_trace_width` of 0 even if we provide a non-empty aux trace in `Trace::validate`,

@@ -562,9 +562,7 @@ macro_rules! and {
 }
 
 macro_rules! or {
-    ($lhs:expr, $rhs:expr) => {{
-        sub!(add!($lhs, $rhs), mul!($lhs, $rhs))
-    }};
+    ($lhs:expr, $rhs:expr) => {{ sub!(add!($lhs, $rhs), mul!($lhs, $rhs)) }};
 }
 
 macro_rules! not {

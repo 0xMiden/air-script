@@ -4,8 +4,8 @@ use super::Scope;
 
 pub(super) fn public_input_type_to_string(public_input: &air_ir::PublicInput) -> String {
     match public_input {
-        air_ir::PublicInput::Vector { size, .. } => format!("[Felt; {}]", size),
-        air_ir::PublicInput::Table { size, .. } => format!("Vec<[Felt; {}]>", size),
+        air_ir::PublicInput::Vector { size, .. } => format!("[Felt; {size}]"),
+        air_ir::PublicInput::Table { size, .. } => format!("Vec<[Felt; {size}]>"),
     }
 }
 

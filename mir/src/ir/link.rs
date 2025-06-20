@@ -19,11 +19,11 @@ impl<T> Link<T> {
         }
     }
     /// Returns a `std::cell::Ref` to the inner value.
-    pub fn borrow(&self) -> std::cell::Ref<T> {
+    pub fn borrow(&self) -> std::cell::Ref<'_, T> {
         self.link.borrow()
     }
     /// Returns a `std::cell::RefMut` to the inner value.
-    pub fn borrow_mut(&self) -> std::cell::RefMut<T> {
+    pub fn borrow_mut(&self) -> std::cell::RefMut<'_, T> {
         self.link.borrow_mut()
     }
     /// Updates the inner value with the value of another `Link` of the same type.

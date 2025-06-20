@@ -1,7 +1,7 @@
 use air_parser::ast::TraceSegment;
 pub use air_parser::{
-    ast::{Identifier, PeriodicColumn, PublicInput, QualifiedIdentifier},
     Symbol,
+    ast::{Identifier, PeriodicColumn, PublicInput, QualifiedIdentifier},
 };
 
 use std::collections::BTreeMap;

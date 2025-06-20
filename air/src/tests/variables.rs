@@ -1,4 +1,4 @@
-use super::{compile, expect_diagnostic, Pipeline};
+use super::{Pipeline, compile, expect_diagnostic};
 
 #[test]
 fn let_scalar_constant_in_boundary_constraint() {
@@ -198,8 +198,16 @@ fn invalid_matrix_literal_with_leading_vector_binding() {
         enf clk' = d[0][0];
     }";
 
-    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', '\"null\"', '\"unconstrained\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithoutMIR);
-    expect_diagnostic(source, "expected one of: '\"!\"', '\"(\"', '\"null\"', '\"unconstrained\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'", Pipeline::WithMIR);
+    expect_diagnostic(
+        source,
+        "expected one of: '\"!\"', '\"(\"', '\"null\"', '\"unconstrained\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'",
+        Pipeline::WithoutMIR,
+    );
+    expect_diagnostic(
+        source,
+        "expected one of: '\"!\"', '\"(\"', '\"null\"', '\"unconstrained\"', 'decl_ident_ref', 'function_identifier', 'identifier', 'int'",
+        Pipeline::WithMIR,
+    );
 }
 
 #[test]

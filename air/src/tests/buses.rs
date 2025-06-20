@@ -1,4 +1,4 @@
-use super::{compile, expect_diagnostic, Pipeline};
+use super::{Pipeline, compile, expect_diagnostic};
 
 #[test]
 fn buses_in_boundary_constraints() {

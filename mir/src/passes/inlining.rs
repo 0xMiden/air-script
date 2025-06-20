@@ -4,11 +4,11 @@ use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Spanned};
 
 use crate::{
+    CompileError,
     ir::{
         Accessor, Graph, Link, Mir, MirType, MirValue, Node, Op, Parameter, Parent, Root,
         SpannedMirValue, TraceAccessBinding, Value, Vector,
     },
-    CompileError,
 };
 
 use super::{duplicate_node_or_replace, visitor::Visitor};
@@ -440,10 +440,7 @@ impl Visitor for InliningSecondPass<'_> {
 
         {
             let call_op = node.clone().as_op().unwrap_or_else(|| {
-                panic!(
-                    "InliningSecondPass::visit_node on a non-Op node: {:?}",
-                    node
-                )
+                panic!("InliningSecondPass::visit_node on a non-Op node: {node:?}")
             });
 
             // First, check if it's a known Call to inline,

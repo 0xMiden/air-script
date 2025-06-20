@@ -1,6 +1,6 @@
 use crate::{
-    ir::{Graph, Link, Node, Op, Parent, Root},
     CompileError,
+    ir::{Graph, Link, Node, Op, Parent, Root},
 };
 use std::ops::Deref;
 

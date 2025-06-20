@@ -1,5 +1,5 @@
-use crate::layout::Layout;
 use crate::QuadFelt;
+use crate::layout::Layout;
 use miden_core::Felt;
 use std::collections::BTreeMap;
 

@@ -1,4 +1,4 @@
-use super::{compile, expect_diagnostic, Pipeline};
+use super::{Pipeline, compile, expect_diagnostic};
 
 #[test]
 fn trace_columns_index_access() {

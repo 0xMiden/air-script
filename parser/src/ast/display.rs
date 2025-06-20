@@ -19,6 +19,7 @@ impl<T: fmt::Display> fmt::Display for DisplayList<'_, T> {
 }
 
 /// Displays an item surrounded by parentheses, e.g. `(foo)`
+#[allow(dead_code)]
 pub struct DisplayParenthesized<T>(pub T);
 impl<T: fmt::Display> fmt::Display for DisplayParenthesized<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -42,7 +43,7 @@ impl<V: fmt::Display, T: fmt::Display> fmt::Display for DisplayTypedTuple<'_, V,
         write!(
             f,
             "({})",
-            DisplayCsv::new(self.0.iter().map(|(v, t)| format!("{}: {}", v, t)))
+            DisplayCsv::new(self.0.iter().map(|(v, t)| format!("{v}: {t}")))
         )
     }
 }
@@ -69,7 +70,7 @@ where
             if i > 0 {
                 f.write_str(", ")?;
             }
-            write!(f, "{}", item)?;
+            write!(f, "{item}")?;
         }
         Ok(())
     }
@@ -102,16 +103,16 @@ impl fmt::Display for DisplayStatement<'_> {
                 write!(f, "{display}")
             }
             Statement::Enforce(expr) => {
-                write!(f, "enf {}", expr)
+                write!(f, "enf {expr}")
             }
             Statement::EnforceIf(expr, selector) => {
-                write!(f, "enf {} when {}", expr, selector)
+                write!(f, "enf {expr} when {selector}")
             }
             Statement::EnforceAll(expr) => {
-                write!(f, "enf {}", expr)
+                write!(f, "enf {expr}")
             }
-            Statement::Expr(expr) => write!(f, "return {}", expr),
-            Statement::BusEnforce(expr) => write!(f, "enf {}", expr),
+            Statement::Expr(expr) => write!(f, "return {expr}"),
+            Statement::BusEnforce(expr) => write!(f, "enf {expr}"),
         }
     }
 }

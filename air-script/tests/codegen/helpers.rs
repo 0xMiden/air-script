@@ -3,7 +3,7 @@ use std::sync::Arc;
 use air_ir::{CodeGenerator, CompileError};
 use air_pass::Pass;
 use miden_diagnostics::{
-    term::termcolor::ColorChoice, CodeMap, DefaultEmitter, DiagnosticsHandler,
+    CodeMap, DefaultEmitter, DiagnosticsHandler, term::termcolor::ColorChoice,
 };
 
 pub enum Target {

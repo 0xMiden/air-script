@@ -29,9 +29,9 @@ use miden_diagnostics::{
 };
 
 use crate::{
+    Symbol,
     parser::ParseError,
     sema::{self, SemanticAnalysisError},
-    Symbol,
 };
 
 /// This structure is used to represent parsing arbitrary AirScript files which may
@@ -314,7 +314,7 @@ impl fmt::Display for Program {
 
         writeln!(f, "trace_columns {{")?;
         for segment in self.trace_columns.iter() {
-            writeln!(f, "    {}", segment)?;
+            writeln!(f, "    {segment}")?;
         }
         f.write_str("}}")?;
         f.write_str("\n")?;

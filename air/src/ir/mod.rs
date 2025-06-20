@@ -13,11 +13,11 @@ pub use self::trace::TraceAccess;
 pub use self::value::{PeriodicColumnAccess, PublicInputAccess, Value};
 
 pub use air_parser::{
+    Symbol,
     ast::{
         AccessType, Boundary, Identifier, PeriodicColumn, PublicInput, QualifiedIdentifier,
         TraceSegmentId,
     },
-    Symbol,
 };
 
 /// The default segment against which a constraint is applied is the main trace segment.

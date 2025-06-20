@@ -1,4 +1,4 @@
-use super::super::{compile, expect_diagnostic, Pipeline};
+use super::super::{Pipeline, compile, expect_diagnostic};
 
 #[test]
 fn list_comprehension() {

@@ -5,8 +5,8 @@ use air_parser::ast::{self, Identifier};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 use crate::{
-    ir::{BackLink, Builder, BusOp, BusOpKind, Link, Op},
     CompileError,
+    ir::{BackLink, Builder, BusOp, BusOpKind, Link, Op},
 };
 
 /// A Mir struct to represent a Bus definition

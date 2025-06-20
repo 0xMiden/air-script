@@ -1,4 +1,4 @@
-use super::super::{compile, Pipeline};
+use super::super::{Pipeline, compile};
 
 #[test]
 fn constraint_comprehension() {

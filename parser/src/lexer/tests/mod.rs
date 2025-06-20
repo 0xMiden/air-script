@@ -1,6 +1,6 @@
+use crate::Symbol;
 use crate::lexer::{Lexer, LexicalError, Token};
 use crate::parser::ParseError;
-use crate::Symbol;
 
 mod arithmetic_ops;
 mod boundary_constraints;

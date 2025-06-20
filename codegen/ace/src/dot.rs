@@ -84,7 +84,7 @@ impl Display for StarkVar {
             Self::ZMaxCycle => "zᵐᵃˣ",
             Self::Alpha => "⍺",
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 
@@ -111,6 +111,6 @@ impl Display for ArithmeticOp {
             ArithmeticOp::Mul => "×",
             ArithmeticOp::Add => "+",
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }

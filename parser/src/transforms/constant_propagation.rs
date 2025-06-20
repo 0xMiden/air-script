@@ -348,8 +348,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                                     Expr::Const(Span::new(span, ConstantExpr::Scalar(value[idx])));
                             }
                             ref ty => panic!(
-                                "invalid constant reference, expected scalar access, got {:?}",
-                                ty
+                                "invalid constant reference, expected scalar access, got {ty:?}",
                             ),
                         },
                         ConstantExpr::Matrix(value) => match access.access_type.clone() {
@@ -399,12 +398,12 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                                         Expr::Const(Span::new(span, ConstantExpr::Scalar(folded)));
                                 }
                                 invalid => {
-                                    panic!("bad argument to list folding builtin: {:#?}", invalid)
+                                    panic!("bad argument to list folding builtin: {invalid:#?}")
                                 }
                             }
                         }
                     }
-                    invalid => unimplemented!("unknown builtin function: {}", invalid),
+                    invalid => unimplemented!("unknown builtin function: {invalid}"),
                 }
                 ControlFlow::Continue(())
             }

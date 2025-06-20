@@ -1,5 +1,5 @@
 use crate::circuit::{Circuit, Node};
-use crate::{build_ace_circuit, AceVars, QuadFelt};
+use crate::{AceVars, QuadFelt, build_ace_circuit};
 use air_ir::Air;
 use miden_diagnostics::term::termcolor::ColorChoice;
 use miden_diagnostics::{CodeMap, DefaultEmitter, DiagnosticsHandler};

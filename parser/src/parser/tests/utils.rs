@@ -123,8 +123,7 @@ impl ParseTest {
             self.diagnostics.emit(err);
             assert!(
                 self.emitter.captured().contains(expected),
-                "expected diagnostic output to contain the string: '{}'",
-                expected
+                "expected diagnostic output to contain the string: '{expected}'",
             );
         } else {
             panic!("expected parsing to fail, but it succeeded");
@@ -137,8 +136,7 @@ impl ParseTest {
             self.diagnostics.emit(err);
             assert!(
                 self.emitter.captured().contains(expected),
-                "expected diagnostic output to contain the string: '{}'",
-                expected
+                "expected diagnostic output to contain the string: '{expected}'",
             );
         } else {
             panic!("expected parsing to fail, but it succeeded");

@@ -119,7 +119,7 @@ impl fmt::Display for TraceSegment {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if !self.name.is_generated() {
             if let Some(name) = self.name.as_str().strip_prefix('$') {
-                write!(f, "{}: ", name)?;
+                write!(f, "{name}: ")?;
             } else {
                 write!(f, "{}: ", self.name)?;
             }

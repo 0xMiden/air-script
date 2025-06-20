@@ -126,6 +126,6 @@ fn return_first_invalid_character_error() {
             let expected = SourceIndex::new(start.source_id(), ByteIndex(7));
             assert_eq!(start, expected);
         }
-        err => panic!("unexpected lexical error in source: {:#?}", err),
+        err => panic!("unexpected lexical error in source: {err:#?}"),
     }
 }

@@ -121,7 +121,7 @@ impl BindingType {
                     }
                 }
             }
-            invalid => panic!("invalid trace column(s) binding type: {:#?}", invalid),
+            invalid => panic!("invalid trace column(s) binding type: {invalid:#?}"),
         }
     }
 
@@ -176,7 +176,7 @@ impl BindingType {
                     }
                 }
             }
-            invalid => panic!("invalid trace column(s) binding type: {:#?}", invalid),
+            invalid => panic!("invalid trace column(s) binding type: {invalid:#?}"),
         }
     }
 
@@ -222,7 +222,7 @@ impl BindingType {
 impl fmt::Display for BindingType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Alias(aliased) => write!(f, "{}", aliased),
+            Self::Alias(aliased) => write!(f, "{aliased}"),
             Self::Local(_) => f.write_str("local"),
             Self::Constant(_) => f.write_str("constant"),
             Self::Vector(_) => f.write_str("vector"),

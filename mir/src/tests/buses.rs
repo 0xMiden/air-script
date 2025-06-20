@@ -1,14 +1,15 @@
 use crate::{
     ir::{
-        assert_bus_eq, Add, Builder, Bus, Fold, FoldOperator, Link, Mir, MirValue, Op,
-        PublicInputTableAccess, Vector,
+        Add, Builder, Bus, Fold, FoldOperator, Link, Mir, MirValue, Op, PublicInputTableAccess,
+        Vector, assert_bus_eq,
     },
     tests::translate,
 };
-use air_parser::{ast, Symbol};
+use air_parser::{Symbol, ast};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 use super::{compile, expect_diagnostic};
+use core::slice;
 
 #[test]
 fn buses_in_boundary_constraints() {
@@ -132,9 +133,9 @@ fn buses_args_expr_in_integrity_expr() {
         .span(SourceSpan::default())
         .build();
     let sel: Link<Op> = From::from(1);
-    let _p_add = bus.insert(&[x.clone()], sel.clone(), SourceSpan::default());
+    let _p_add = bus.insert(slice::from_ref(&x), sel.clone(), SourceSpan::default());
     let not_sel: Link<Op> = From::from(0);
-    let _p_rem = bus.remove(&[x.clone()], not_sel.clone(), SourceSpan::default());
+    let _p_rem = bus.remove(slice::from_ref(&x), not_sel.clone(), SourceSpan::default());
     let bus_ident = result_mir.constraint_graph().buses.keys().next().unwrap();
     let bus_name = ast::Identifier::new(bus_ident.span(), bus_ident.name());
     bus.borrow_mut().set_name_unchecked(bus_name);
@@ -181,7 +182,7 @@ fn buses_table_in_boundary_constraints() {
             ..
         }) = op.as_value().unwrap().value.value
         else {
-            panic!("Expected a public input, got {:#?}", op);
+            panic!("Expected a public input, got {op:#?}");
         };
         (table_name, num_cols)
     };

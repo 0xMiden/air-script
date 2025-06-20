@@ -1,5 +1,5 @@
-use crate::inputs::{AceVars, StarkInputs};
 use crate::QuadFelt;
+use crate::inputs::{AceVars, StarkInputs};
 use air_ir::{Air, ConstraintDomain, NodeIndex, Operation, Value};
 use miden_core::Felt;
 use std::collections::BTreeMap;

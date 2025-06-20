@@ -1,5 +1,5 @@
-use crate::layout::{InputRegion, Layout};
 use crate::QuadFelt;
+use crate::layout::{InputRegion, Layout};
 use air_ir::Air;
 use miden_core::Felt;
 use std::iter::zip;

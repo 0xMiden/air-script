@@ -198,13 +198,13 @@ impl<'a> Inlining<'a> {
     fn get_next_ident_lc(&mut self, span: SourceSpan) -> Identifier {
         let id = self.next_ident_lc;
         self.next_ident_lc += 1;
-        Identifier::new(span, crate::Symbol::intern(format!("%lc{}", id)))
+        Identifier::new(span, crate::Symbol::intern(format!("%lc{id}")))
     }
 
     fn get_next_ident(&mut self, span: SourceSpan) -> Identifier {
         let id = self.next_ident;
         self.next_ident += 1;
-        Identifier::new(span, crate::Symbol::intern(format!("%{}", id)))
+        Identifier::new(span, crate::Symbol::intern(format!("%{id}")))
     }
 
     /// Inline/expand all of the statements in the `boundary_constraints` section
@@ -561,7 +561,7 @@ impl<'a> Inlining<'a> {
             // with constant arguments, so we should panic if we ever see one here
             Expr::Const(_) => panic!("expected constant to have been folded"),
             // All other invalid expressions should have been caught by now
-            invalid => panic!("invalid argument to list folding builtin: {:#?}", invalid),
+            invalid => panic!("invalid argument to list folding builtin: {invalid:#?}"),
         }
     }
 
@@ -683,21 +683,13 @@ impl<'a> Inlining<'a> {
         match expr {
             ScalarExpr::Const(_) => Ok(()),
             ScalarExpr::SymbolAccess(access)
-            | ScalarExpr::BoundedSymbolAccess(BoundedSymbolAccess {
-                column: access,
-                ..
-            }) => {
+            | ScalarExpr::BoundedSymbolAccess(BoundedSymbolAccess { column: access, .. }) => {
                 if let Some(rewrite) = self.get_trace_access_rewrite(access) {
                     *access = rewrite;
                 }
                 Ok(())
             }
-            ScalarExpr::Binary(BinaryExpr {
-                op,
-                lhs,
-                rhs,
-                ..
-            }) => {
+            ScalarExpr::Binary(BinaryExpr { op, lhs, rhs, .. }) => {
                 self.rewrite_scalar_expr(lhs.as_mut())?;
                 self.rewrite_scalar_expr(rhs.as_mut())?;
                 match op {
@@ -1392,7 +1384,7 @@ impl<'a> Inlining<'a> {
                             // aren't a thing, and there is no other expression type which can produce trace
                             // bindings.
                             let Expr::SymbolAccess(access) = input else {
-                                panic!("unexpected element in trace column vector: {:#?}", input)
+                                panic!("unexpected element in trace column vector: {input:#?}")
                             };
                             // Unless we have leftover input, initialize `binding_ty` with the binding type of this input
                             let bt = binding_ty
@@ -1671,8 +1663,7 @@ impl RewriteIterableBindingsVisitor<'_> {
                             Some(ScalarExpr::Const(Span::new(span, elems[idx])))
                         }
                         invalid => panic!(
-                            "expected vector to be reduced to scalar by access, got {:#?}",
-                            invalid
+                            "expected vector to be reduced to scalar by access, got {invalid:#?}"
                         ),
                     },
                     ConstantExpr::Matrix(ref rows) => match access.access_type {
@@ -1680,8 +1671,7 @@ impl RewriteIterableBindingsVisitor<'_> {
                             Some(ScalarExpr::Const(Span::new(span, rows[row][col])))
                         }
                         invalid => panic!(
-                            "expected matrix to be reduced to scalar by access, got {:#?}",
-                            invalid
+                            "expected matrix to be reduced to scalar by access, got {invalid:#?}",
                         ),
                     },
                 }
@@ -1694,10 +1684,9 @@ impl RewriteIterableBindingsVisitor<'_> {
                         span,
                         (range.start + idx) as u64,
                     ))),
-                    invalid => panic!(
-                        "expected range to be reduced to scalar by access, got {:#?}",
-                        invalid
-                    ),
+                    invalid => {
+                        panic!("expected range to be reduced to scalar by access, got {invalid:#?}",)
+                    }
                 }
             }
             Some(Expr::Vector(elems)) => {
@@ -1711,24 +1700,20 @@ impl RewriteIterableBindingsVisitor<'_> {
                             self.rewrite_scalar_access(access)?
                         }
                         invalid => panic!(
-                            "expected vector-like value at {}[{}], got: {:#?}",
+                            "expected vector-like value at {}[{idx}], got: {invalid:#?}",
                             access.name.as_ref(),
-                            idx,
-                            invalid
                         ),
                     },
                     invalid => panic!(
-                        "expected vector to be reduced to scalar by access, got {:#?}",
-                        invalid
+                        "expected vector to be reduced to scalar by access, got {invalid:#?}"
                     ),
                 }
             }
             Some(Expr::Matrix(elems)) => match access.access_type {
                 AccessType::Matrix(row, col) => Some(elems[row][col].clone()),
-                invalid => panic!(
-                    "expected matrix to be reduced to scalar by access, got {:#?}",
-                    invalid
-                ),
+                invalid => {
+                    panic!("expected matrix to be reduced to scalar by access, got {invalid:#?}")
+                }
             },
             Some(Expr::SymbolAccess(symbol_access)) => {
                 let mut new_access = symbol_access.access(access.access_type).unwrap();
@@ -1769,10 +1754,7 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
             // permitted in boundary_constraints currently. That is handled elsewhere, we just need to
             // make sure the symbols themselves are rewritten properly here.
             ScalarExpr::SymbolAccess(access)
-            | ScalarExpr::BoundedSymbolAccess(BoundedSymbolAccess {
-                column: access,
-                ..
-            }) => {
+            | ScalarExpr::BoundedSymbolAccess(BoundedSymbolAccess { column: access, .. }) => {
                 if let Some(replacement) = self.rewrite_scalar_access(access.clone())? {
                     *expr = replacement;
                     return ControlFlow::Continue(());

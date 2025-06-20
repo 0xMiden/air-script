@@ -2,12 +2,13 @@ use core::panic;
 use std::ops::Deref;
 
 use air_parser::ast::AccessType;
-use air_parser::{ast, symbols, LexicalScope};
+use air_parser::{LexicalScope, ast, symbols};
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 
 use crate::ir::BusAccess;
 use crate::{
+    CompileError,
     ir::{
         Accessor, Add, Boundary, Builder, Bus, BusOp, BusOpKind, Call, ConstantValue, Enf,
         Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir, MirType, MirValue,
@@ -15,7 +16,6 @@ use crate::{
         SpannedMirValue, Sub, TraceAccess, TraceAccessBinding, Value, Vector,
     },
     passes::duplicate_node,
-    CompileError,
 };
 
 /// This pass transforms a given [ast::Program] into a Middle Intermediate Representation ([Mir])
@@ -506,8 +506,7 @@ impl<'a> MirBuilder<'a> {
                 .with_primary_label(
                     list_comp.span(),
                     format!(
-                        "expected a bus operation in bus enforce, got this instead: \n{:#?}",
-                        bus_op
+                        "expected a bus operation in bus enforce, got this instead: \n{bus_op:#?}"
                     ),
                 )
                 .emit();
@@ -711,14 +710,11 @@ impl<'a> MirBuilder<'a> {
                         .with_message("expected reference to periodic column")
                         .with_primary_label(
                             qual_ident.span(),
-                            format!(
-                                "expected reference to periodic column, got `{:#?}`",
-                                qual_ident
-                            ),
+                            format!("expected reference to periodic column, got `{qual_ident:#?}`"),
                         )
                         .with_secondary_label(
                             access.span(),
-                            format!("in this access expression `{:#?}`", access),
+                            format!("in this access expression `{access:#?}`"),
                         )
                         .emit();
                     //unreachable!("expected reference to periodic column in `{:#?}`", access);

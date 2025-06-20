@@ -7,7 +7,7 @@ use air_parser::ast::{Identifier, NamespacedIdentifier};
 use miden_diagnostics::{SourceSpan, Span};
 use pretty_assertions::assert_eq;
 
-use crate::{ir::*, passes::Visitor, CompileError};
+use crate::{CompileError, ir::*, passes::Visitor};
 
 pub fn strip_spans(mir: &mut Mir) {
     let graph = mir.constraint_graph_mut();
@@ -15,7 +15,7 @@ pub fn strip_spans(mir: &mut Mir) {
     match visitor.run(graph) {
         Ok(_) => {}
         Err(e) => {
-            panic!("Error stripping spans: {:?}", e);
+            panic!("Error stripping spans: {e:?}");
         }
     }
 }

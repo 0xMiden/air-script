@@ -1,4 +1,4 @@
-use super::{expect_valid_tokenization, Symbol, Token};
+use super::{Symbol, Token, expect_valid_tokenization};
 
 #[test]
 fn root_module_tokenization() {
