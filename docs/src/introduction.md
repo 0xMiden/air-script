@@ -65,13 +65,13 @@ You can use the `help` option to see other available options.
 The following changes are some of the improvements under consideration for future releases.
 
 - more advanced language functionality for better ergonomics and modularity, such as:
-  - support for functions.
-  - specialized expressions for multiset checks.
+  - multi-table constraints.
+  - type system.
 - optimizations, such as:
   - constant folding.
   - removing unnecessary nodes from the `AlgebraicGraph` of boundary and integrity constraints.
   - combining integrity constraints with mutually exclusive selectors to reduce the total number of constraints.
-  - Optimizing constraint evaluation logic for Miden assembly backend.
 - additional language targets for simplifying verifier implementations:
-  - Solidity.
+  - Plonky3 AirBuilder.
+  - JSON-based constraint syntax.
 - formal verification

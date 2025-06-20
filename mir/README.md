@@ -2,7 +2,7 @@
 
 This crate contains the middle intermediate representation for AirScript, `MIR`.
 
-The purpose of the `MIR` is to provide a representation of an AirScript program that allows for optimization and translation to `AirIR` containing the `AlgebraicGraph`
+The purpose of the `MIR` is to provide a representation of an AirScript program that allows for optimization and translation to `AirIR` containing the `AlgebraicGraph`.
 
 ## Generating the MIR
 
