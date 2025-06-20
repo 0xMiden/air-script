@@ -335,9 +335,27 @@ impl Visitor for InliningSecondPass<'_> {
                         // Depends if additional nodes change things (e.g. the Vector size..)
                         // For now I think we can keep all nodes, and just ignore the non-Enf nodes
                         // When building the constraints during lowering Mir -> Air
-                        new_nodes.push(
-                            self.nodes_to_replace.get(&body_node.get_ptr()).unwrap().1.clone(),
-                        );
+
+                        let new_node =
+                            self.nodes_to_replace.get(&body_node.get_ptr()).unwrap().1.clone();
+
+                        if let Some(bus_op) = new_node.clone().as_bus_op() {
+                            //let args = bus_op.args.clone();
+                            let latch = bus_op.latch.clone();
+
+                            bus_op
+                                .bus
+                                .to_link()
+                                .unwrap()
+                                .borrow_mut()
+                                .columns
+                                .push(new_node.clone());
+                            bus_op.bus.to_link().unwrap().borrow_mut().latches.push(latch.clone());
+                        }
+
+                        if new_node.clone().as_enf().is_some() {
+                            new_nodes.push(new_node);
+                        }
                     }
                     let span =
                         new_nodes.iter().map(|n| n.span()).fold(SourceSpan::UNKNOWN, |acc, s| {

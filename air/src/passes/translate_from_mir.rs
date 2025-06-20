@@ -74,10 +74,6 @@ impl Pass for MirToAir<'_> {
 
         let graph = mir.constraint_graph();
 
-        for bus in buses.values() {
-            builder.build_bus(bus)?;
-        }
-
         for bc in graph.boundary_constraints_roots.borrow().deref().iter() {
             builder.build_boundary_constraint(bc)?;
         }
@@ -85,6 +81,11 @@ impl Pass for MirToAir<'_> {
         for ic in graph.integrity_constraints_roots.borrow().deref().iter() {
             builder.build_integrity_constraint(ic)?;
         }
+
+        for bus in buses.values() {
+            builder.build_bus(bus)?;
+        }
+
         Ok(air)
     }
 }
@@ -519,6 +520,13 @@ impl AirBuilder<'_> {
                 match child_op.clone().borrow().deref() {
                     Op::Sub(_sub) => {
                         self.build_integrity_constraint(&child_op)?;
+                    },
+                    Op::BusOp(bus_op) => {
+                        let bus = bus_op.bus.to_link().unwrap();
+                        let latch = bus_op.latch.clone();
+
+                        bus.borrow_mut().latches.push(latch.clone());
+                        bus.borrow_mut().columns.push(child_op.clone());
                     },
                     _ => unreachable!("Enforced with unexpected operation: {:?}", child_op),
                 }
