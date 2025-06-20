@@ -186,10 +186,10 @@ impl fmt::Display for ConstantExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Scalar(value) => write!(f, "{}", value),
-            Self::Vector(ref values) => {
+            Self::Vector(values) => {
                 write!(f, "{}", DisplayList(values.as_slice()))
             }
-            Self::Matrix(ref values) => write!(
+            Self::Matrix(values) => write!(
                 f,
                 "{}",
                 DisplayBracketed(DisplayCsv::new(

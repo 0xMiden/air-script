@@ -100,8 +100,8 @@ where
                 *self = Self::Root(env);
                 None
             }
-            Self::Root(ref mut env) => env.insert(k, v),
-            Self::Nested(_, ref mut env) => env.insert(k, v),
+            Self::Root(env) => env.insert(k, v),
+            Self::Nested(_, env) => env.insert(k, v),
         }
     }
 
@@ -112,8 +112,8 @@ where
     {
         match self {
             Self::Empty => None,
-            Self::Root(ref env) => env.get(key),
-            Self::Nested(ref parent, ref env) => env.get(key).or_else(|| parent.get(key)),
+            Self::Root(env) => env.get(key),
+            Self::Nested(parent, env) => env.get(key).or_else(|| parent.get(key)),
         }
     }
 
@@ -124,8 +124,8 @@ where
     {
         match self {
             Self::Empty => None,
-            Self::Root(ref mut env) => env.get_mut(key),
-            Self::Nested(ref mut parent, ref mut env) => env
+            Self::Root(env) => env.get_mut(key),
+            Self::Nested(parent, env) => env
                 .get_mut(key)
                 .or_else(|| Rc::get_mut(parent).and_then(|p| p.get_mut(key))),
         }
@@ -138,8 +138,8 @@ where
     {
         match self {
             Self::Empty => None,
-            Self::Root(ref env) => env.get_key_value(key),
-            Self::Nested(ref parent, ref env) => {
+            Self::Root(env) => env.get_key_value(key),
+            Self::Nested(parent, env) => {
                 env.get_key_value(key).or_else(|| parent.get_key_value(key))
             }
         }

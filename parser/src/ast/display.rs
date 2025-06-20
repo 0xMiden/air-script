@@ -93,7 +93,7 @@ impl fmt::Display for DisplayStatement<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.write_indent(f)?;
         match self.statement {
-            Statement::Let(ref expr) => {
+            Statement::Let(expr) => {
                 let display = DisplayLet {
                     let_expr: expr,
                     indent: self.indent,
@@ -101,17 +101,17 @@ impl fmt::Display for DisplayStatement<'_> {
                 };
                 write!(f, "{display}")
             }
-            Statement::Enforce(ref expr) => {
+            Statement::Enforce(expr) => {
                 write!(f, "enf {}", expr)
             }
-            Statement::EnforceIf(ref expr, ref selector) => {
+            Statement::EnforceIf(expr, selector) => {
                 write!(f, "enf {} when {}", expr, selector)
             }
-            Statement::EnforceAll(ref expr) => {
+            Statement::EnforceAll(expr) => {
                 write!(f, "enf {}", expr)
             }
-            Statement::Expr(ref expr) => write!(f, "return {}", expr),
-            Statement::BusEnforce(ref expr) => write!(f, "enf {}", expr),
+            Statement::Expr(expr) => write!(f, "return {}", expr),
+            Statement::BusEnforce(expr) => write!(f, "enf {}", expr),
         }
     }
 }

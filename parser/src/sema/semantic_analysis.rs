@@ -755,7 +755,7 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
     ) -> ControlFlow<SemanticAnalysisError> {
         match expr {
             crate::ast::RangeBound::Const(_) => ControlFlow::Continue(()),
-            crate::ast::RangeBound::SymbolAccess(ref mut access) => {
+            crate::ast::RangeBound::SymbolAccess(access) => {
                 self.visit_mut_const_symbol_access(access)?;
                 // The identifier must have been resolved to reach here
                 let qid = access.name.resolved().unwrap();
@@ -950,7 +950,7 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
                     .emit();
                 // Continue with a fabricated type
                 let ty = match &expr.access_type {
-                    AccessType::Slice(ref range) => {
+                    AccessType::Slice(range) => {
                         let range = range.to_slice_range();
                         Type::Vector(range.len())
                     }
@@ -1119,7 +1119,7 @@ impl SemanticAnalysis<'_> {
     ) -> ControlFlow<SemanticAnalysisError> {
         // We're expecting either a vector of bindings, or an aggregate binding
         match arg {
-            Expr::SymbolAccess(ref access) => {
+            Expr::SymbolAccess(access) => {
                 match self.access_binding_type(access) {
                     Ok(BindingType::TraceColumn(tr) | BindingType::TraceParam(tr)) => {
                         if tr.size == param.size {
@@ -1246,7 +1246,7 @@ impl SemanticAnalysis<'_> {
                     }
                 }
             }
-            Expr::Vector(ref elems) => {
+            Expr::Vector(elems) => {
                 // We need to make sure that the number of columns represented by the vector corresponds to those
                 // expected by the callee, which requires us to first check each element of the vector, and then
                 // at the end determine if the sizes line up
@@ -1334,10 +1334,10 @@ impl SemanticAnalysis<'_> {
         // Only equality expressions are permitted in boundary constraints
         let constraint_span = expr.span();
         match expr {
-            ScalarExpr::Binary(ref mut expr) if expr.op == BinaryOp::Eq => {
+            ScalarExpr::Binary(expr) if expr.op == BinaryOp::Eq => {
                 // Ensure that the left-hand expression is a boundary access
                 match expr.lhs.as_mut() {
-                    ScalarExpr::BoundedSymbolAccess(ref mut access) => {
+                    ScalarExpr::BoundedSymbolAccess(access) => {
                         // Visit the expression operands
                         self.visit_mut_symbol_access(&mut access.column)?;
 
@@ -1500,13 +1500,13 @@ impl SemanticAnalysis<'_> {
                     }
                 }
             }
-            ScalarExpr::BusOperation(ref mut expr) => {
+            ScalarExpr::BusOperation(expr) => {
                 self.invalid_constraint(expr.span(), "expected an equality expression here")
                     .with_note("Bus operations are only permitted in integrity constraints")
                     .emit();
                 ControlFlow::Break(SemanticAnalysisError::Invalid)
             }
-            ScalarExpr::Call(ref expr) => {
+            ScalarExpr::Call(expr) => {
                 self.invalid_constraint(expr.span(), "expected an equality expression here")
                     .with_note(
                         "Calls to evaluator functions are only permitted in integrity constraints",
@@ -1538,10 +1538,10 @@ impl SemanticAnalysis<'_> {
         // 2. That the expression is either an equality, a call to an evaluator function, or a bus operation
         //
         match expr {
-            ScalarExpr::Binary(ref mut expr) if expr.op == BinaryOp::Eq => {
+            ScalarExpr::Binary(expr) if expr.op == BinaryOp::Eq => {
                 self.visit_mut_binary_expr(expr)
             }
-            ScalarExpr::Call(ref mut expr) => {
+            ScalarExpr::Call(expr) => {
                 // Visit the call normally, so we can resolve the callee identifier
                 self.visit_mut_call(expr)?;
 
@@ -1592,7 +1592,7 @@ impl SemanticAnalysis<'_> {
                     ResolvableIdentifier::Unresolved(_) => ControlFlow::Continue(()),
                 }
             }
-            ScalarExpr::BusOperation(ref mut expr) => {
+            ScalarExpr::BusOperation(expr) => {
                 // Visit the call normally, so we can resolve the callee identifier
                 self.visit_mut_bus_operation(expr)?;
 
@@ -1763,7 +1763,7 @@ impl SemanticAnalysis<'_> {
             Expr::Range(range) => Ok(BindingType::Local(Type::Vector(
                 range.to_slice_range().len(),
             ))),
-            Expr::Vector(ref elems) => {
+            Expr::Vector(elems) => {
                 let mut binding_tys = Vec::with_capacity(elems.len());
                 for elem in elems.iter() {
                     binding_tys.push(self.expr_binding_type(elem)?);
@@ -1776,11 +1776,11 @@ impl SemanticAnalysis<'_> {
                 let columns = expr[0].len();
                 Ok(BindingType::Local(Type::Matrix(rows, columns)))
             }
-            Expr::SymbolAccess(ref expr) => self.access_binding_type(expr),
+            Expr::SymbolAccess(expr) => self.access_binding_type(expr),
             Expr::Call(Call { ty: None, .. }) => Err(InvalidAccessError::InvalidBinding),
             Expr::Call(Call { ty: Some(ty), .. }) => Ok(BindingType::Local(*ty)),
             Expr::Binary(_) => Ok(BindingType::Local(Type::Felt)),
-            Expr::ListComprehension(ref lc) => {
+            Expr::ListComprehension(lc) => {
                 match lc.ty {
                     Some(ty) => Ok(BindingType::Local(ty)),
                     None => {
@@ -1791,7 +1791,7 @@ impl SemanticAnalysis<'_> {
                     }
                 }
             }
-            Expr::Let(ref expr) => {
+            Expr::Let(expr) => {
                 self.diagnostics
                     .diagnostic(Severity::Bug)
                     .with_message("invalid expression")
@@ -1799,7 +1799,7 @@ impl SemanticAnalysis<'_> {
                     .emit();
                 Err(InvalidAccessError::InvalidBinding)
             }
-            Expr::BusOperation(ref _expr) => Ok(BindingType::Local(Type::Felt)),
+            Expr::BusOperation(_expr) => Ok(BindingType::Local(Type::Felt)),
             Expr::Null(_) | Expr::Unconstrained(_) => Ok(BindingType::Local(Type::Felt)),
         }
     }
@@ -1829,7 +1829,7 @@ impl SemanticAnalysis<'_> {
                     .map(|(nid, ty)| Span::new(nid.span(), ty.clone()))
                     .ok_or(InvalidAccessError::UndefinedVariable)
             }
-            ResolvableIdentifier::Resolved(ref qid) => self.resolved_binding_type(qid),
+            ResolvableIdentifier::Resolved(qid) => self.resolved_binding_type(qid),
             ResolvableIdentifier::Unresolved(_) => Err(InvalidAccessError::UndefinedVariable),
         }
     }

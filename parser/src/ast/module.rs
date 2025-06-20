@@ -254,7 +254,7 @@ impl Module {
                                 .emit();
                         }
                         Import::Partial {
-                            items: ref mut prev_items,
+                            items: prev_items,
                             ..
                         } => {
                             for item in items.drain() {
@@ -341,7 +341,7 @@ impl Module {
         }
 
         // Validate constant expression
-        if let ConstantExpr::Matrix(ref matrix) = &constant.value {
+        if let ConstantExpr::Matrix(matrix) = &constant.value {
             let expected_len = matrix
                 .first()
                 .expect("expected matrix to have at least one row")

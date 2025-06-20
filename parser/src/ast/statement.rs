@@ -162,10 +162,10 @@ impl Let {
         let mut last = self.body.last();
         while let Some(stmt) = last.take() {
             match stmt {
-                Statement::Let(ref let_expr) => {
+                Statement::Let(let_expr) => {
                     last = let_expr.body.last();
                 }
-                Statement::Expr(ref expr) => return expr.ty(),
+                Statement::Expr(expr) => return expr.ty(),
                 Statement::Enforce(_)
                 | Statement::EnforceIf(_, _)
                 | Statement::EnforceAll(_)

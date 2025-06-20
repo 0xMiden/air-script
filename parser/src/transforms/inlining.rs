@@ -509,10 +509,10 @@ impl<'a> Inlining<'a> {
     }
 
     /// Expand a list folding operation (e.g. sum/prod) over an expression of aggregate type into an equivalent expression tree
-    fn expand_fold(&mut self, op: BinaryOp, mut list: Expr) -> Result<Expr, SemanticAnalysisError> {
+    fn expand_fold(&mut self, op: BinaryOp, list: Expr) -> Result<Expr, SemanticAnalysisError> {
         let span = list.span();
         match list {
-            Expr::Vector(ref mut elems) => self.expand_vector_fold(span, op, elems),
+            Expr::Vector(mut elems) => self.expand_vector_fold(span, op, &mut elems),
             Expr::ListComprehension(lc) => {
                 // Expand the comprehension, but ensure we don't treat it like a comprehension constraint
                 let in_cc = core::mem::replace(&mut self.in_comprehension_constraint, false);
@@ -522,7 +522,7 @@ impl<'a> Inlining<'a> {
                 with_let_result(self, &mut expanded, |inliner, value| {
                     match value {
                         // The result value of expanding a comprehension _must_ be a vector
-                        Expr::Vector(ref mut elems) => {
+                        Expr::Vector(elems) => {
                             // We're going to replace the vector binding with the fold
                             let folded = inliner.expand_vector_fold(span, op, elems)?;
                             *value = folded;
@@ -561,7 +561,7 @@ impl<'a> Inlining<'a> {
             // with constant arguments, so we should panic if we ever see one here
             Expr::Const(_) => panic!("expected constant to have been folded"),
             // All other invalid expressions should have been caught by now
-            ref invalid => panic!("invalid argument to list folding builtin: {:#?}", invalid),
+            invalid => panic!("invalid argument to list folding builtin: {:#?}", invalid),
         }
     }
 
@@ -617,47 +617,47 @@ impl<'a> Inlining<'a> {
     fn rewrite_expr(&mut self, expr: &mut Expr) -> Result<(), SemanticAnalysisError> {
         match expr {
             Expr::Const(_) | Expr::Range(_) => return Ok(()),
-            Expr::Vector(ref mut elems) => {
+            Expr::Vector(elems) => {
                 for elem in elems.iter_mut() {
                     self.rewrite_expr(elem)?;
                 }
             }
-            Expr::Matrix(ref mut rows) => {
+            Expr::Matrix(rows) => {
                 for row in rows.iter_mut() {
                     for col in row.iter_mut() {
                         self.rewrite_scalar_expr(col)?;
                     }
                 }
             }
-            Expr::Binary(ref mut binary_expr) => {
+            Expr::Binary(binary_expr) => {
                 self.rewrite_scalar_expr(binary_expr.lhs.as_mut())?;
                 self.rewrite_scalar_expr(binary_expr.rhs.as_mut())?;
             }
-            Expr::SymbolAccess(ref mut access) => {
+            Expr::SymbolAccess(access) => {
                 if let Some(rewrite) = self.get_trace_access_rewrite(access) {
                     *access = rewrite;
                 }
             }
-            Expr::Call(ref mut call) => {
+            Expr::Call(call) => {
                 for arg in call.args.iter_mut() {
                     self.rewrite_expr(arg)?;
                 }
             }
             // Comprehension rewrites happen when they are expanded, but we do visit the iterables now
-            Expr::ListComprehension(ref mut lc) => {
+            Expr::ListComprehension(lc) => {
                 for expr in lc.iterables.iter_mut() {
                     self.rewrite_expr(expr)?;
                 }
             }
-            Expr::Let(ref mut let_expr) => {
+            Expr::Let(let_expr) => {
                 let mut next = Some(let_expr.as_mut());
                 while let Some(next_let) = next.take() {
                     self.rewrite_expr(&mut next_let.value)?;
                     match next_let.body.last_mut().unwrap() {
-                        Statement::Let(ref mut inner) => {
+                        Statement::Let(inner) => {
                             next = Some(inner);
                         }
-                        Statement::Expr(ref mut expr) => {
+                        Statement::Expr(expr) => {
                             self.rewrite_expr(expr)?;
                         }
                         Statement::Enforce(_)
@@ -682,9 +682,9 @@ impl<'a> Inlining<'a> {
     fn rewrite_scalar_expr(&mut self, expr: &mut ScalarExpr) -> Result<(), SemanticAnalysisError> {
         match expr {
             ScalarExpr::Const(_) => Ok(()),
-            ScalarExpr::SymbolAccess(ref mut access)
+            ScalarExpr::SymbolAccess(access)
             | ScalarExpr::BoundedSymbolAccess(BoundedSymbolAccess {
-                column: ref mut access,
+                column: access,
                 ..
             }) => {
                 if let Some(rewrite) = self.get_trace_access_rewrite(access) {
@@ -694,8 +694,8 @@ impl<'a> Inlining<'a> {
             }
             ScalarExpr::Binary(BinaryExpr {
                 op,
-                ref mut lhs,
-                ref mut rhs,
+                lhs,
+                rhs,
                 ..
             }) => {
                 self.rewrite_scalar_expr(lhs.as_mut())?;
@@ -707,21 +707,21 @@ impl<'a> Inlining<'a> {
                     _ => Ok(()),
                 }
             }
-            ScalarExpr::Call(ref mut expr) => {
+            ScalarExpr::Call(expr) => {
                 for arg in expr.args.iter_mut() {
                     self.rewrite_expr(arg)?;
                 }
                 Ok(())
             }
-            ScalarExpr::Let(ref mut let_expr) => {
+            ScalarExpr::Let(let_expr) => {
                 let mut next = Some(let_expr.as_mut());
                 while let Some(next_let) = next.take() {
                     self.rewrite_expr(&mut next_let.value)?;
                     match next_let.body.last_mut().unwrap() {
-                        Statement::Let(ref mut inner) => {
+                        Statement::Let(inner) => {
                             next = Some(inner);
                         }
-                        Statement::Expr(ref mut expr) => {
+                        Statement::Expr(expr) => {
                             self.rewrite_expr(expr)?;
                         }
                         Statement::Enforce(_)
@@ -970,16 +970,16 @@ impl<'a> Inlining<'a> {
                 }
                 // If the iterable was a vector, the abstract value is whatever expression is at
                 // the corresponding index of the vector.
-                Expr::Vector(ref elems) => {
+                Expr::Vector(elems) => {
                     let abstract_value = elems[index].clone();
                     let binding_ty = self.expr_binding_type(&abstract_value).unwrap();
                     self.bindings.insert(binding, binding_ty);
                     abstract_value
                 }
                 // If the iterable was a matrix, the abstract value is a vector of expressions
-                // representing the current row of the matrix. We calulate the binding type of
+                // representing the current row of the matrix. We calculate the binding type of
                 // each element in that vector so that accesses into the vector are well typed.
-                Expr::Matrix(ref rows) => {
+                Expr::Matrix(rows) => {
                     let row: Vec<Expr> = rows[index]
                         .iter()
                         .cloned()
@@ -995,7 +995,7 @@ impl<'a> Inlining<'a> {
                 }
                 // If the iterable was a variable/access, then we must first index into that
                 // access, and then rewrite it, if applicable.
-                Expr::SymbolAccess(ref access) => {
+                Expr::SymbolAccess(access) => {
                     // The access here must be of aggregate type, so index into it for the current iteration
                     let mut current_access = access.access(AccessType::Index(index)).unwrap();
                     // Rewrite the resulting access if we have a rewrite for the underlying symbol
@@ -1315,7 +1315,7 @@ impl<'a> Inlining<'a> {
                 // parameter we're binding must be the same. However, a variable may represent a single
                 // column, a contiguous slice of columns, or a vector of such variables which may be
                 // non-contiguous.
-                Expr::SymbolAccess(ref access) => {
+                Expr::SymbolAccess(access) => {
                     // We use a `BindingType` to track the state of the current input binding being processed.
                     //
                     // The initial state is given by the binding type of the access itself, but as we destructure
@@ -1362,7 +1362,7 @@ impl<'a> Inlining<'a> {
                 //    parameter groups together columns passed individually in the caller
                 // 4. Fewer elements in the vector than bindings in the segment, typically because the function
                 //    parameter destructures an input into multiple bindings
-                Expr::Vector(ref inputs) => {
+                Expr::Vector(inputs) => {
                     // The index of the input we're currently extracting columns from
                     let mut index = 0;
                     // A `BindingType` representing the current trace binding we're extracting columns from,
@@ -1381,7 +1381,7 @@ impl<'a> Inlining<'a> {
                         let mut set = vec![];
 
                         // We may need to consume multiple input elements to fulfill the needed columns of
-                        // the current parameter binding - we advance this loop whenver we have exhausted
+                        // the current parameter binding - we advance this loop whenever we have exhausted
                         // an input and need to move on to the next one. We may enter this loop with the
                         // same input index across multiple parameter bindings when the input element is
                         // larger than the parameter binding, in which case we have split the input and
@@ -1391,7 +1391,7 @@ impl<'a> Inlining<'a> {
                             // The input expression must have been a symbol access, as matrices of columns
                             // aren't a thing, and there is no other expression type which can produce trace
                             // bindings.
-                            let Expr::SymbolAccess(ref access) = input else {
+                            let Expr::SymbolAccess(access) = input else {
                                 panic!("unexpected element in trace column vector: {:#?}", input)
                             };
                             // Unless we have leftover input, initialize `binding_ty` with the binding type of this input
@@ -1571,7 +1571,7 @@ fn eval_expr_binding_type(
         Expr::Range(range) => Ok(BindingType::Local(Type::Vector(
             range.to_slice_range().len(),
         ))),
-        Expr::Vector(ref elems) => match elems[0].ty() {
+        Expr::Vector(elems) => match elems[0].ty() {
             None | Some(Type::Felt) => {
                 let mut binding_tys = Vec::with_capacity(elems.len());
                 for elem in elems.iter() {
@@ -1590,17 +1590,17 @@ fn eval_expr_binding_type(
             let columns = expr[0].len();
             Ok(BindingType::Local(Type::Matrix(rows, columns)))
         }
-        Expr::SymbolAccess(ref access) => eval_access_binding_type(access, bindings, imported),
+        Expr::SymbolAccess(access) => eval_access_binding_type(access, bindings, imported),
         Expr::Call(Call { ty: None, .. }) => Err(InvalidAccessError::InvalidBinding),
         Expr::Call(Call { ty: Some(ty), .. }) => Ok(BindingType::Local(*ty)),
         Expr::Binary(_) => Ok(BindingType::Local(Type::Felt)),
-        Expr::ListComprehension(ref lc) => {
+        Expr::ListComprehension(lc) => {
             // The types of all iterables must be the same, so the type of
             // the comprehension is given by the type of the iterables. We
             // just pick the first iterable to tell us the type
             eval_expr_binding_type(&lc.iterables[0], bindings, imported)
         }
-        Expr::Let(ref let_expr) => eval_let_binding_ty(let_expr, bindings, imported),
+        Expr::Let(let_expr) => eval_let_binding_ty(let_expr, bindings, imported),
         Expr::BusOperation(_) | Expr::Null(_) | Expr::Unconstrained(_) => {
             unimplemented!("buses are not implemented for this Pipeline")
         }
@@ -1633,8 +1633,8 @@ fn eval_let_binding_ty(
     bindings.enter();
     bindings.insert(let_expr.name, variable_ty);
     let binding_ty = match let_expr.body.last().unwrap() {
-        Statement::Let(ref inner_let) => eval_let_binding_ty(inner_let, bindings, imported)?,
-        Statement::Expr(ref expr) => eval_expr_binding_type(expr, bindings, imported)?,
+        Statement::Let(inner_let) => eval_let_binding_ty(inner_let, bindings, imported)?,
+        Statement::Expr(expr) => eval_expr_binding_type(expr, bindings, imported)?,
         Statement::Enforce(_)
         | Statement::EnforceIf(_, _)
         | Statement::EnforceAll(_)
@@ -1706,7 +1706,7 @@ impl RewriteIterableBindingsVisitor<'_> {
                     // This implies that the vector contains an element which is vector-like,
                     // if the value at `idx` is not, this is an invalid access
                     AccessType::Matrix(idx, nested_idx) => match &elems[idx] {
-                        Expr::SymbolAccess(ref saccess) => {
+                        Expr::SymbolAccess(saccess) => {
                             let access = saccess.access(AccessType::Index(nested_idx)).unwrap();
                             self.rewrite_scalar_access(access)?
                         }
@@ -1768,9 +1768,9 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
             // NOTE: We handle BoundedSymbolAccess here even though comprehension constraints are not
             // permitted in boundary_constraints currently. That is handled elsewhere, we just need to
             // make sure the symbols themselves are rewritten properly here.
-            ScalarExpr::SymbolAccess(ref mut access)
+            ScalarExpr::SymbolAccess(access)
             | ScalarExpr::BoundedSymbolAccess(BoundedSymbolAccess {
-                column: ref mut access,
+                column: access,
                 ..
             }) => {
                 if let Some(replacement) = self.rewrite_scalar_access(access.clone())? {
@@ -1782,7 +1782,7 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
             // We need to visit both operands of a binary expression - but while we're here,
             // check to see if resolving the operands reduces to a constant expression that
             // can be folded.
-            ScalarExpr::Binary(ref mut binary_expr) => {
+            ScalarExpr::Binary(binary_expr) => {
                 self.visit_mut_binary_expr(binary_expr)?;
                 match constant_propagation::try_fold_binary_expr(binary_expr) {
                     Ok(Some(folded)) => {
@@ -1794,7 +1794,7 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
                 }
             }
             // If we observe a call here, just rewrite the arguments, inlining happens elsewhere
-            ScalarExpr::Call(ref mut call) => {
+            ScalarExpr::Call(call) => {
                 for arg in call.args.iter_mut() {
                     self.visit_mut_expr(arg)?;
                 }
@@ -1824,14 +1824,14 @@ impl VisitMut<SemanticAnalysisError> for ApplyConstraintSelector<'_> {
         statement: &mut Statement,
     ) -> ControlFlow<SemanticAnalysisError> {
         match statement {
-            Statement::Let(ref mut expr) => self.visit_mut_let(expr),
-            Statement::Enforce(ref mut expr) => {
+            Statement::Let(expr) => self.visit_mut_let(expr),
+            Statement::Enforce(expr) => {
                 let expr =
                     core::mem::replace(expr, ScalarExpr::Const(Span::new(SourceSpan::UNKNOWN, 0)));
                 *statement = Statement::EnforceIf(expr, self.selector.clone());
                 ControlFlow::Continue(())
             }
-            Statement::EnforceIf(_, ref mut selector) => {
+            Statement::EnforceIf(_, selector) => {
                 // Combine the selectors
                 let lhs = core::mem::replace(
                     selector,
@@ -1904,7 +1904,7 @@ where
             // is the effective value of the `let` tree. We will replace this
             // node if the callback we were given returns a new `Statement`. In
             // either case, we're done once we've handled the callback result.
-            Statement::Expr(ref mut value) => match callback(inliner, value) {
+            Statement::Expr(value) => match callback(inliner, value) {
                 Ok(Some(replacement)) => {
                     parent_block.pop();
                     parent_block.push(replacement);
@@ -1918,7 +1918,7 @@ where
             },
             // We've traversed down a level in the let-tree, but there are more to go.
             // Set up the next iteration to visit the next block down in the tree.
-            Statement::Let(ref mut let_expr) => {
+            Statement::Let(let_expr) => {
                 // Register this binding
                 let binding_ty = inliner.expr_binding_type(&let_expr.value).unwrap();
                 inliner.bindings.insert(let_expr.name, binding_ty);

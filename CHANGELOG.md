@@ -24,6 +24,7 @@
 
 - Eliminated exponentiations in the IR (#352).
 - Updated compilation pipeline to use MIR (#359).
+- Incremented MSRV to 1.87.
 
 ## 0.3.0 (2023-07-12)
 

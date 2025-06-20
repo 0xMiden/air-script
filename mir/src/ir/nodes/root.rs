@@ -62,7 +62,7 @@ impl Link<Root> {
                 _node: Singleton(Some(link)),
                 ..
             }) => link.clone(),
-            Root::Function(ref mut f) => {
+            Root::Function(f) => {
                 let node: Link<Node> = Node::Function(back).into();
                 f._node = Singleton::from(node.clone());
                 node
@@ -71,7 +71,7 @@ impl Link<Root> {
                 _node: Singleton(Some(link)),
                 ..
             }) => link.clone(),
-            Root::Evaluator(ref mut e) => {
+            Root::Evaluator(e) => {
                 let node: Link<Node> = Node::Evaluator(back).into();
                 e._node = Singleton::from(node.clone());
                 node
@@ -88,7 +88,7 @@ impl Link<Root> {
                 _owner: Singleton(Some(link)),
                 ..
             }) => link.clone(),
-            Root::Function(ref mut f) => {
+            Root::Function(f) => {
                 let owner: Link<Owner> = Owner::Function(back).into();
                 f._owner = Singleton::from(owner.clone());
                 owner
@@ -97,7 +97,7 @@ impl Link<Root> {
                 _owner: Singleton(Some(link)),
                 ..
             }) => link.clone(),
-            Root::Evaluator(ref mut e) => {
+            Root::Evaluator(e) => {
                 let owner: Link<Owner> = Owner::Evaluator(back).into();
                 e._owner = Singleton::from(owner.clone());
                 owner

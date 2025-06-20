@@ -50,7 +50,7 @@ impl BindingType {
     pub fn is_trace_binding(&self) -> bool {
         match self {
             Self::TraceColumn(_) | Self::TraceParam(_) => true,
-            Self::Vector(ref elems) => elems.iter().all(|e| e.is_trace_binding()),
+            Self::Vector(elems) => elems.iter().all(|e| e.is_trace_binding()),
             _ => false,
         }
     }
@@ -75,7 +75,7 @@ impl BindingType {
         }
 
         match self {
-            Self::TraceColumn(ref tb) => match n.cmp(&tb.size) {
+            Self::TraceColumn(tb) => match n.cmp(&tb.size) {
                 Ordering::Equal => Ok((self.clone(), None)),
                 Ordering::Less => {
                     let remaining = tb.size - n;
@@ -89,8 +89,8 @@ impl BindingType {
                 }
                 Ordering::Greater => Err(self.clone()),
             },
-            Self::Vector(ref elems) if elems.len() == 1 => elems[0].split_columns(n),
-            Self::Vector(ref elems) => {
+            Self::Vector(elems) if elems.len() == 1 => elems[0].split_columns(n),
+            Self::Vector(elems) => {
                 let mut index = 0;
                 let mut remaining = n;
                 let mut set = Vec::with_capacity(elems.len());
@@ -134,8 +134,8 @@ impl BindingType {
             // a binding containing the first column of that binding, and the
             // second half as a binding representing whatever was left, or `None`
             // if it is empty.
-            Self::TraceColumn(ref tb) if tb.is_scalar() => (Self::TraceColumn(*tb), None),
-            Self::TraceColumn(ref tb) => {
+            Self::TraceColumn(tb) if tb.is_scalar() => (Self::TraceColumn(*tb), None),
+            Self::TraceColumn(tb) => {
                 let first = Self::TraceColumn(TraceBinding {
                     size: 1,
                     ty: Type::Felt,
@@ -156,10 +156,10 @@ impl BindingType {
             }
             // If the vector has only one element, remove the vector and
             // return the result of popping a column on the first element.
-            Self::Vector(ref elems) if elems.len() == 1 => elems[0].pop_column(),
+            Self::Vector(elems) if elems.len() == 1 => elems[0].pop_column(),
             // If the vector has multiple elements, then we're going to return
             // a vector for the remainder of the split.
-            Self::Vector(ref elems) => {
+            Self::Vector(elems) => {
                 // Take the first element out of the vector
                 let (popped, rest) = elems.split_first().unwrap();
                 // Pop a single trace column from that element

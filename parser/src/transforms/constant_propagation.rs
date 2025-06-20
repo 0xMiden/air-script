@@ -158,7 +158,7 @@ impl<'a> ConstantPropagation<'a> {
         let is_live = self.live.contains(&expr.name);
         let result = if is_constant && !is_live {
             match expr.body.last().unwrap() {
-                Statement::Expr(Expr::Const(ref const_value)) => {
+                Statement::Expr(Expr::Const(const_value)) => {
                     Left(Some(Span::new(expr.span(), const_value.item.clone())))
                 }
                 _ => Right(core::mem::take(&mut expr.body)),
@@ -237,7 +237,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 ControlFlow::Continue(())
             }
             // Fold constant expressions
-            ScalarExpr::Binary(ref mut binary_expr) => {
+            ScalarExpr::Binary(binary_expr) => {
                 match self.try_fold_binary_expr(binary_expr) {
                     Ok(maybe_folded) => {
                         if let Some(folded) = maybe_folded {
@@ -258,11 +258,11 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 }
             }
             // While calls cannot be constant folded, arguments can be
-            ScalarExpr::Call(ref mut call) => self.visit_mut_call(call),
+            ScalarExpr::Call(call) => self.visit_mut_call(call),
             // This cannot be constant folded
             ScalarExpr::BoundedSymbolAccess(_) => ControlFlow::Continue(()),
             // A let that evaluates to a constant value can be folded to the constant value
-            ScalarExpr::Let(ref mut let_expr) => {
+            ScalarExpr::Let(let_expr) => {
                 match self.try_fold_let_expr(let_expr) {
                     Ok(Left(Some(const_expr))) => {
                         let span = const_expr.span();
@@ -303,7 +303,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 }
                 ControlFlow::Continue(())
             }
-            ScalarExpr::BusOperation(ref mut expr) => self.visit_mut_bus_operation(expr),
+            ScalarExpr::BusOperation(expr) => self.visit_mut_bus_operation(expr),
         }
     }
 
@@ -315,7 +315,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
             // Lift to `Expr::Const` if the scalar expression is constant
             //
             // We deal with symbol accesses directly, as they may evaluate to an aggregate constant
-            Expr::SymbolAccess(ref mut access) => {
+            Expr::SymbolAccess(access) => {
                 let constant_value = match access.name {
                     // Possibly a reference to a constant declaration
                     ResolvableIdentifier::Resolved(ref qid) => {
@@ -381,15 +381,15 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 }
                 ControlFlow::Continue(())
             }
-            Expr::Call(ref mut call) if call.is_builtin() => {
+            Expr::Call(call) if call.is_builtin() => {
                 self.visit_mut_call(call)?;
                 match call.callee.as_ref().name() {
                     name @ (symbols::Sum | symbols::Prod) => {
                         assert_eq!(call.args.len(), 1);
-                        if let Expr::Const(ref value) = &call.args[0] {
+                        if let Expr::Const(value) = &call.args[0] {
                             let span = value.span();
                             match &value.item {
-                                ConstantExpr::Vector(ref elems) => {
+                                ConstantExpr::Vector(elems) => {
                                     let folded = if name == symbols::Sum {
                                         elems.iter().sum::<u64>()
                                     } else {
@@ -408,8 +408,8 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 }
                 ControlFlow::Continue(())
             }
-            Expr::Call(ref mut call) => self.visit_mut_call(call),
-            Expr::Binary(ref mut binary_expr) => match self.try_fold_binary_expr(binary_expr) {
+            Expr::Call(call) => self.visit_mut_call(call),
+            Expr::Binary(binary_expr) => match self.try_fold_binary_expr(binary_expr) {
                 Ok(maybe_folded) => {
                     if let Some(folded) = maybe_folded {
                         *expr = Expr::Const(Span::new(
@@ -433,7 +433,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
             // Ranges are constant
             Expr::Range(_) => ControlFlow::Continue(()),
             // Visit vector elements, and promote the vector to `Expr::Const` if possible
-            Expr::Vector(ref mut vector) => {
+            Expr::Vector(vector) => {
                 if vector.is_empty() {
                     return ControlFlow::Continue(());
                 }
@@ -483,7 +483,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 ControlFlow::Continue(())
             }
             // Visit matrix elements, and promote the matrix to `Expr::Const` if possible
-            Expr::Matrix(ref mut matrix) => {
+            Expr::Matrix(matrix) => {
                 let mut is_constant = true;
                 for row in matrix.iter_mut() {
                     for column in row.iter_mut() {
@@ -510,7 +510,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 ControlFlow::Continue(())
             }
             // Visit list comprehensions and convert to constant if possible
-            Expr::ListComprehension(ref mut lc) => {
+            Expr::ListComprehension(lc) => {
                 let old_in_lc = core::mem::replace(&mut self.in_list_comprehension, true);
                 let mut has_constant_iterables = true;
                 for iterable in lc.iterables.iter_mut() {
@@ -623,7 +623,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 self.in_list_comprehension = old_in_lc;
                 ControlFlow::Continue(())
             }
-            Expr::Let(ref mut let_expr) => {
+            Expr::Let(let_expr) => {
                 match self.try_fold_let_expr(let_expr) {
                     Ok(Left(Some(const_expr))) => {
                         *expr = Expr::Const(Span::new(span, const_expr.item));
@@ -645,7 +645,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 }
                 ControlFlow::Continue(())
             }
-            Expr::BusOperation(ref mut expr) => self.visit_mut_bus_operation(expr),
+            Expr::BusOperation(expr) => self.visit_mut_bus_operation(expr),
             Expr::Null(_) | Expr::Unconstrained(_) => ControlFlow::Continue(()),
         }
     }
@@ -660,7 +660,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
         while current_statement < statements.len() {
             let num_statements = statements.len();
             match &mut statements[current_statement] {
-                Statement::Let(ref mut expr) => {
+                Statement::Let(expr) => {
                     // A `let` may only appear once in a statement block, and must be the
                     // last statement in the block
                     assert_eq!(
@@ -679,18 +679,18 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                         Err(err) => return ControlFlow::Break(err),
                     }
                 }
-                Statement::Enforce(ref mut expr) => {
+                Statement::Enforce(expr) => {
                     self.visit_mut_enforce(expr)?;
                 }
-                Statement::EnforceAll(ref mut expr) => {
+                Statement::EnforceAll(expr) => {
                     self.in_constraint_comprehension = true;
                     self.visit_mut_list_comprehension(expr)?;
                     self.in_constraint_comprehension = false;
                 }
-                Statement::Expr(ref mut expr) => {
+                Statement::Expr(expr) => {
                     self.visit_mut_expr(expr)?;
                 }
-                Statement::BusEnforce(ref mut expr) => {
+                Statement::BusEnforce(expr) => {
                     self.in_constraint_comprehension = true;
                     self.visit_mut_list_comprehension(expr)?;
                     self.in_constraint_comprehension = false;

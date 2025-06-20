@@ -58,6 +58,7 @@ pub enum ParseError {
     #[error("parsing failed, see diagnostics for details")]
     Failed,
 }
+
 impl Eq for ParseError {}
 impl PartialEq for ParseError {
     fn eq(&self, other: &Self) -> bool {
@@ -68,21 +69,21 @@ impl PartialEq for ParseError {
             (Self::InvalidToken(_), Self::InvalidToken(_)) => true,
             (
                 Self::UnexpectedEof {
-                    expected: ref l, ..
+                    expected: l, ..
                 },
                 Self::UnexpectedEof {
-                    expected: ref r, ..
+                    expected: r, ..
                 },
             ) => l == r,
             (
                 Self::UnrecognizedToken {
                     token: lt,
-                    expected: ref l,
+                    expected: l,
                     ..
                 },
                 Self::UnrecognizedToken {
                     token: rt,
-                    expected: ref r,
+                    expected: r,
                     ..
                 },
             ) => lt == rt && l == r,

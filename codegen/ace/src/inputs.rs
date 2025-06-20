@@ -88,11 +88,11 @@ impl StarkInputs {
     /// The [`Air`] is required to compute `zᵐᵃˣ`, the power of `z` at which we evaluate the longest
     /// periodic column, and from which we derive the evaluation points of all other columns.
     pub(crate) fn new(air: &Air, log_trace_len: u32, alpha: QuadFelt, z: QuadFelt) -> Self {
-        let gen = Felt::get_root_of_unity(log_trace_len);
-        let gen_next = gen.square();
+        let generator = Felt::get_root_of_unity(log_trace_len);
+        let gen_next = generator.square();
         let gen_penultimate = gen_next.inv().into();
 
-        let gen_last = gen.inv().into();
+        let gen_last = generator.inv().into();
 
         let n = 1 << log_trace_len;
         let z_pow_n = z.exp_vartime(n);

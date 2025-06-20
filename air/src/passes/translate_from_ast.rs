@@ -75,8 +75,8 @@ impl AirBuilder<'_> {
         match bc {
             ast::Statement::Enforce(ast::ScalarExpr::Binary(ast::BinaryExpr {
                 op: ast::BinaryOp::Eq,
-                ref lhs,
-                ref rhs,
+                lhs,
+                rhs,
                 ..
             })) => self.build_boundary_equality(lhs, rhs),
             ast::Statement::Let(expr) => {
@@ -100,18 +100,18 @@ impl AirBuilder<'_> {
         match ic {
             ast::Statement::Enforce(ast::ScalarExpr::Binary(ast::BinaryExpr {
                 op: ast::BinaryOp::Eq,
-                ref lhs,
-                ref rhs,
+                lhs,
+                rhs,
                 ..
             })) => self.build_integrity_equality(lhs, rhs, None),
             ast::Statement::EnforceIf(
                 ast::ScalarExpr::Binary(ast::BinaryExpr {
                     op: ast::BinaryOp::Eq,
-                    ref lhs,
-                    ref rhs,
+                    lhs,
+                    rhs,
                     ..
                 }),
-                ref condition,
+                condition,
             ) => self.build_integrity_equality(lhs, rhs, Some(condition)),
             ast::Statement::Let(expr) => {
                 self.build_let(expr, |bldr, stmt| bldr.build_integrity_constraint(stmt))
@@ -158,7 +158,7 @@ impl AirBuilder<'_> {
 
         // The left-hand side of a boundary constraint equality expression is always a bounded symbol access
         // against a trace column. It is fine to panic here if that is ever violated.
-        let ast::ScalarExpr::BoundedSymbolAccess(ref access) = lhs else {
+        let ast::ScalarExpr::BoundedSymbolAccess(access) = lhs else {
             self.diagnostics
                 .diagnostic(Severity::Bug)
                 .with_message("invalid boundary constraint")
@@ -283,10 +283,10 @@ impl AirBuilder<'_> {
             self.bindings.enter();
             self.bindings.insert(let_expr.name, bound);
             match let_expr.body.last().unwrap() {
-                ast::Statement::Let(ref inner_let) => {
+                ast::Statement::Let(inner_let) => {
                     next_let = Some(inner_let);
                 }
-                ast::Statement::Expr(ref expr) => {
+                ast::Statement::Expr(expr) => {
                     let value = self.eval_expr(expr);
                     self.bindings = snapshot;
                     break value;
@@ -303,7 +303,7 @@ impl AirBuilder<'_> {
 
     fn eval_expr(&mut self, expr: &ast::Expr) -> Result<MemoizedBinding, CompileError> {
         match expr {
-            ast::Expr::Const(ref constant) => match &constant.item {
+            ast::Expr::Const(constant) => match &constant.item {
                 ast::ConstantExpr::Scalar(value) => {
                     let value = self.insert_constant(*value);
                     Ok(MemoizedBinding::Scalar(value))
@@ -320,14 +320,14 @@ impl AirBuilder<'_> {
                     Ok(MemoizedBinding::Matrix(values))
                 }
             },
-            ast::Expr::Range(ref values) => {
+            ast::Expr::Range(values) => {
                 let values = values
                     .to_slice_range()
                     .map(|v| self.insert_constant(v as u64))
                     .collect();
                 Ok(MemoizedBinding::Vector(values))
             }
-            ast::Expr::Vector(ref values) => match values[0].ty().unwrap() {
+            ast::Expr::Vector(values) => match values[0].ty().unwrap() {
                 ast::Type::Felt => {
                     let mut nodes = vec![];
                     for value in values.iter().cloned() {
@@ -357,7 +357,7 @@ impl AirBuilder<'_> {
                                 }
                                 nodes.push(cols);
                             }
-                            ast::Expr::Vector(ref elems) => {
+                            ast::Expr::Vector(elems) => {
                                 let mut cols = vec![];
                                 for elem in elems.iter().cloned() {
                                     let elem: ast::ScalarExpr = elem.try_into().unwrap();
@@ -373,7 +373,7 @@ impl AirBuilder<'_> {
                 }
                 _ => unreachable!(),
             },
-            ast::Expr::Matrix(ref values) => {
+            ast::Expr::Matrix(values) => {
                 let mut rows = Vec::with_capacity(values.len());
                 for vs in values.iter() {
                     let mut cols = Vec::with_capacity(vs.len());
@@ -384,11 +384,11 @@ impl AirBuilder<'_> {
                 }
                 Ok(MemoizedBinding::Matrix(rows))
             }
-            ast::Expr::Binary(ref bexpr) => {
+            ast::Expr::Binary(bexpr) => {
                 let value = self.insert_binary_expr(bexpr)?;
                 Ok(MemoizedBinding::Scalar(value))
             }
-            ast::Expr::SymbolAccess(ref access) => {
+            ast::Expr::SymbolAccess(access) => {
                 match self.bindings.get(access.name.as_ref()) {
                     None => {
                         // Must be a reference to a declaration
@@ -425,7 +425,7 @@ impl AirBuilder<'_> {
                     }
                 }
             }
-            ast::Expr::Let(ref let_expr) => self.eval_let_expr(let_expr),
+            ast::Expr::Let(let_expr) => self.eval_let_expr(let_expr),
             // These node types should not exist at this point
             ast::Expr::Call(_) | ast::Expr::ListComprehension(_) => unreachable!(),
             ast::Expr::BusOperation(_) | ast::Expr::Null(_) | ast::Expr::Unconstrained(_) => {
@@ -445,7 +445,7 @@ impl AirBuilder<'_> {
             }
             ast::ScalarExpr::SymbolAccess(access) => Ok(self.insert_symbol_access(access)),
             ast::ScalarExpr::Binary(expr) => self.insert_binary_expr(expr),
-            ast::ScalarExpr::Let(ref let_expr) => match self.eval_let_expr(let_expr)? {
+            ast::ScalarExpr::Let(let_expr) => match self.eval_let_expr(let_expr)? {
                 MemoizedBinding::Scalar(node) => Ok(node),
                 invalid => {
                     panic!("expected scalar expression to produce scalar value, got: {invalid:?}")

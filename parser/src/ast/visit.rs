@@ -77,7 +77,7 @@ use crate::ast;
 ///                 }
 ///                 ControlFlow::Continue(())
 ///             }
-///             ast::ScalarExpr::Binary(ast::BinaryExpr { op: ast::BinaryOp::Add, ref mut lhs, ref mut rhs, .. }) => {
+///             ast::ScalarExpr::Binary(ast::BinaryExpr { op: ast::BinaryOp::Add, lhs, rhs, .. }) => {
 ///                 visit::visit_mut_scalar_expr(self, lhs)?;
 ///                 visit::visit_mut_scalar_expr(self, rhs)?;
 ///                 // If both operands are constant, evaluate to a scalar constant
@@ -569,14 +569,14 @@ where
     V: ?Sized + VisitMut<T>,
 {
     match expr {
-        ast::Statement::Let(ref mut expr) => visitor.visit_mut_let(expr),
-        ast::Statement::Enforce(ref mut expr) => visitor.visit_mut_enforce(expr),
-        ast::Statement::EnforceIf(ref mut expr, ref mut selector) => {
+        ast::Statement::Let(expr) => visitor.visit_mut_let(expr),
+        ast::Statement::Enforce(expr) => visitor.visit_mut_enforce(expr),
+        ast::Statement::EnforceIf(expr, selector) => {
             visitor.visit_mut_enforce_if(expr, selector)
         }
-        ast::Statement::EnforceAll(ref mut expr) => visitor.visit_mut_enforce_all(expr),
-        ast::Statement::Expr(ref mut expr) => visitor.visit_mut_expr(expr),
-        ast::Statement::BusEnforce(ref mut expr) => visitor.visit_mut_bus_enforce(expr),
+        ast::Statement::EnforceAll(expr) => visitor.visit_mut_enforce_all(expr),
+        ast::Statement::Expr(expr) => visitor.visit_mut_expr(expr),
+        ast::Statement::BusEnforce(expr) => visitor.visit_mut_bus_enforce(expr),
     }
 }
 
@@ -598,18 +598,18 @@ where
 {
     match expr {
         ast::Expr::Const(_) => ControlFlow::Continue(()),
-        ast::Expr::Range(ref mut range) => {
+        ast::Expr::Range(range) => {
             visitor.visit_mut_range_bound(&mut range.start)?;
             visitor.visit_mut_range_bound(&mut range.end)?;
             ControlFlow::Continue(())
         }
-        ast::Expr::Vector(ref mut exprs) => {
+        ast::Expr::Vector(exprs) => {
             for expr in exprs.iter_mut() {
                 visitor.visit_mut_expr(expr)?;
             }
             ControlFlow::Continue(())
         }
-        ast::Expr::Matrix(ref mut matrix) => {
+        ast::Expr::Matrix(matrix) => {
             for exprs in matrix.iter_mut() {
                 for expr in exprs.iter_mut() {
                     visitor.visit_mut_scalar_expr(expr)?;
@@ -617,12 +617,12 @@ where
             }
             ControlFlow::Continue(())
         }
-        ast::Expr::SymbolAccess(ref mut expr) => visitor.visit_mut_symbol_access(expr),
-        ast::Expr::Binary(ref mut expr) => visitor.visit_mut_binary_expr(expr),
-        ast::Expr::Call(ref mut expr) => visitor.visit_mut_call(expr),
-        ast::Expr::ListComprehension(ref mut expr) => visitor.visit_mut_list_comprehension(expr),
-        ast::Expr::Let(ref mut expr) => visitor.visit_mut_let(expr),
-        ast::Expr::BusOperation(ref mut expr) => visitor.visit_mut_bus_operation(expr),
+        ast::Expr::SymbolAccess(expr) => visitor.visit_mut_symbol_access(expr),
+        ast::Expr::Binary(expr) => visitor.visit_mut_binary_expr(expr),
+        ast::Expr::Call(expr) => visitor.visit_mut_call(expr),
+        ast::Expr::ListComprehension(expr) => visitor.visit_mut_list_comprehension(expr),
+        ast::Expr::Let(expr) => visitor.visit_mut_let(expr),
+        ast::Expr::BusOperation(expr) => visitor.visit_mut_bus_operation(expr),
         ast::Expr::Null(_) | ast::Expr::Unconstrained(_) => ControlFlow::Continue(()),
     }
 }
@@ -635,14 +635,14 @@ where
         ast::ScalarExpr::Const(_)
         | ast::ScalarExpr::Null(_)
         | ast::ScalarExpr::Unconstrained(_) => ControlFlow::Continue(()),
-        ast::ScalarExpr::SymbolAccess(ref mut expr) => visitor.visit_mut_symbol_access(expr),
-        ast::ScalarExpr::BoundedSymbolAccess(ref mut expr) => {
+        ast::ScalarExpr::SymbolAccess(expr) => visitor.visit_mut_symbol_access(expr),
+        ast::ScalarExpr::BoundedSymbolAccess(expr) => {
             visitor.visit_mut_bounded_symbol_access(expr)
         }
-        ast::ScalarExpr::Binary(ref mut expr) => visitor.visit_mut_binary_expr(expr),
-        ast::ScalarExpr::Call(ref mut expr) => visitor.visit_mut_call(expr),
-        ast::ScalarExpr::Let(ref mut expr) => visitor.visit_mut_let(expr),
-        ast::ScalarExpr::BusOperation(ref mut expr) => visitor.visit_mut_bus_operation(expr),
+        ast::ScalarExpr::Binary(expr) => visitor.visit_mut_binary_expr(expr),
+        ast::ScalarExpr::Call(expr) => visitor.visit_mut_call(expr),
+        ast::ScalarExpr::Let(expr) => visitor.visit_mut_let(expr),
+        ast::ScalarExpr::BusOperation(expr) => visitor.visit_mut_bus_operation(expr),
     }
 }
 
@@ -704,7 +704,7 @@ where
 {
     match expr {
         ast::RangeBound::Const(_) => ControlFlow::Continue(()),
-        ast::RangeBound::SymbolAccess(ref mut access) => {
+        ast::RangeBound::SymbolAccess(access) => {
             visitor.visit_mut_const_symbol_access(access)
         }
     }
@@ -718,7 +718,7 @@ where
         ast::AccessType::Default | ast::AccessType::Index(_) | ast::AccessType::Matrix(_, _) => {
             ControlFlow::Continue(())
         }
-        ast::AccessType::Slice(ref mut range) => {
+        ast::AccessType::Slice(range) => {
             visitor.visit_mut_range_bound(&mut range.start)?;
             visitor.visit_mut_range_bound(&mut range.end)
         }

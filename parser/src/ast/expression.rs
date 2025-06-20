@@ -112,7 +112,7 @@ impl NamespacedIdentifier {
 impl AsRef<Identifier> for NamespacedIdentifier {
     fn as_ref(&self) -> &Identifier {
         match self {
-            Self::Function(ref ident) | Self::Binding(ref ident) => ident,
+            Self::Function(ident) | Self::Binding(ident) => ident,
         }
     }
 }
@@ -228,7 +228,7 @@ impl ResolvableIdentifier {
     /// resolved/unresolved states
     pub fn module(&self) -> Option<ModuleId> {
         match self {
-            Self::Resolved(ref qid) => Some(*qid.as_ref()),
+            Self::Resolved(qid) => Some(*qid.as_ref()),
             _ => None,
         }
     }
@@ -252,10 +252,10 @@ impl AsRef<Identifier> for ResolvableIdentifier {
     #[inline]
     fn as_ref(&self) -> &Identifier {
         match self {
-            Self::Local(ref id) => id,
-            Self::Global(ref id) => id,
-            Self::Resolved(ref qid) => qid.item.as_ref(),
-            Self::Unresolved(ref nid) => nid.as_ref(),
+            Self::Local(id) => id,
+            Self::Global(id) => id,
+            Self::Resolved(qid) => qid.item.as_ref(),
+            Self::Unresolved(nid) => nid.as_ref(),
         }
     }
 }
@@ -337,11 +337,11 @@ impl Expr {
                 let cols = matrix[0].len();
                 Some(Type::Matrix(rows, cols))
             }
-            Self::SymbolAccess(ref access) => access.ty,
+            Self::SymbolAccess(access) => access.ty,
             Self::Binary(_) => Some(Type::Felt),
-            Self::Call(ref call) => call.ty,
-            Self::ListComprehension(ref lc) => lc.ty,
-            Self::Let(ref let_expr) => let_expr.ty(),
+            Self::Call(call) => call.ty,
+            Self::ListComprehension(lc) => lc.ty,
+            Self::Let(let_expr) => let_expr.ty(),
             Self::BusOperation(_) | Self::Null(_) | Self::Unconstrained(_) => Some(Type::Felt),
         }
     }
@@ -349,30 +349,30 @@ impl Expr {
 impl fmt::Debug for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Const(ref expr) => f.debug_tuple("Const").field(&expr.item).finish(),
-            Self::Range(ref expr) => f.debug_tuple("Range").field(&expr).finish(),
-            Self::Vector(ref expr) => f.debug_tuple("Vector").field(&expr.item).finish(),
-            Self::Matrix(ref expr) => f.debug_tuple("Matrix").field(&expr.item).finish(),
-            Self::SymbolAccess(ref expr) => f.debug_tuple("SymbolAccess").field(expr).finish(),
-            Self::Binary(ref expr) => f.debug_tuple("Binary").field(expr).finish(),
-            Self::Call(ref expr) => f.debug_tuple("Call").field(expr).finish(),
-            Self::ListComprehension(ref expr) => {
+            Self::Const(expr) => f.debug_tuple("Const").field(&expr.item).finish(),
+            Self::Range(expr) => f.debug_tuple("Range").field(&expr).finish(),
+            Self::Vector(expr) => f.debug_tuple("Vector").field(&expr.item).finish(),
+            Self::Matrix(expr) => f.debug_tuple("Matrix").field(&expr.item).finish(),
+            Self::SymbolAccess(expr) => f.debug_tuple("SymbolAccess").field(expr).finish(),
+            Self::Binary(expr) => f.debug_tuple("Binary").field(expr).finish(),
+            Self::Call(expr) => f.debug_tuple("Call").field(expr).finish(),
+            Self::ListComprehension(expr) => {
                 f.debug_tuple("ListComprehension").field(expr).finish()
             }
-            Self::Let(ref let_expr) => write!(f, "{let_expr:#?}"),
-            Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
-            Self::Null(ref expr) => f.debug_tuple("Null").field(expr).finish(),
-            Self::Unconstrained(ref expr) => f.debug_tuple("Unconstrained").field(expr).finish(),
+            Self::Let(let_expr) => write!(f, "{let_expr:#?}"),
+            Self::BusOperation(expr) => f.debug_tuple("BusOp").field(expr).finish(),
+            Self::Null(expr) => f.debug_tuple("Null").field(expr).finish(),
+            Self::Unconstrained(expr) => f.debug_tuple("Unconstrained").field(expr).finish(),
         }
     }
 }
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Const(ref expr) => write!(f, "{}", &expr),
-            Self::Range(ref range) => write!(f, "{}", range),
-            Self::Vector(ref expr) => write!(f, "{}", DisplayList(expr.as_slice())),
-            Self::Matrix(ref expr) => {
+            Self::Const(expr) => write!(f, "{}", &expr),
+            Self::Range(range) => write!(f, "{}", range),
+            Self::Vector(expr) => write!(f, "{}", DisplayList(expr.as_slice())),
+            Self::Matrix(expr) => {
                 f.write_str("[")?;
                 for (i, col) in expr.iter().enumerate() {
                     if i > 0 {
@@ -382,11 +382,11 @@ impl fmt::Display for Expr {
                 }
                 f.write_str("]")
             }
-            Self::SymbolAccess(ref expr) => write!(f, "{}", expr),
-            Self::Binary(ref expr) => write!(f, "{}", expr),
-            Self::Call(ref expr) => write!(f, "{}", expr),
-            Self::ListComprehension(ref expr) => write!(f, "{}", DisplayBracketed(expr)),
-            Self::Let(ref let_expr) => {
+            Self::SymbolAccess(expr) => write!(f, "{}", expr),
+            Self::Binary(expr) => write!(f, "{}", expr),
+            Self::Call(expr) => write!(f, "{}", expr),
+            Self::ListComprehension(expr) => write!(f, "{}", DisplayBracketed(expr)),
+            Self::Let(let_expr) => {
                 let display = DisplayLet {
                     let_expr,
                     indent: 0,
@@ -394,9 +394,9 @@ impl fmt::Display for Expr {
                 };
                 write!(f, "{display}")
             }
-            Self::BusOperation(ref expr) => write!(f, "{}", expr),
-            Self::Null(ref _expr) => write!(f, "null"),
-            Self::Unconstrained(ref _expr) => write!(f, "unconstrained"),
+            Self::BusOperation(expr) => write!(f, "{}", expr),
+            Self::Null(_expr) => write!(f, "null"),
+            Self::Unconstrained(_expr) => write!(f, "unconstrained"),
         }
     }
 }
@@ -525,7 +525,7 @@ impl ScalarExpr {
     /// Returns true if this scalar expression could expand to a block, e.g. due to a function call being inlined.
     pub fn has_block_like_expansion(&self) -> bool {
         match self {
-            Self::Binary(ref expr) => expr.has_block_like_expansion(),
+            Self::Binary(expr) => expr.has_block_like_expansion(),
             Self::Call(_) | Self::Let(_) => true,
             _ => false,
         }
@@ -540,15 +540,15 @@ impl ScalarExpr {
     pub fn ty(&self) -> Result<Option<Type>, SourceSpan> {
         match self {
             Self::Const(_) => Ok(Some(Type::Felt)),
-            Self::SymbolAccess(ref sym) => Ok(sym.ty),
-            Self::BoundedSymbolAccess(ref sym) => Ok(sym.column.ty),
-            Self::Binary(ref expr) => match (expr.lhs.ty()?, expr.rhs.ty()?) {
+            Self::SymbolAccess(sym) => Ok(sym.ty),
+            Self::BoundedSymbolAccess(sym) => Ok(sym.column.ty),
+            Self::Binary(expr) => match (expr.lhs.ty()?, expr.rhs.ty()?) {
                 (None, _) | (_, None) => Ok(None),
                 (Some(lty), Some(rty)) if lty == rty => Ok(Some(lty)),
                 _ => Err(expr.span()),
             },
-            Self::Call(ref expr) => Ok(expr.ty),
-            Self::Let(ref expr) => Ok(expr.ty()),
+            Self::Call(expr) => Ok(expr.ty),
+            Self::Let(expr) => Ok(expr.ty()),
             Self::BusOperation(_) | ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_) => {
                 Ok(Some(Type::Felt))
             }
@@ -601,28 +601,28 @@ impl fmt::Debug for ScalarExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Const(i) => f.debug_tuple("Const").field(&i.item).finish(),
-            Self::SymbolAccess(ref expr) => f.debug_tuple("SymbolAccess").field(expr).finish(),
-            Self::BoundedSymbolAccess(ref expr) => {
+            Self::SymbolAccess(expr) => f.debug_tuple("SymbolAccess").field(expr).finish(),
+            Self::BoundedSymbolAccess(expr) => {
                 f.debug_tuple("BoundedSymbolAccess").field(expr).finish()
             }
-            Self::Binary(ref expr) => f.debug_tuple("Binary").field(expr).finish(),
-            Self::Call(ref expr) => f.debug_tuple("Call").field(expr).finish(),
-            Self::Let(ref expr) => write!(f, "{:#?}", expr),
-            Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
-            Self::Null(ref expr) => f.debug_tuple("Null").field(expr).finish(),
-            Self::Unconstrained(ref expr) => f.debug_tuple("Unconstrained").field(expr).finish(),
+            Self::Binary(expr) => f.debug_tuple("Binary").field(expr).finish(),
+            Self::Call(expr) => f.debug_tuple("Call").field(expr).finish(),
+            Self::Let(expr) => write!(f, "{:#?}", expr),
+            Self::BusOperation(expr) => f.debug_tuple("BusOp").field(expr).finish(),
+            Self::Null(expr) => f.debug_tuple("Null").field(expr).finish(),
+            Self::Unconstrained(expr) => f.debug_tuple("Unconstrained").field(expr).finish(),
         }
     }
 }
 impl fmt::Display for ScalarExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Const(ref value) => write!(f, "{}", value),
-            Self::SymbolAccess(ref expr) => write!(f, "{}", expr),
-            Self::BoundedSymbolAccess(ref expr) => write!(f, "{}.{}", &expr.column, &expr.boundary),
-            Self::Binary(ref expr) => write!(f, "{}", expr),
-            Self::Call(ref call) => write!(f, "{}", call),
-            Self::Let(ref let_expr) => {
+            Self::Const(value) => write!(f, "{}", value),
+            Self::SymbolAccess(expr) => write!(f, "{}", expr),
+            Self::BoundedSymbolAccess(expr) => write!(f, "{}.{}", &expr.column, &expr.boundary),
+            Self::Binary(expr) => write!(f, "{}", expr),
+            Self::Call(call) => write!(f, "{}", call),
+            Self::Let(let_expr) => {
                 let display = DisplayLet {
                     let_expr,
                     indent: 0,
@@ -630,9 +630,9 @@ impl fmt::Display for ScalarExpr {
                 };
                 write!(f, "{display}")
             }
-            Self::BusOperation(ref expr) => write!(f, "{}", expr),
-            Self::Null(ref _value) => write!(f, "null"),
-            Self::Unconstrained(ref _value) => write!(f, "unconstrained"),
+            Self::BusOperation(expr) => write!(f, "{}", expr),
+            Self::Null(_value) => write!(f, "null"),
+            Self::Unconstrained(_value) => write!(f, "unconstrained"),
         }
     }
 }

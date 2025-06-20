@@ -23,7 +23,7 @@ lalrpop-util = "0.20"
 lazy_static = "1.4"
 petgraph = "0.6"
 regex = "1"
-thiserror = "1.0"
+thiserror = "2.0"
 
 [dev-dependencies]
 pretty_assertions = "1.0"
