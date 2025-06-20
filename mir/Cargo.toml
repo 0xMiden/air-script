@@ -1,11 +1,11 @@
 [package]
-name = "mir"
+name = "air-mir"
 version = "0.4.0"
 description = "Intermediate representation for the AirScript language"
-authors = ["miden contributors"]
+authors.workspace = true
 readme = "README.md"
-license = "MIT"
-repository = "https://github.com/0xMiden/air-script"
+license.workspace = true
+repository.workspace = true
 categories = ["compilers", "cryptography"]
 keywords = ["air", "stark", "zero-knowledge", "zkp"]
 rust-version.workspace = true
@@ -13,9 +13,9 @@ edition.workspace = true
 
 [dependencies]
 air-parser = { package = "air-parser", path = "../parser", version = "0.4" }
-air-pass = { package = "air-pass", path = "../pass", version = "0.1" }
-anyhow = "1.0"
-miden-diagnostics = "0.1"
-thiserror = "1.0"
+air-pass = { package = "air-pass", path = "../pass", version = "0.4" }
+anyhow = { workspace = true }
 derive-ir = { package = "derive-ir", path = "./derive-ir", version = "0.1" }
+miden-diagnostics = { workspace = true }
 pretty_assertions = "1.4"
+thiserror = { workspace = true }

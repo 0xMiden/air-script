@@ -2,10 +2,10 @@
 name = "air-script"
 version = "0.4.0"
 description = "AirScript language compiler"
-authors = ["miden contributors"]
+authors.workspace = true
 readme = "README.md"
-license = "MIT"
-repository = "https://github.com/0xMiden/air-script"
+license.workspace = true
+repository.workspace = true
 documentation = "https://0xpolygonmiden.github.io/air-script/"
 categories = ["compilers", "cryptography"]
 keywords = ["air", "stark", "zero-knowledge", "zkp"]
@@ -17,15 +17,15 @@ name = "airc"
 path = "src/main.rs"
 
 [dependencies]
-mir = { package = "mir", path = "../mir", version = "0.4" }
+air-codegen-winter = { package = "air-codegen-winter", path = "../codegen/winterfell", version = "0.4" }
 air-ir = { package = "air-ir", path = "../air", version = "0.4" }
 air-parser = { package = "air-parser", path = "../parser", version = "0.4" }
-air-pass = { package = "air-pass", path = "../pass", version = "0.1" }
-air-codegen-winter = { package = "air-codegen-winter", path = "../codegen/winterfell", version = "0.4" }
+air-pass = { package = "air-pass", path = "../pass", version = "0.4" }
 clap = { version = "4.2", features = ["derive"] }
-env_logger = "0.10"
+env_logger = "0.11"
 log = { version = "0.4", default-features = false }
-miden-diagnostics = "0.1"
+miden-diagnostics = { workspace = true }
+mir = { package = "air-mir", path = "../mir", version = "0.4" }
 
 [dev-dependencies]
 expect-test = "1.4"

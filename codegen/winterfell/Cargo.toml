@@ -2,10 +2,10 @@
 name = "air-codegen-winter"
 version = "0.4.0"
 description = "Winterfell code generator for the AirScript language"
-authors = ["miden contributors"]
+authors.workspace = true
 readme = "README.md"
-license = "MIT"
-repository = "https://github.com/0xMiden/air-script"
+license.workspace = true
+repository.workspace = true
 categories = ["compilers", "cryptography"]
 keywords = ["air", "stark", "winterfell", "zero-knowledge", "zkp"]
 edition.workspace = true
@@ -13,5 +13,5 @@ rust-version.workspace = true
 
 [dependencies]
 air-ir = { package = "air-ir", path = "../../air", version = "0.4" }
-anyhow = "1.0"
+anyhow = { workspace = true }
 codegen = "0.2"
