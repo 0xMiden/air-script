@@ -26,7 +26,6 @@ integrity_constraints {
     enf s2^2 = s2;
 
     let vec = [x for x in 0..3];
-    let c = 41;
     let x = sum(vec) + b;
 
     p.insert(1, x, a) when s1;

@@ -340,7 +340,6 @@ impl Visitor for InliningSecondPass<'_> {
                             self.nodes_to_replace.get(&body_node.get_ptr()).unwrap().1.clone();
 
                         if let Some(bus_op) = new_node.clone().as_bus_op() {
-                            //let args = bus_op.args.clone();
                             let latch = bus_op.latch.clone();
 
                             bus_op
