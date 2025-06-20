@@ -1,6 +1,29 @@
 # Changelog
 
-## 0.4.0 (TBD)
+## 0.4.0 (2025-06-20)
+
+### Language
+
+- [BREAKING] Introduced "block" syntax for all declarations and statements (#350).
+- Implemented support for pure functions (#351).
+- [BREAKING] Introduced semicolons as statement terminators (#353).
+- Allowed named constants in rage notation (#355).
+- Added commas in match/case statements (#356).
+- Implemented `bus` constructs (#371).
+- Removed `aux` and `rand` values from the frontend (#375).
+- Implemented variable length public input (for bus boundaries) (#376).
+- Implemented nested list comprehension (#400).
+
+### Codegen
+
+- Introduced initial version of the ACE backend (#370, #380, #386).
+- Updated Winterfell codegen to the latest version (#388).
+- Removed obsolete MASM codegen backend (#389).
+
+### Internal
+
+- Eliminated exponentiations in the IR (#352).
+- Updated compilation pipeline to use MIR (#359).
 
 ## 0.3.0 (2023-07-12)
 
