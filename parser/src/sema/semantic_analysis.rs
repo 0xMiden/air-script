@@ -146,8 +146,14 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
         self.constants
             .extend(module.constants.iter().map(|(id, c)| (*id, c.value.clone())));
 
-        // Next, add all the top-level root module declarations as locals, if this is the root
-        // module
+        if !module.is_root() {
+            for (qid, bus) in self.program.buses.iter() {
+                // Add the bus defined in the root to the locals bindings
+                self.locals.insert(qid.id(), BindingType::Bus(bus.bus_type));
+            }
+        }
+
+        // Next, add all the top-level root module declarations as locals, if this is the root module
         //
         // As above, we are guaranteed that these names have no conflicts, but we assert that anyway
         if module.is_root() {
@@ -1003,10 +1009,17 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
                         // These binding types are module-local declarations
                         BindingType::Constant(_)
                         | BindingType::Function(_)
-                        | BindingType::PeriodicColumn(_)
-                        | BindingType::Bus(_) => {
+                        | BindingType::PeriodicColumn(_) => {
                             *expr = ResolvableIdentifier::Resolved(QualifiedIdentifier::new(
                                 current_module,
+                                namespaced_id,
+                            ));
+                        },
+                        BindingType::Bus(_) => {
+                            // We use the program name to resolve the bus, as it is a globally defined item
+                            // in the root module
+                            *expr = ResolvableIdentifier::Resolved(QualifiedIdentifier::new(
+                                self.program.name,
                                 namespaced_id,
                             ));
                         },

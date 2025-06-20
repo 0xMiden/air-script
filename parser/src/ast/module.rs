@@ -149,6 +149,10 @@ impl Module {
                     module.declare_integrity_constraints(diagnostics, statements)?;
                 },
                 Declaration::Buses(mut buses) => {
+                    if module.is_library() {
+                        invalid_section_in_library(diagnostics, "buses", span);
+                        return Err(SemanticAnalysisError::RootSectionInLibrary(span));
+                    }
                     for bus in buses.drain(..) {
                         module.declare_bus(diagnostics, &mut names, bus)?;
                     }
