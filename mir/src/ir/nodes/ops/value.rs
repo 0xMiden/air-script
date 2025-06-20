@@ -75,7 +75,10 @@ pub enum MirValue {
     TraceAccessBinding(TraceAccessBinding),
     /// A binding to a [Bus].
     BusAccess(BusAccess),
+    /// An empty bus
     Null,
+    /// An unconstrained bus
+    Unconstrained,
 }
 
 /// [BusAccess] is like [SymbolAccess], but is used to describe an access to a specific bus.

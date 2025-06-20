@@ -112,6 +112,8 @@ impl<'a> BusOpExpand<'a> {
             // Boundaries to PublicInputTable should be handled later during codegen, as we cannot
             // know at this point the length of the table, so we cannot generate the resulting constraint
             BusBoundary::PublicInputTable(_public_input_table_access) => {}
+            // Unconstrained boundaries do not require any constraints
+            BusBoundary::Unconstrained => {}
             BusBoundary::Null => {
                 // The value of the constraint for an empty bus depends on the bus types (1 for multiset, 0 for logup)
                 let value = match bus_type {

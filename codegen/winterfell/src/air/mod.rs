@@ -14,7 +14,7 @@ use boundary_constraints::{add_fn_get_assertions, add_fn_get_aux_assertions};
 mod transition_constraints;
 use transition_constraints::{add_fn_evaluate_aux_transition, add_fn_evaluate_transition};
 
-use air_ir::{Air, BusBoundary, BusType, Identifier, TraceSegmentId};
+use air_ir::{Air, BusBoundary, BusType, ConstraintDomain, Identifier, TraceSegmentId};
 
 use super::{Impl, Scope};
 
@@ -301,6 +301,26 @@ fn call_bus_boundary_varlen_pubinput(
     }
 }
 
+/// Helper function to count the number of bus boundary constraints in the provided AirIR.
 fn num_bus_boundary_constraints(ir: &Air) -> usize {
-    ir.buses.len() * 2
+    let mut num_bus_boundary_constraints = 0;
+
+    let domains = [ConstraintDomain::FirstRow, ConstraintDomain::LastRow];
+    for domain in &domains {
+        for bus in ir.buses.values() {
+            let bus_boundary = match domain {
+                ConstraintDomain::FirstRow => &bus.first,
+                ConstraintDomain::LastRow => &bus.last,
+                _ => unreachable!("Invalid domain for bus boundary constraint"),
+            };
+            match bus_boundary {
+                air_ir::BusBoundary::PublicInputTable(_) | air_ir::BusBoundary::Null => {
+                    num_bus_boundary_constraints += 1;
+                }
+                air_ir::BusBoundary::Unconstrained => {}
+            }
+        }
+    }
+
+    num_bus_boundary_constraints
 }

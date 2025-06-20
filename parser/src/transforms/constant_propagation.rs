@@ -186,7 +186,9 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
     ) -> ControlFlow<SemanticAnalysisError> {
         match expr {
             // Expression is already folded
-            ScalarExpr::Const(_) | ScalarExpr::Null(_) => ControlFlow::Continue(()),
+            ScalarExpr::Const(_) | ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_) => {
+                ControlFlow::Continue(())
+            }
             // Need to check if this access is to a constant value, and transform to a constant if so
             ScalarExpr::SymbolAccess(sym) => {
                 let constant_value = match sym.name {
@@ -644,7 +646,7 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                 ControlFlow::Continue(())
             }
             Expr::BusOperation(ref mut expr) => self.visit_mut_bus_operation(expr),
-            Expr::Null(_) => ControlFlow::Continue(()),
+            Expr::Null(_) | Expr::Unconstrained(_) => ControlFlow::Continue(()),
         }
     }
 

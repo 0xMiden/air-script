@@ -50,7 +50,7 @@ impl Air for BusesAir {
         let main_degrees = vec![];
         let aux_degrees = vec![TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(1)];
         let num_main_assertions = 0;
-        let num_aux_assertions = 4;
+        let num_aux_assertions = 3;
 
         let context = AirContext::new_multi_segment(
             trace_info,
@@ -75,7 +75,6 @@ impl Air for BusesAir {
 
     fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
-        result.push(Assertion::single(0, 0, E::ONE));
         result.push(Assertion::single(0, self.last_step(), E::ONE));
         result.push(Assertion::single(1, 0, E::ZERO));
         result.push(Assertion::single(1, self.last_step(), E::ZERO));

@@ -420,6 +420,10 @@ impl<'a> MirBuilder<'a> {
                 span: expr.span(),
                 value: MirValue::Null,
             })),
+            ast::Expr::Unconstrained(_) => Ok(Value::create(SpannedMirValue {
+                span: expr.span(),
+                value: MirValue::Unconstrained,
+            })),
             ast::Expr::BusOperation(bo) => self.translate_bus_operation(bo),
         }
     }
@@ -1016,6 +1020,10 @@ impl<'a> MirBuilder<'a> {
             ast::ScalarExpr::Null(_) => Ok(Value::create(SpannedMirValue {
                 span: scalar_expr.span(),
                 value: MirValue::Null,
+            })),
+            ast::ScalarExpr::Unconstrained(_) => Ok(Value::create(SpannedMirValue {
+                span: scalar_expr.span(),
+                value: MirValue::Unconstrained,
             })),
             ast::ScalarExpr::BusOperation(bo) => self.translate_bus_operation(bo),
         }

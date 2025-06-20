@@ -306,6 +306,8 @@ pub enum Expr {
     BusOperation(BusOperation),
     /// An empty bus
     Null(Span<()>),
+    /// An unconstrained bus
+    Unconstrained(Span<()>),
 }
 impl Expr {
     /// Returns true if this expression is constant
@@ -340,7 +342,7 @@ impl Expr {
             Self::Call(ref call) => call.ty,
             Self::ListComprehension(ref lc) => lc.ty,
             Self::Let(ref let_expr) => let_expr.ty(),
-            Self::BusOperation(_) | Self::Null(_) => Some(Type::Felt),
+            Self::BusOperation(_) | Self::Null(_) | Self::Unconstrained(_) => Some(Type::Felt),
         }
     }
 }
@@ -360,6 +362,7 @@ impl fmt::Debug for Expr {
             Self::Let(ref let_expr) => write!(f, "{let_expr:#?}"),
             Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
             Self::Null(ref expr) => f.debug_tuple("Null").field(expr).finish(),
+            Self::Unconstrained(ref expr) => f.debug_tuple("Unconstrained").field(expr).finish(),
         }
     }
 }
@@ -393,6 +396,7 @@ impl fmt::Display for Expr {
             }
             Self::BusOperation(ref expr) => write!(f, "{}", expr),
             Self::Null(ref _expr) => write!(f, "null"),
+            Self::Unconstrained(ref _expr) => write!(f, "unconstrained"),
         }
     }
 }
@@ -456,6 +460,7 @@ impl TryFrom<ScalarExpr> for Expr {
             ScalarExpr::Let(expr) => Ok(Self::Let(expr)),
             ScalarExpr::BusOperation(expr) => Ok(Self::BusOperation(expr)),
             ScalarExpr::Null(spanned) => Ok(Self::Null(spanned)),
+            ScalarExpr::Unconstrained(spanned) => Ok(Self::Unconstrained(spanned)),
         }
     }
 }
@@ -508,6 +513,8 @@ pub enum ScalarExpr {
     BusOperation(BusOperation),
     /// An empty bus
     Null(Span<()>),
+    /// An unconstrained bus
+    Unconstrained(Span<()>),
 }
 impl ScalarExpr {
     /// Returns true if this is a constant value
@@ -542,7 +549,9 @@ impl ScalarExpr {
             },
             Self::Call(ref expr) => Ok(expr.ty),
             Self::Let(ref expr) => Ok(expr.ty()),
-            Self::BusOperation(_) | ScalarExpr::Null(_) => Ok(Some(Type::Felt)),
+            Self::BusOperation(_) | ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_) => {
+                Ok(Some(Type::Felt))
+            }
         }
     }
 }
@@ -601,6 +610,7 @@ impl fmt::Debug for ScalarExpr {
             Self::Let(ref expr) => write!(f, "{:#?}", expr),
             Self::BusOperation(ref expr) => f.debug_tuple("BusOp").field(expr).finish(),
             Self::Null(ref expr) => f.debug_tuple("Null").field(expr).finish(),
+            Self::Unconstrained(ref expr) => f.debug_tuple("Unconstrained").field(expr).finish(),
         }
     }
 }
@@ -622,6 +632,7 @@ impl fmt::Display for ScalarExpr {
             }
             Self::BusOperation(ref expr) => write!(f, "{}", expr),
             Self::Null(ref _value) => write!(f, "null"),
+            Self::Unconstrained(ref _value) => write!(f, "unconstrained"),
         }
     }
 }

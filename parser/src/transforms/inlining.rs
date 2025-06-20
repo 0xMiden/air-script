@@ -343,7 +343,7 @@ impl<'a> Inlining<'a> {
                 Expr::try_from(block.pop().unwrap()).map_err(SemanticAnalysisError::InvalidExpr)
             }
             expr @ (Expr::Const(_) | Expr::Range(_) | Expr::SymbolAccess(_)) => Ok(expr),
-            Expr::BusOperation(_) | Expr::Null(_) => {
+            Expr::BusOperation(_) | Expr::Null(_) | Expr::Unconstrained(_) => {
                 self.diagnostics
                     .diagnostic(Severity::Error)
                     .with_message("buses are not implemented for this Pipeline")
@@ -667,7 +667,7 @@ impl<'a> Inlining<'a> {
                     }
                 }
             }
-            Expr::BusOperation(_) | Expr::Null(_) => {
+            Expr::BusOperation(_) | Expr::Null(_) | Expr::Unconstrained(_) => {
                 self.diagnostics
                     .diagnostic(Severity::Error)
                     .with_message("buses are not implemented for this Pipeline")
@@ -732,7 +732,7 @@ impl<'a> Inlining<'a> {
                 }
                 Ok(())
             }
-            ScalarExpr::BusOperation(_) | ScalarExpr::Null(_) => {
+            ScalarExpr::BusOperation(_) | ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_) => {
                 self.diagnostics
                     .diagnostic(Severity::Error)
                     .with_message("buses are not implemented for this Pipeline")
@@ -1014,7 +1014,8 @@ impl<'a> Inlining<'a> {
                 | Expr::ListComprehension(_)
                 | Expr::Let(_)
                 | Expr::BusOperation(_)
-                | Expr::Null(_) => {
+                | Expr::Null(_)
+                | Expr::Unconstrained(_) => {
                     unreachable!()
                 }
             };
@@ -1600,7 +1601,7 @@ fn eval_expr_binding_type(
             eval_expr_binding_type(&lc.iterables[0], bindings, imported)
         }
         Expr::Let(ref let_expr) => eval_let_binding_ty(let_expr, bindings, imported),
-        Expr::BusOperation(_) | Expr::Null(_) => {
+        Expr::BusOperation(_) | Expr::Null(_) | Expr::Unconstrained(_) => {
             unimplemented!("buses are not implemented for this Pipeline")
         }
     }
@@ -1743,7 +1744,8 @@ impl RewriteIterableBindingsVisitor<'_> {
                 | Expr::ListComprehension(_)
                 | Expr::Let(_)
                 | Expr::BusOperation(_)
-                | Expr::Null(_),
+                | Expr::Null(_)
+                | Expr::Unconstrained(_),
             ) => {
                 unreachable!()
             }
@@ -1802,7 +1804,7 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
             // the case that we encounter a let here, as they can only be introduced in scalar
             // expression position as a result of inlining/expansion
             ScalarExpr::Let(_) => unreachable!(),
-            ScalarExpr::BusOperation(_) | ScalarExpr::Null(_) => {
+            ScalarExpr::BusOperation(_) | ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_) => {
                 ControlFlow::Break(SemanticAnalysisError::Invalid)
             }
         }

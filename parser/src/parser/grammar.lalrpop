@@ -464,6 +464,7 @@ ScalarExprBase: ScalarExpr = {
     SymbolAccess,
     <Int> => ScalarExpr::Const(<>),
     <l:@L> "null" <r:@R> => ScalarExpr::Null(Span::new(span!(l, r), ())),
+    <l:@L> "unconstrained" <r:@R> => ScalarExpr::Unconstrained(Span::new(span!(l, r), ())),
     "(" <ScalarExpr> ")",
 
     #[precedence(level="1")]
@@ -665,6 +666,7 @@ extern {
         "multiset" => Token::Multiset,
         "logup" => Token::Logup,
         "null" => Token::Null,
+        "unconstrained" => Token::Unconstrained,
         "insert" => Token::Insert,
         "remove" => Token::Remove,
         "boundary_constraints" => Token::BoundaryConstraints,
