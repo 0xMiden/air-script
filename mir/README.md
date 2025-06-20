@@ -37,3 +37,7 @@ Although generation of an `AirIR` uses a symbol table while processing the sourc
   - a directed acyclic graph (DAG) without duplicate nodes.
   - a vector of `ConstraintRoot` for each trace segment (e.g. main), where `ConstraintRoot` contains the node index in the graph where each of the constraint starts and the constraint domain which specifies the row(s) accessed by each of the constraints.
   - contains both boundary and integrity constraints.
+
+## License
+
+This project is [MIT licensed](../LICENSE).
