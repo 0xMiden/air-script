@@ -45,7 +45,7 @@ impl AirTester for BusesAirTester {
 
     fn build_aux_trace(&self, length: usize) -> Option<AuxTraceWithMetadata<Felt>> {
         let aux_trace_width = 2;
-        let num_rand_values = 3;
+        let num_rand_values = 4;
         let mut aux_trace = ColMatrix::new(vec![vec![Felt::new(0); length]; aux_trace_width]);
         aux_trace.update_row(0, &[Felt::new(1), Felt::new(0)]);
         aux_trace.update_row(length - 2, &[Felt::new(1), Felt::new(0)]);
