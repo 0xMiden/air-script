@@ -153,7 +153,8 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
             }
         }
 
-        // Next, add all the top-level root module declarations as locals, if this is the root module
+        // Next, add all the top-level root module declarations as locals, if this is the root
+        // module
         //
         // As above, we are guaranteed that these names have no conflicts, but we assert that anyway
         if module.is_root() {
@@ -1016,8 +1017,8 @@ impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
                             ));
                         },
                         BindingType::Bus(_) => {
-                            // We use the program name to resolve the bus, as it is a globally defined item
-                            // in the root module
+                            // We use the program name to resolve the bus, as it is a globally
+                            // defined item in the root module
                             *expr = ResolvableIdentifier::Resolved(QualifiedIdentifier::new(
                                 self.program.name,
                                 namespaced_id,

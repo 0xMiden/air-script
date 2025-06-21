@@ -1,16 +1,7 @@
-use core::slice;
-
-use air_parser::{Symbol, ast};
-use miden_diagnostics::{SourceSpan, Spanned};
+use air_parser::ast;
 
 use super::{compile, expect_diagnostic};
-use crate::{
-    ir::{
-        Add, Builder, Bus, Fold, FoldOperator, Link, Mir, MirValue, Op, PublicInputTableAccess,
-        Vector, assert_bus_eq,
-    },
-    tests::translate,
-};
+use crate::ir::{Link, MirValue, Op, PublicInputTableAccess};
 
 #[test]
 fn buses_in_boundary_constraints() {
