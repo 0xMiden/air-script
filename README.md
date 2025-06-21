@@ -1,10 +1,11 @@
 # AirScript
 
-<a href="https://github.com/0xMiden/air-script/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<img src="https://github.com/0xMiden/air-script/workflows/CI/badge.svg?branch=main">
-<a href="https://crates.io/crates/air-script"><img src="https://img.shields.io/crates/v/air-script"></a>
+[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/0xMiden/air-script/blob/main/LICENSE)
+[![CI](https://github.com/0xMiden/air-script/actions/workflows/ci.yml/badge.svg)](https://github.com/0xMiden/air-script/actions/workflows/test.yml)
+[![RUST_VERSION](https://img.shields.io/badge/rustc-1.87+-lightgray.svg)](https://www.rust-lang.org/tools/install)
+[![Crates.io](https://img.shields.io/crates/v/air-script)](https://crates.io/crates/air-script)
 
-A domain-specific language for expressing AIR constraints for STARKs, especially for STARK-based virtual machines like [Miden VM](https://github.com/maticnetwork/miden/).
+A domain-specific language for expressing AIR constraints for STARKs, especially for STARK-based virtual machines like [Miden VM](https://github.com/0xMiden/miden-vm).
 
 An in-depth description of AirScript is available in the full AirScript [documentation](https://0xMiden.github.io/air-script/).
 
