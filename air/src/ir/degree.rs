@@ -1,10 +1,10 @@
 //! The [IntegrityConstraintDegree] struct and documentation contained in this file is a duplicate
 //! of the [TransitionConstraintDegree] struct defined in the Winterfell STARK prover library
-//! (https://github.com/novifinancial/winterfell), which is licensed under the MIT license. The
+//! (<https://github.com/novifinancial/winterfell>), which is licensed under the MIT license. The
 //! implementation in this file is a subset of the Winterfell code.
 //!
 //! The original code is available in the Winterfell library in the `air` crate:
-//! https://github.com/novifinancial/winterfell/blob/main/air/src/air/transition/degree.rs
+//! <https://github.com/novifinancial/winterfell/blob/main/air/src/air/transition/degree.rs>
 
 use super::MIN_CYCLE_LENGTH;
 
@@ -37,14 +37,8 @@ impl IntegrityConstraintDegree {
     /// should be set to 2. If a constraint involves multiplication of three trace columns,
     /// `degree` should be set to 3 etc.
     pub fn new(degree: usize) -> Self {
-        assert!(
-            degree > 0,
-            "integrity constraint degree must be at least one, but was zero"
-        );
-        Self {
-            base: degree,
-            cycles: vec![],
-        }
+        assert!(degree > 0, "integrity constraint degree must be at least one, but was zero");
+        Self { base: degree, cycles: vec![] }
     }
 
     /// Creates a new integrity degree descriptor for constraints which involve multiplication
@@ -72,9 +66,6 @@ impl IntegrityConstraintDegree {
                 "cycle length must be a power of two, but was {cycle} for cycle {i}"
             );
         }
-        Self {
-            base: base_degree,
-            cycles,
-        }
+        Self { base: base_degree, cycles }
     }
 }

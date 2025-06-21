@@ -40,11 +40,7 @@ impl<T: fmt::Display> fmt::Display for DisplayTuple<'_, T> {
 pub struct DisplayTypedTuple<'a, V, T>(pub &'a [(V, T)]);
 impl<V: fmt::Display, T: fmt::Display> fmt::Display for DisplayTypedTuple<'_, V, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "({})",
-            DisplayCsv::new(self.0.iter().map(|(v, t)| format!("{v}: {t}")))
-        )
+        write!(f, "({})", DisplayCsv::new(self.0.iter().map(|(v, t)| format!("{v}: {t}"))))
     }
 }
 
@@ -101,16 +97,16 @@ impl fmt::Display for DisplayStatement<'_> {
                     in_expr_position: false,
                 };
                 write!(f, "{display}")
-            }
+            },
             Statement::Enforce(expr) => {
                 write!(f, "enf {expr}")
-            }
+            },
             Statement::EnforceIf(expr, selector) => {
                 write!(f, "enf {expr} when {selector}")
-            }
+            },
             Statement::EnforceAll(expr) => {
                 write!(f, "enf {expr}")
-            }
+            },
             Statement::Expr(expr) => write!(f, "return {expr}"),
             Statement::BusEnforce(expr) => write!(f, "enf {expr}"),
         }
@@ -152,7 +148,7 @@ impl fmt::Display for DisplayLet<'_> {
                 } else {
                     f.write_str("}\n")?;
                 }
-            }
+            },
             value => {
                 write!(f, "let {} = {}", self.let_expr.name, value)?;
                 if self.in_expr_position {
@@ -160,7 +156,7 @@ impl fmt::Display for DisplayLet<'_> {
                 } else {
                     f.write_char('\n')?;
                 }
-            }
+            },
         }
         for stmt in self.let_expr.body.iter() {
             writeln!(f, "{}", stmt.display(self.indent + 1))?;

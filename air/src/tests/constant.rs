@@ -73,9 +73,5 @@ fn invalid_matrix_constant() {
         "invalid matrix literal: mismatched dimensions",
         Pipeline::WithoutMIR,
     );
-    expect_diagnostic(
-        source,
-        "invalid matrix literal: mismatched dimensions",
-        Pipeline::WithMIR,
-    );
+    expect_diagnostic(source, "invalid matrix literal: mismatched dimensions", Pipeline::WithMIR);
 }

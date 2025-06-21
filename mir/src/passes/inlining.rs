@@ -3,6 +3,7 @@ use std::{collections::HashMap, ops::Deref};
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Spanned};
 
+use super::{duplicate_node_or_replace, visitor::Visitor};
 use crate::{
     CompileError,
     ir::{
@@ -11,17 +12,15 @@ use crate::{
     },
 };
 
-use super::{duplicate_node_or_replace, visitor::Visitor};
-
 /// This pass handles inlining of Call nodes at there call sites.
 ///
 /// It works in three steps:
 /// * Firstly, we visit the graph to build the call dependency graph.
-/// * This dependency graph is then used to compute the wanted inlining order
-///   (we first replace calls to callees that do not have Calls in their body).
-///   If it is not possible create this order, this means there is a circular dependency.
-/// * Then, we visit the graph again at each Call nodes, building a duplicate of the body
-///   (with Parameter replaced by call arguments), and replacing the Call node by this duplicate body.
+/// * This dependency graph is then used to compute the wanted inlining order (we first replace
+///   calls to callees that do not have Calls in their body). If it is not possible create this
+///   order, this means there is a circular dependency.
+/// * Then, we visit the graph again at each Call nodes, building a duplicate of the body (with
+///   Parameter replaced by call arguments), and replacing the Call node by this duplicate body.
 ///  
 pub struct Inlining<'a> {
     diagnostics: &'a DiagnosticsHandler,
@@ -39,7 +38,8 @@ pub struct InliningFirstPass<'a> {
     // general context
     work_stack: Vec<Link<Node>>,
     in_func_or_eval: bool,
-    // When encountering a call, we store it here to construct the dependency graph once reaching the root node
+    // When encountering a call, we store it here to construct the dependency graph once reaching
+    // the root node
     current_callees_encountered: Vec<Link<Root>>,
     // HashMap<FunctionPtr, (Function, Functions where it is called)>
     func_eval_dependency_graph: HashMap<usize, (Link<Root>, Vec<Link<Root>>)>,
@@ -59,7 +59,8 @@ impl<'a> InliningFirstPass<'a> {
     }
 }
 
-/// This structure is used to keep track of what is needed to inline a call to a given function or evaluator.
+/// This structure is used to keep track of what is needed to inline a call to a given function or
+/// evaluator.
 #[derive(Clone, Debug)]
 pub struct CallInliningContext {
     body: Link<Vec<Link<Op>>>,
@@ -113,11 +114,10 @@ impl Pass for Inlining<'_> {
         let mut first_pass = InliningFirstPass::new(self.diagnostics);
         Visitor::run(&mut first_pass, ir.constraint_graph_mut())?;
 
-        // We then create the inlining order (inlining first the functions and evaluators that do not call other functions or evaluators)
-        let func_eval_inlining_order = create_inlining_order(
-            self.diagnostics,
-            first_pass.func_eval_dependency_graph.clone(),
-        )?;
+        // We then create the inlining order (inlining first the functions and evaluators that do
+        // not call other functions or evaluators)
+        let func_eval_inlining_order =
+            create_inlining_order(self.diagnostics, first_pass.func_eval_dependency_graph.clone())?;
 
         // The second pass actually inlines the calls
         let mut second_pass = InliningSecondPass::new(
@@ -143,33 +143,27 @@ fn create_inlining_order(
     // Note: we remove an element at each iteration (or raise diag), so this will terminate
     while !func_eval_dependency_graph.is_empty() {
         // Find a function without dependency
-        match func_eval_dependency_graph
-            .clone()
-            .iter()
-            .find(|(_, (_k, v))| v.is_empty())
-        {
+        match func_eval_dependency_graph.clone().iter().find(|(_, (_k, v))| v.is_empty()) {
             Some((f_ptr, (f, _))) => {
                 func_eval_inlining_order.push(f.clone());
                 // Remove the entry of dependency graph corresponding to the next function to inline
                 func_eval_dependency_graph.remove(f_ptr);
-            }
+            },
             _ => {
                 diagnostics
                     .diagnostic(Severity::Error)
                     .with_message("Circular dependency detected")
                     .emit();
                 return Err(CompileError::Failed);
-            }
+            },
         }
 
         let removed_fn = func_eval_inlining_order.last().unwrap();
 
         // Remove the function from the list of dependencies of all other functions
-        func_eval_dependency_graph
-            .iter_mut()
-            .for_each(|(_, (_, v))| {
-                v.retain(|x| x != removed_fn);
-            });
+        func_eval_dependency_graph.iter_mut().for_each(|(_, (_, v))| {
+            v.retain(|x| x != removed_fn);
+        });
     }
     Ok(func_eval_inlining_order)
 }
@@ -214,29 +208,23 @@ impl Visitor for InliningFirstPass<'_> {
             .clone()
             .into_iter()
             .map(|bc| bc.as_node())
-            .chain(
-                integrity_constraints_roots_ref
-                    .clone()
-                    .into_iter()
-                    .map(|ic| ic.as_node()),
-            )
+            .chain(integrity_constraints_roots_ref.clone().into_iter().map(|ic| ic.as_node()))
             .chain(bus_roots.into_iter().map(|b| b.as_node()))
             .chain(evaluators.into_iter().map(|e| e.as_node()))
             .chain(functions.into_iter().map(|f| f.as_node()));
         combined_roots.collect()
     }
 
-    // When visiting a function or an evaluator, we have just finished visiting their bodies so we can update the dependency graph for this root
-    // We then clear the current_callees_encountered vec to prepare to visit the next function or evaluator
+    // When visiting a function or an evaluator, we have just finished visiting their bodies so we
+    // can update the dependency graph for this root We then clear the
+    // current_callees_encountered vec to prepare to visit the next function or evaluator
     fn visit_function(
         &mut self,
         _graph: &mut Graph,
         function: Link<Root>,
     ) -> Result<(), CompileError> {
-        self.func_eval_dependency_graph.insert(
-            function.get_ptr(),
-            (function, self.current_callees_encountered.clone()),
-        );
+        self.func_eval_dependency_graph
+            .insert(function.get_ptr(), (function, self.current_callees_encountered.clone()));
         self.current_callees_encountered.clear();
         Ok(())
     }
@@ -254,7 +242,8 @@ impl Visitor for InliningFirstPass<'_> {
     }
 
     // When visiting a call, we:
-    // - add it to the current list of callees if we're currently visiting the bodies of functions or evaluators (to build the dependency graph)
+    // - add it to the current list of callees if we're currently visiting the bodies of functions
+    //   or evaluators (to build the dependency graph)
     // - add it to the list of calls to inline with the func_eval_nodes_where_called map
     fn visit_call(&mut self, _graph: &mut Graph, call: Link<Op>) -> Result<(), CompileError> {
         // safe to unwrap because we just dispatched on it
@@ -331,16 +320,15 @@ impl Visitor for InliningSecondPass<'_> {
                 }
 
                 if context.pure_function {
-                    // We have finished inlining the body, we can now replace the Call node with the last expression of the body
+                    // We have finished inlining the body, we can now replace the Call node with the
+                    // last expression of the body
                     let last_child_of_body = context.body.borrow().last().unwrap().clone();
-                    let (_, new_node) = self
-                        .nodes_to_replace
-                        .get(&last_child_of_body.get_ptr())
-                        .unwrap()
-                        .clone();
+                    let (_, new_node) =
+                        self.nodes_to_replace.get(&last_child_of_body.get_ptr()).unwrap().clone();
                     updated_op = Some(new_node);
                 } else {
-                    // We have finished inlining the body, we can now replace the Call node with all the body
+                    // We have finished inlining the body, we can now replace the Call node with all
+                    // the body
                     let mut new_nodes = Vec::new();
                     for body_node in context.body.borrow().iter() {
                         // FIXME: Maybe we should only push nodes that are Enf()?
@@ -348,17 +336,11 @@ impl Visitor for InliningSecondPass<'_> {
                         // For now I think we can keep all nodes, and just ignore the non-Enf nodes
                         // When building the constraints during lowering Mir -> Air
                         new_nodes.push(
-                            self.nodes_to_replace
-                                .get(&body_node.get_ptr())
-                                .unwrap()
-                                .1
-                                .clone(),
+                            self.nodes_to_replace.get(&body_node.get_ptr()).unwrap().1.clone(),
                         );
                     }
-                    let span = new_nodes
-                        .iter()
-                        .map(|n| n.span())
-                        .fold(SourceSpan::UNKNOWN, |acc, s| {
+                    let span =
+                        new_nodes.iter().map(|n| n.span()).fold(SourceSpan::UNKNOWN, |acc, s| {
                             acc.merge(s).unwrap_or(SourceSpan::UNKNOWN)
                         });
                     let new_nodes_vector = Vector::create(new_nodes, span);
@@ -371,7 +353,8 @@ impl Visitor for InliningSecondPass<'_> {
             }
 
             // Effectively replace the Call node with the updated op
-            // Note: We also update the references of Parameters that referenced the node we are replacing
+            // Note: We also update the references of Parameters that referenced the node we are
+            // replacing
             if let Some(updated_op) = updated_op {
                 //
                 let prev_owner_ptr = updated_op.as_owner().unwrap().get_ptr();
@@ -380,18 +363,9 @@ impl Visitor for InliningSecondPass<'_> {
                 root_node.as_op().unwrap().set(&updated_op);
 
                 if let Some(params) = params {
-                    let new_owner = root_node
-                        .clone()
-                        .as_op()
-                        .unwrap()
-                        .clone()
-                        .as_owner()
-                        .unwrap();
+                    let new_owner = root_node.clone().as_op().unwrap().clone().as_owner().unwrap();
                     for param in params.iter() {
-                        param
-                            .as_parameter_mut()
-                            .unwrap()
-                            .set_ref_node(new_owner.clone());
+                        param.as_parameter_mut().unwrap().set_ref_node(new_owner.clone());
                     }
                 }
             }
@@ -420,10 +394,7 @@ impl Visitor for InliningSecondPass<'_> {
         if context.pure_function {
             // Instead of scanning all the body, we only scan the last node,
             // which represents the return value of the function
-            self.scan_node(
-                _graph,
-                context.body.borrow().last().unwrap().clone().as_node(),
-            )?;
+            self.scan_node(_graph, context.body.borrow().last().unwrap().clone().as_node())?;
         } else {
             // We scan all the nodes related to the body
             for body_node in context.body.borrow().iter() {
@@ -448,32 +419,25 @@ impl Visitor for InliningSecondPass<'_> {
             if call_op.clone().as_call().is_some() {
                 self.visit_call(graph, call_op.clone())?;
             } else {
-                // Else, we are currently visiting the body of a function or an evaluator of a call we want to inline
-                // We use our helper duplicate_node_or_replace to duplicate the body, while replacing the Function or Evaluator parameters with the Call arguments
+                // Else, we are currently visiting the body of a function or an evaluator of a call
+                // we want to inline We use our helper duplicate_node_or_replace to
+                // duplicate the body, while replacing the Function or Evaluator parameters with the
+                // Call arguments
                 if self.call_inlining_context.clone().unwrap().pure_function {
                     duplicate_node_or_replace(
                         &mut self.nodes_to_replace,
                         call_op.clone(),
-                        self.call_inlining_context
-                            .clone()
-                            .unwrap()
-                            .arguments
-                            .borrow()
-                            .clone(),
+                        self.call_inlining_context.clone().unwrap().arguments.borrow().clone(),
                         self.call_inlining_context.clone().unwrap().ref_node,
                         None,
                         &mut self.params_for_ref_node,
                     );
                 } else {
-                    // If we're inside the body of an evaluator, we first need to unpack the arguments of the call to have a Vector of Trace columns, and not
+                    // If we're inside the body of an evaluator, we first need to unpack the
+                    // arguments of the call to have a Vector of Trace columns, and not
                     // bindings to multiple columns
-                    let args = self
-                        .call_inlining_context
-                        .clone()
-                        .unwrap()
-                        .arguments
-                        .borrow()
-                        .clone();
+                    let args =
+                        self.call_inlining_context.clone().unwrap().arguments.borrow().clone();
 
                     let callee_params = self
                         .call_inlining_context
@@ -523,10 +487,7 @@ fn check_evaluator_argument_sizes(
         let mut trace_segments_arg_vector_len = 0;
         for child in children.borrow().deref() {
             if let Some(value) = child.as_value() {
-                let Value {
-                    value: SpannedMirValue { value, .. },
-                    ..
-                } = value.deref();
+                let Value { value: SpannedMirValue { value, .. }, .. } = value.deref();
 
                 let param_size = match value {
                     MirValue::TraceAccessBinding(tab) => tab.size,
@@ -546,10 +507,7 @@ fn check_evaluator_argument_sizes(
                 let Accessor { indexable, .. } = accessor.deref();
 
                 if let Some(value) = indexable.as_value() {
-                    let Value {
-                        value: SpannedMirValue { value, .. },
-                        ..
-                    } = value.deref();
+                    let Value { value: SpannedMirValue { value, .. }, .. } = value.deref();
 
                     let param_size = match value {
                         MirValue::TraceAccessBinding(tab) => tab.size,
@@ -635,10 +593,10 @@ fn unpack_evaluator_arguments(args: &[Link<Op>]) -> Vec<Link<Op>> {
                         } else {
                             args_unpacked.push(arg.clone());
                         }
-                    }
+                    },
                     MirValue::TraceAccess(_ta) => {
                         args_unpacked.push(arg.clone());
-                    }
+                    },
                     _ => unreachable!(
                         "expected trace access binding or trace access, got {:?}",
                         value
@@ -650,10 +608,7 @@ fn unpack_evaluator_arguments(args: &[Link<Op>]) -> Vec<Link<Op>> {
                 let Accessor { indexable, .. } = accessor.deref();
 
                 if let Some(value) = indexable.as_value() {
-                    let Value {
-                        value: SpannedMirValue { value, .. },
-                        ..
-                    } = value.deref();
+                    let Value { value: SpannedMirValue { value, .. }, .. } = value.deref();
 
                     let _param_size = match value {
                         MirValue::TraceAccessBinding(tab) => tab.size,
@@ -672,16 +627,10 @@ fn unpack_evaluator_arguments(args: &[Link<Op>]) -> Vec<Link<Op>> {
 
                     args_unpacked.push(indexable.clone());
                 } else {
-                    unreachable!(
-                        "expected value or parameter (or accessor on one), got {:?}",
-                        arg
-                    );
+                    unreachable!("expected value or parameter (or accessor on one), got {:?}", arg);
                 }
             } else {
-                unreachable!(
-                    "expected value or parameter (or accessor on one), got {:?}",
-                    arg
-                );
+                unreachable!("expected value or parameter (or accessor on one), got {:?}", arg);
             }
         }
     }

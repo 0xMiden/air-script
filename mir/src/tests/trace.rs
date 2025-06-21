@@ -106,10 +106,7 @@ fn err_bc_trace_cols_access_out_of_bounds() {
         enf a[0]' = a[0] - 1;
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]
@@ -134,10 +131,7 @@ fn err_ic_trace_cols_access_out_of_bounds() {
         enf a[4]' = a[4] - 1;
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]

@@ -1,8 +1,7 @@
 use core::fmt;
 
-use crate::graph::{AlgebraicGraph, NodeIndex};
-
 use super::*;
+use crate::graph::{AlgebraicGraph, NodeIndex};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConstraintError {
@@ -10,28 +9,27 @@ pub enum ConstraintError {
     IncompatibleConstraintDomains(ConstraintDomain, ConstraintDomain),
 }
 
-/// [Constraints] is the algebraic graph representation of all the constraints
-/// in an [AirScript]. The graph contains all of the constraints, each of which
-/// is a subgraph consisting of all the expressions involved in evaluating the constraint,
-/// including constants, references to the trace, public inputs, random values, and
-/// periodic columns.
+/// [Constraints] is the algebraic graph representation of all the constraints in an AirScript. The
+/// graph contains all of the constraints, each of which is a subgraph consisting of all the
+/// expressions involved in evaluating the constraint, including constants, references to the trace,
+/// public inputs, random values, and periodic columns.
 ///
-/// Internally, this struct also holds a matrix for each constraint type (boundary,
-/// integrity), where each row corresponds to a trace segment (in the same order)
-/// and contains a vector of [ConstraintRoot] for all of the constraints of that type
-/// to be applied to that trace segment.
+/// Internally, this struct also holds a matrix for each constraint type (boundary, integrity),
+/// where each row corresponds to a trace segment (in the same order) and contains a vector of
+/// [ConstraintRoot] for all of the constraints of that type to be applied to that trace segment.
 ///
-/// For example, integrity constraints for the main execution trace, which has a trace segment
-/// id of 0, will be specified by the vector of constraint roots found at index 0 of the
+/// For example, integrity constraints for the main execution trace, which has a trace segment id of
+/// 0, will be specified by the vector of constraint roots found at index 0 of the
 /// `integrity_constraints` matrix.
 #[derive(Default, Debug)]
 pub struct Constraints {
-    /// Constraint roots for all boundary constraints against the execution trace, by trace segment,
-    /// where boundary constraints are any constraints that apply to either the first or the last
-    /// row of the trace.
+    /// Constraint roots for all boundary constraints against the execution trace, by trace
+    /// segment, where boundary constraints are any constraints that apply to either the first
+    /// or the last row of the trace.
     boundary_constraints: Vec<Vec<ConstraintRoot>>,
-    /// Constraint roots for all integrity constraints against the execution trace, by trace segment,
-    /// where integrity constraints are any constraints that apply to every row or every frame.
+    /// Constraint roots for all integrity constraints against the execution trace, by trace
+    /// segment, where integrity constraints are any constraints that apply to every row or
+    /// every frame.
     integrity_constraints: Vec<Vec<ConstraintRoot>>,
     /// A directed acyclic graph which represents all of the constraints and their subexpressions.
     graph: AlgebraicGraph,
@@ -71,7 +69,8 @@ impl Constraints {
         &self.boundary_constraints[trace_segment]
     }
 
-    /// Returns a vector of the degrees of the integrity constraints for the specified trace segment.
+    /// Returns a vector of the degrees of the integrity constraints for the specified trace
+    /// segment.
     pub fn integrity_constraint_degrees(
         &self,
         trace_segment: TraceSegmentId,
@@ -119,13 +118,15 @@ impl Constraints {
         }
     }
 
-    /// Returns the underlying [AlgebraicGraph] representing all constraints and their sub-expressions.
+    /// Returns the underlying [AlgebraicGraph] representing all constraints and their
+    /// sub-expressions.
     #[inline]
     pub const fn graph(&self) -> &AlgebraicGraph {
         &self.graph
     }
 
-    /// Returns a mutable reference to the underlying [AlgebraicGraph] representing all constraints and their sub-expressions.
+    /// Returns a mutable reference to the underlying [AlgebraicGraph] representing all constraints
+    /// and their sub-expressions.
     #[inline]
     pub fn graph_mut(&mut self) -> &mut AlgebraicGraph {
         &mut self.graph
@@ -209,9 +210,11 @@ impl ConstraintDomain {
     /// that represents the maximum of the two.
     ///
     /// For example, if one domain is [ConstraintDomain::EveryFrame(2)] and the other
-    /// is [ConstraintDomain::EveryFrame(3)], then the result will be [ConstraintDomain::EveryFrame(3)].
+    /// is [ConstraintDomain::EveryFrame(3)], then the result will be
+    /// [ConstraintDomain::EveryFrame(3)].
     ///
-    /// NOTE: Domains for boundary constraints (FirstRow and LastRow) cannot be merged with other domains.
+    /// NOTE: Domains for boundary constraints (FirstRow and LastRow) cannot be merged with other
+    /// domains.
     pub fn merge(self, other: Self) -> Result<Self, ConstraintError> {
         if self == other {
             return Ok(other);
@@ -241,7 +244,7 @@ impl fmt::Display for ConstraintDomain {
             Self::EveryRow => write!(f, "every row"),
             Self::EveryFrame(size) => {
                 write!(f, "every frame of {size} consecutive rows")
-            }
+            },
         }
     }
 }

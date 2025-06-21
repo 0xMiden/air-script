@@ -2,8 +2,9 @@ use winter_air::{BatchingMethod, EvaluationFrame, FieldExtension, ProofOptions, 
 use winter_math::fields::f64::BaseElement as Felt;
 use winterfell::{AuxTraceWithMetadata, Trace, TraceTable, matrix::ColMatrix};
 
-/// We need to encapsulate the trace table in a struct to manually implement the `aux_trace_width` method of the `Table` trait.
-/// Otherwise, using only a TraceTable<Felt> will return an `aux_trace_width` of 0 even if we provide a non-empty aux trace in `Trace::validate`,
+/// We need to encapsulate the trace table in a struct to manually implement the `aux_trace_width`
+/// method of the `Table` trait. Otherwise, using only a TraceTable<Felt> will return an
+/// `aux_trace_width` of 0 even if we provide a non-empty aux trace in `Trace::validate`,
 /// and it fails the tests.
 pub struct MyTraceTable {
     pub trace: TraceTable<Felt>,
@@ -62,9 +63,10 @@ pub trait AirTester {
             8,  // blowup factor
             0,  // grinding factor
             FieldExtension::None,
-            8,                      // FRI folding factor
-            31,                     // FRI max remainder polynomial degree
-            BatchingMethod::Linear, // method of batching used in computing constraint composition polynomial
+            8,  // FRI folding factor
+            31, // FRI max remainder polynomial degree
+            BatchingMethod::Linear, /* method of batching used in computing constraint
+                 * composition polynomial */
             BatchingMethod::Linear, // method of batching used in computing DEEP polynomial
         )
     }

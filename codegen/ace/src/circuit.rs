@@ -1,7 +1,8 @@
-use crate::QuadFelt;
-use crate::layout::Layout;
-use miden_core::Felt;
 use std::collections::BTreeMap;
+
+use miden_core::Felt;
+
+use crate::{QuadFelt, layout::Layout};
 
 /// One of the 3 arithmetic operations supported by the ACE chiplet.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -18,7 +19,7 @@ pub enum Node {
     Input(usize),
     /// Index of a leaf node stored in the circuit description.
     Constant(usize),
-    /// Index of a non-leaf node representing the result of an [`ArithmeticOp`] applied
+    /// Index of a non-leaf node representing the result of an `ArithmeticOp` applied
     /// to two other [`Node`]s.
     Operation(usize),
 }
@@ -31,8 +32,9 @@ pub struct OperationNode {
 }
 
 /// A circuit that can be consumed by the ACE chiplet.
+///
 /// The only way to build a circuit is through the CircuitBuilder, it can then be obtained
-/// from [`CircuitBuilder::normalize`] and serialized to felts with [`Circuit::to_felts`].
+/// from `CircuitBuilder::normalize` and serialized to felts with `Circuit::to_elements`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Circuit {
     pub layout: Layout,
@@ -41,7 +43,7 @@ pub struct Circuit {
 }
 
 impl Circuit {
-    /// Evaluates to a [`Quad`] the index `root`, given a vector of inputs to the circuit.
+    /// Evaluates to a `Quad` the index `root`, given a vector of inputs to the circuit.
     pub fn eval(&self, node: Node, inputs: &[QuadFelt]) -> QuadFelt {
         let mut evals: BTreeMap<Node, QuadFelt> = BTreeMap::new();
         // Insert inputs nodes with given values

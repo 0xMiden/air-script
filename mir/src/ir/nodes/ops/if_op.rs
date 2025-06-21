@@ -1,13 +1,14 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
+
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 
 /// A MIR operation to represent conditional constraints
 ///
 /// Notes:
-/// - the If operation will be unrolled into a Vector during the Unrolling pass, combining the then and else branches.
-///   For example, If(s, vec![a, b], vec![c]) will be unrolled into: vec![s * a, s * b, (1 - s) * c]
+/// - the If operation will be unrolled into a Vector during the Unrolling pass, combining the then
+///   and else branches. For example, If(s, vec![a, b], vec![c]) will be unrolled into: vec![s * a,
+///   s * b, (1 - s) * c]
 /// - After the Unrolling pass, no If ops should be present in the graph
-///
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Builder, Spanned)]
 #[enum_wrapper(Op)]
 pub struct If {
@@ -42,11 +43,7 @@ impl If {
 impl Parent for If {
     type Child = Op;
     fn children(&self) -> Link<Vec<Link<Self::Child>>> {
-        Link::new(vec![
-            self.condition.clone(),
-            self.then_branch.clone(),
-            self.else_branch.clone(),
-        ])
+        Link::new(vec![self.condition.clone(), self.then_branch.clone(), self.else_branch.clone()])
     }
 }
 

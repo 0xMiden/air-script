@@ -1,8 +1,11 @@
+use std::{
+    cell::RefCell,
+    fmt::Debug,
+    hash::Hash,
+    rc::{Rc, Weak},
+};
+
 use miden_diagnostics::{SourceSpan, Spanned};
-use std::cell::RefCell;
-use std::fmt::Debug;
-use std::hash::Hash;
-use std::rc::{Rc, Weak};
 
 /// A wrapper around a `Rc<RefCell<T>>` to allow custom trait implementations.
 pub struct Link<T>
@@ -14,9 +17,7 @@ where
 
 impl<T> Link<T> {
     pub fn new(data: T) -> Self {
-        Self {
-            link: Rc::new(RefCell::new(data)),
-        }
+        Self { link: Rc::new(RefCell::new(data)) }
     }
     /// Returns a `std::cell::Ref` to the inner value.
     pub fn borrow(&self) -> std::cell::Ref<'_, T> {
@@ -58,9 +59,7 @@ where
 
 impl<T> Clone for Link<T> {
     fn clone(&self) -> Self {
-        Self {
-            link: self.link.clone(),
-        }
+        Self { link: self.link.clone() }
     }
 }
 
@@ -149,9 +148,7 @@ impl<T: std::fmt::Debug> Debug for BackLink<T> {
 
 impl<T> Clone for BackLink<T> {
     fn clone(&self) -> Self {
-        Self {
-            link: self.link.clone(),
-        }
+        Self { link: self.link.clone() }
     }
 }
 
@@ -167,18 +164,14 @@ impl<T> Eq for BackLink<T> {}
 /// Converts a `Link` into a `BackLink` by downgrading the strong reference.
 impl<T> From<Link<T>> for BackLink<T> {
     fn from(parent: Link<T>) -> Self {
-        Self {
-            link: Some(Rc::downgrade(&parent.link)),
-        }
+        Self { link: Some(Rc::downgrade(&parent.link)) }
     }
 }
 
 /// Converts a `Rc<RefCell<T>>` into a `BackLink`.
 impl<T> From<Rc<RefCell<T>>> for BackLink<T> {
     fn from(parent: Rc<RefCell<T>>) -> Self {
-        Self {
-            link: Some(Rc::downgrade(&parent)),
-        }
+        Self { link: Some(Rc::downgrade(&parent)) }
     }
 }
 
@@ -198,7 +191,7 @@ where
     }
 }
 
-/// A wrapper around a [Link<T>] to block recursive implementations of [PartialEq] and [Hash].
+/// A wrapper around a [`Link<T>`] to block recursive implementations of [PartialEq] and [Hash].
 /// A [Singleton] is used when the following properties are desired:
 /// - The reference count of the field needs to be kept at >1 once instantiated.
 /// - The field should be ignored in comparisons and hashing.

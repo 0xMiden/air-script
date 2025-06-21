@@ -43,10 +43,7 @@ pub enum ParseError {
     #[error("invalid token")]
     InvalidToken(SourceIndex),
     #[error("unexpected end of file")]
-    UnexpectedEof {
-        at: SourceIndex,
-        expected: Vec<String>,
-    },
+    UnexpectedEof { at: SourceIndex, expected: Vec<String> },
     #[error("unrecognized token '{token}'")]
     UnrecognizedToken {
         span: SourceSpan,
@@ -69,18 +66,10 @@ impl PartialEq for ParseError {
             (Self::InvalidToken(_), Self::InvalidToken(_)) => true,
             (Self::UnexpectedEof { expected: l, .. }, Self::UnexpectedEof { expected: r, .. }) => {
                 l == r
-            }
+            },
             (
-                Self::UnrecognizedToken {
-                    token: lt,
-                    expected: l,
-                    ..
-                },
-                Self::UnrecognizedToken {
-                    token: rt,
-                    expected: r,
-                    ..
-                },
+                Self::UnrecognizedToken { token: lt, expected: l, .. },
+                Self::UnrecognizedToken { token: rt, expected: r, .. },
             ) => lt == rt && l == r,
             (Self::ExtraToken { token: l, .. }, Self::ExtraToken { token: r, .. }) => l == r,
             (Self::Failed, Self::Failed) => true,
@@ -94,23 +83,18 @@ impl From<lalrpop_util::ParseError<SourceIndex, Token, ParseError>> for ParseErr
 
         match err {
             LError::InvalidToken { location } => Self::InvalidToken(location),
-            LError::UnrecognizedEof {
-                location: at,
-                expected,
-            } => Self::UnexpectedEof { at, expected },
-            LError::UnrecognizedToken {
-                token: (l, token, r),
-                expected,
-            } => Self::UnrecognizedToken {
-                span: SourceSpan::new(l, r),
-                token,
-                expected,
+            LError::UnrecognizedEof { location: at, expected } => {
+                Self::UnexpectedEof { at, expected }
             },
-            LError::ExtraToken {
-                token: (l, token, r),
-            } => Self::ExtraToken {
-                span: SourceSpan::new(l, r),
-                token,
+            LError::UnrecognizedToken { token: (l, token, r), expected } => {
+                Self::UnrecognizedToken {
+                    span: SourceSpan::new(l, r),
+                    token,
+                    expected,
+                }
+            },
+            LError::ExtraToken { token: (l, token, r) } => {
+                Self::ExtraToken { span: SourceSpan::new(l, r), token }
             },
             LError::User { error } => error,
         }
@@ -137,16 +121,11 @@ impl ToDiagnostic for ParseError {
                     }
                 }
 
-                Diagnostic::error()
-                    .with_message("unexpected eof")
-                    .with_labels(vec![
-                        Label::primary(at.source_id(), SourceSpan::new(at, at))
-                            .with_message(message),
-                    ])
-            }
-            Self::UnrecognizedToken {
-                span, ref expected, ..
-            } => {
+                Diagnostic::error().with_message("unexpected eof").with_labels(vec![
+                    Label::primary(at.source_id(), SourceSpan::new(at, at)).with_message(message),
+                ])
+            },
+            Self::UnrecognizedToken { span, ref expected, .. } => {
                 let mut message = "expected one of: ".to_string();
                 for (i, t) in expected.iter().enumerate() {
                     if i == 0 {
@@ -158,10 +137,8 @@ impl ToDiagnostic for ParseError {
 
                 Diagnostic::error()
                     .with_message("unexpected token")
-                    .with_labels(vec![
-                        Label::primary(span.source_id(), span).with_message(message),
-                    ])
-            }
+                    .with_labels(vec![Label::primary(span.source_id(), span).with_message(message)])
+            },
             Self::ExtraToken { span, .. } => Diagnostic::error()
                 .with_message("extraneous token")
                 .with_labels(vec![Label::primary(span.source_id(), span)]),
@@ -206,7 +183,7 @@ impl miden_parsing::Parse for ast::Source {
                     return Err(ParseError::Failed);
                 }
                 Ok(ast)
-            }
+            },
             Err(lalrpop_util::ParseError::User { error }) => Err(error),
             Err(err) => Err(err.into()),
         }
@@ -249,7 +226,7 @@ impl miden_parsing::Parse for ast::Program {
                     return Err(ParseError::Failed);
                 }
                 Ok(ast)
-            }
+            },
             Err(lalrpop_util::ParseError::User { error }) => Err(error),
             Err(err) => Err(err.into()),
         }
@@ -292,7 +269,7 @@ impl miden_parsing::Parse for ast::Module {
                     return Err(ParseError::Failed);
                 }
                 Ok(ast)
-            }
+            },
             Err(lalrpop_util::ParseError::User { error }) => Err(error),
             Err(err) => Err(err.into()),
         }

@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::ops::ControlFlow;
+use std::{collections::HashMap, ops::ControlFlow};
 
 use miden_diagnostics::{DiagnosticsHandler, Severity, Spanned};
 
@@ -61,11 +60,8 @@ impl VisitMut<SemanticAnalysisError> for ImportResolver<'_> {
                         let item = Identifier::new(from.span(), name.name());
                         self.import(module, *from, item, export)?;
                     }
-                }
-                Import::Partial {
-                    module: from,
-                    items,
-                } => {
+                },
+                Import::Partial { module: from, items } => {
                     let imported_from = match self
                         .library
                         .get(from)
@@ -84,7 +80,7 @@ impl VisitMut<SemanticAnalysisError> for ImportResolver<'_> {
                             self.import(module, *from, *item, export)?;
                         }
                     }
-                }
+                },
             }
         }
 
@@ -148,13 +144,13 @@ impl ImportResolver<'_> {
                                 prev: id.span(),
                             })
                         }
-                    }
+                    },
                     Entry::Vacant(entry) => {
                         entry.insert(from);
                         ControlFlow::Continue(())
-                    }
+                    },
                 }
-            }
+            },
         }
     }
 
@@ -197,13 +193,13 @@ impl ImportResolver<'_> {
                                 prev: id.span(),
                             })
                         }
-                    }
+                    },
                     Entry::Vacant(entry) => {
                         entry.insert(from);
                         ControlFlow::Continue(())
-                    }
+                    },
                 }
-            }
+            },
         }
     }
 }

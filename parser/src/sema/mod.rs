@@ -6,8 +6,10 @@ mod scope;
 mod semantic_analysis;
 
 pub(crate) use self::binding_type::BindingType;
-pub use self::dependencies::*;
-pub use self::errors::SemanticAnalysisError;
-pub use self::import_resolver::{ImportResolver, Imported};
-pub use self::scope::LexicalScope;
-pub use self::semantic_analysis::SemanticAnalysis;
+pub use self::{
+    dependencies::*,
+    errors::SemanticAnalysisError,
+    import_resolver::{ImportResolver, Imported},
+    scope::LexicalScope,
+    semantic_analysis::SemanticAnalysis,
+};

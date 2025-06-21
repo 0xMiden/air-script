@@ -1,7 +1,7 @@
 [package]
 name = "air-derive-ir"
 description = "Macros for MIR representation of the AirScript language"
-version = "0.4.0"
+version = "0.5.0"
 authors.workspace = true
 license.workspace = true
 repository.workspace = true

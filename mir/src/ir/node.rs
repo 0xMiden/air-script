@@ -1,7 +1,8 @@
-use crate::ir::{BackLink, Child, Link, Op, Owner, Parent, Root};
+use std::ops::Deref;
+
 use miden_diagnostics::{SourceSpan, Spanned};
 
-use std::ops::Deref;
+use crate::ir::{BackLink, Child, Link, Op, Owner, Parent, Root};
 
 /// All the nodes that can be in the MIR Graph
 /// Combines all [Root] and [Op] variants
@@ -11,8 +12,7 @@ use std::ops::Deref;
 /// so it can be updated to the correct variant when the inner struct is updated
 /// Note: The [None] variant is used to represent a [Node] that:
 /// - is not yet initialized
-/// - no longer exists (due to its ref-count dropping to 0).
-///   We refer to those as "stale" nodes.
+/// - no longer exists (due to its ref-count dropping to 0). We refer to those as "stale" nodes.
 #[derive(Clone, Eq, Debug, Spanned)]
 pub enum Node {
     Function(BackLink<Root>),

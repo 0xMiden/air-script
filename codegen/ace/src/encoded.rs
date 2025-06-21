@@ -1,21 +1,26 @@
-use crate::QuadFelt;
-use crate::circuit::{ArithmeticOp, Circuit, Node, OperationNode};
-use miden_core::Felt;
-use miden_core::crypto::hash::{Rpo256, RpoDigest};
+use miden_core::{
+    Felt,
+    crypto::hash::{Rpo256, RpoDigest},
+};
 use winter_math::FieldElement;
+
+use crate::{
+    QuadFelt,
+    circuit::{ArithmeticOp, Circuit, Node, OperationNode},
+};
 
 /// An encoded [`Circuit`] matching the required format for the ACE chiplet.
 /// The chiplet performs an evaluation by sequentially reading a region in memory with the following
 /// layout, where each region must be word-aligned.
-/// - *Variables* correspond to all leaf nodes, stored two-by-two as extension field elements.
-///   It is subdivided into the two following consecutive regions, which is achieved by padding
-///   with zeros.
+/// - *Variables* correspond to all leaf nodes, stored two-by-two as extension field elements. It is
+///   subdivided into the two following consecutive regions, which is achieved by padding with
+///   zeros.
 ///   - *Inputs*: List of all inputs to the circuit. The internal layout is described in
 ///     [`crate::AceVars::to_memory_vec`].
 ///   - *Constants*: Fixed values that can be referenced by instructions.
 /// - *Instructions*: List of arithmetic gates to be evaluated. Each instruction is encoded as a
 ///   single field element. It is padded with instructions which square the output, as this still
-///   ensures the final evaluation is still evaluates to zero.  
+///   ensures the final evaluation is still evaluates to zero.
 pub struct EncodedCircuit {
     num_vars: usize,
     num_ops: usize,
@@ -97,10 +102,7 @@ impl Circuit {
     pub fn to_ace(&self) -> EncodedCircuit {
         const MAX_NODE_ID: u64 = (1 << 30) - 1;
 
-        assert!(
-            self.num_nodes() as u64 <= MAX_NODE_ID,
-            "more than 2^30 nodes"
-        );
+        assert!(self.num_nodes() as u64 <= MAX_NODE_ID, "more than 2^30 nodes");
 
         // Constants are encoded two-by-two as extension field elements, followed by operations.
         let num_const = self.constants.len().next_multiple_of(2);
@@ -110,11 +112,8 @@ impl Circuit {
         let mut instructions = Vec::with_capacity(len_circuit);
 
         // Add constants
-        instructions.extend(
-            self.constants
-                .iter()
-                .flat_map(|c| QuadFelt::from(*c).to_base_elements()),
-        );
+        instructions
+            .extend(self.constants.iter().flat_map(|c| QuadFelt::from(*c).to_base_elements()));
         // Since constants are treated as extension field elements, we pad this section with zeros
         // to ensure it is aligned in memory.
         instructions.resize(len_const, Felt::ZERO);
@@ -169,11 +168,7 @@ impl Circuit {
         }
 
         let num_vars = num_inputs + num_constants;
-        EncodedCircuit {
-            num_vars,
-            num_ops,
-            instructions,
-        }
+        EncodedCircuit { num_vars, num_ops, instructions }
     }
 
     /// Returns `true` when the circuit is properly padded, and each region is word-aligned. It
@@ -189,10 +184,13 @@ impl Circuit {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::circuit::{ArithmeticOp, OperationNode};
-    use crate::layout::{InputRegion, Layout};
     use std::iter::zip;
+
+    use super::*;
+    use crate::{
+        circuit::{ArithmeticOp, OperationNode},
+        layout::{InputRegion, Layout},
+    };
 
     /// Circuit evaluating `{[(i0 + 1) * i0] - 1}^2`, ensuring
     /// - All arithmetic operations are used
@@ -210,36 +208,18 @@ mod tests {
             trace_segments: [
                 [
                     // Main
-                    InputRegion {
-                        offset: 0,
-                        width: 1,
-                    },
+                    InputRegion { offset: 0, width: 1 },
                     // Aux
-                    InputRegion {
-                        offset: 1,
-                        width: 0,
-                    },
+                    InputRegion { offset: 1, width: 0 },
                     // Quotient
-                    InputRegion {
-                        offset: 1,
-                        width: 0,
-                    },
+                    InputRegion { offset: 1, width: 0 },
                 ],
                 [
-                    InputRegion {
-                        offset: 1,
-                        width: 1,
-                    },
+                    InputRegion { offset: 1, width: 1 },
                     // Aux
-                    InputRegion {
-                        offset: 2,
-                        width: 0,
-                    },
+                    InputRegion { offset: 2, width: 0 },
                     // Quotient
-                    InputRegion {
-                        offset: 2,
-                        width: 0,
-                    },
+                    InputRegion { offset: 2, width: 0 },
                 ],
             ],
             stark_vars: Default::default(),

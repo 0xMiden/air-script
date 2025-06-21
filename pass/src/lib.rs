@@ -2,11 +2,14 @@
 
 /// This trait represents anything that can be run as a pass.
 ///
-/// Passes operate on an input value, and return either the same type, or a new type, depending on the nature of the pass.
+/// Passes operate on an input value, and return either the same type, or a new type, depending on
+/// the nature of the pass.
 ///
-/// Implementations may represent a single pass, or an arbitrary number of passes that will be run as a single unit.
+/// Implementations may represent a single pass, or an arbitrary number of passes that will be run
+/// as a single unit.
 ///
-/// Functions are valid implementations of `Pass` as long as their signature is `fn<I, O, E>(I) -> Result<O, E>`.
+/// Functions are valid implementations of `Pass` as long as their signature is `fn<I, O, E>(I) ->
+/// Result<O, E>`.
 pub trait Pass {
     type Input<'a>;
     type Output<'a>;

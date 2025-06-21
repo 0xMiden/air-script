@@ -1,8 +1,7 @@
 use miden_diagnostics::SourceSpan;
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 #[test]
 fn call_fold_identifier() {
@@ -44,11 +43,9 @@ fn call_fold_vector_literal() {
     }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
-    let body = vec![
-        let_!(x = expr!(call!(sum(vector!(access!(a), access!(b), access!(c[0]))))) =>
+    let body = vec![let_!(x = expr!(call!(sum(vector!(access!(a), access!(b), access!(c[0]))))) =>
                   let_!(y = expr!(call!(prod(vector!(access!(a), access!(b), access!(c[0]))))) =>
-                        enforce!(eq!(access!(a), add!(access!(x), access!(y)))))),
-    ];
+                        enforce!(eq!(access!(a), add!(access!(x), access!(y))))))];
     expected.evaluators.insert(
         ident!(test),
         EvaluatorFunction::new(

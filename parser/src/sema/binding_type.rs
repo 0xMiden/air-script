@@ -1,5 +1,6 @@
-use crate::ast::{AccessType, BusType, FunctionType, InvalidAccessError, TraceBinding, Type};
 use std::fmt;
+
+use crate::ast::{AccessType, BusType, FunctionType, InvalidAccessError, TraceBinding, Type};
 
 /// This type provides type and contextual information about a binding,
 /// i.e. not only does it tell us the type of a binding, but what type
@@ -86,7 +87,7 @@ impl BindingType {
                         ..*tb
                     });
                     Ok((first, Some(rest)))
-                }
+                },
                 Ordering::Greater => Err(self.clone()),
             },
             Self::Vector(elems) if elems.len() == 1 => elems[0].split_columns(n),
@@ -106,7 +107,7 @@ impl BindingType {
                                 index += 1;
                                 elems.get(index).cloned()
                             });
-                        }
+                        },
                     }
                 }
                 let leftover = elems.len() - (index + 1);
@@ -118,9 +119,9 @@ impl BindingType {
                         rest.push(mid);
                         rest.extend_from_slice(&elems[index..]);
                         Ok((Self::Vector(set), Some(Self::Vector(rest))))
-                    }
+                    },
                 }
-            }
+            },
             invalid => panic!("invalid trace column(s) binding type: {invalid:#?}"),
         }
     }
@@ -136,11 +137,7 @@ impl BindingType {
             // if it is empty.
             Self::TraceColumn(tb) if tb.is_scalar() => (Self::TraceColumn(*tb), None),
             Self::TraceColumn(tb) => {
-                let first = Self::TraceColumn(TraceBinding {
-                    size: 1,
-                    ty: Type::Felt,
-                    ..*tb
-                });
+                let first = Self::TraceColumn(TraceBinding { size: 1, ty: Type::Felt, ..*tb });
                 let remaining = tb.size - 1;
                 if remaining == 0 {
                     (first, None)
@@ -153,7 +150,7 @@ impl BindingType {
                     });
                     (first, Some(rest))
                 }
-            }
+            },
             // If the vector has only one element, remove the vector and
             // return the result of popping a column on the first element.
             Self::Vector(elems) if elems.len() == 1 => elems[0].pop_column(),
@@ -173,9 +170,9 @@ impl BindingType {
                         mid_and_rest.push(mid);
                         mid_and_rest.extend_from_slice(rest);
                         (first, Some(Self::Vector(mid_and_rest)))
-                    }
+                    },
                 }
-            }
+            },
             invalid => panic!("invalid trace column(s) binding type: {invalid:#?}"),
         }
     }
@@ -185,16 +182,16 @@ impl BindingType {
         match self {
             Self::Alias(aliased) => aliased.access(access_type),
             Self::Local(ty) => ty.access(access_type).map(Self::Local),
-            Self::Constant(ty) => ty
-                .access(access_type)
-                .map(|t| Self::Alias(Box::new(Self::Constant(t)))),
+            Self::Constant(ty) => {
+                ty.access(access_type).map(|t| Self::Alias(Box::new(Self::Constant(t))))
+            },
             Self::TraceColumn(tb) => tb.access(access_type).map(Self::TraceColumn),
             Self::TraceParam(tb) => tb.access(access_type).map(Self::TraceParam),
             Self::Vector(elems) => match access_type {
                 AccessType::Default => Ok(Self::Vector(elems.clone())),
                 AccessType::Index(idx) if idx >= elems.len() => {
                     Err(InvalidAccessError::IndexOutOfBounds)
-                }
+                },
                 AccessType::Index(idx) => Ok(elems[idx].clone()),
                 AccessType::Slice(range) => {
                     let slice_range = range.to_slice_range();
@@ -203,10 +200,10 @@ impl BindingType {
                     } else {
                         Ok(Self::Vector(elems[slice_range].to_vec()))
                     }
-                }
+                },
                 AccessType::Matrix(row, _) if row >= elems.len() => {
                     Err(InvalidAccessError::IndexOutOfBounds)
-                }
+                },
                 AccessType::Matrix(row, col) => elems[row].access(AccessType::Index(col)),
             },
             Self::PublicInput(ty) => ty.access(access_type).map(Self::PublicInput),

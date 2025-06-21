@@ -104,14 +104,6 @@ fn err_non_const_exp_outside_lc() {
         enf clk = 2^ctx;
     }";
 
-    expect_diagnostic(
-        source,
-        "expected exponent to be a constant",
-        Pipeline::WithoutMIR,
-    );
-    expect_diagnostic(
-        source,
-        "expected exponent to be a constant",
-        Pipeline::WithMIR,
-    );
+    expect_diagnostic(source, "expected exponent to be a constant", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "expected exponent to be a constant", Pipeline::WithMIR);
 }

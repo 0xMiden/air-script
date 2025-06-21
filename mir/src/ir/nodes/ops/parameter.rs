@@ -1,7 +1,9 @@
+use std::hash::{Hash, Hasher};
+
+use miden_diagnostics::{SourceSpan, Spanned};
+
 use super::MirType;
 use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Singleton};
-use miden_diagnostics::{SourceSpan, Spanned};
-use std::hash::{Hash, Hasher};
 
 /// A MIR operation to represent a `Parameter` in a function or evaluator.
 /// Also used in If and For loops to represent declared parameters.

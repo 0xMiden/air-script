@@ -1,12 +1,14 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
-use air_parser::ast::AccessType;
-use miden_diagnostics::{SourceSpan, Spanned};
 use std::hash::Hash;
 
+use air_parser::ast::AccessType;
+use miden_diagnostics::{SourceSpan, Spanned};
+
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
+
 /// A MIR operation to represent accessing a given op, `indexable`, in two different ways:
-/// - access_type: AccessType, which describes for example how to access a given index for a Vector (e.g. `v[0]`)
+/// - access_type: AccessType, which describes for example how to access a given index for a Vector
+///   (e.g. `v[0]`)
 /// - offset: usize, which describes the row offset for a trace column access (e.g. `a'`)
-///
 #[derive(Hash, Clone, PartialEq, Eq, Debug, Builder, Spanned, Default)]
 #[enum_wrapper(Op)]
 pub struct Accessor {

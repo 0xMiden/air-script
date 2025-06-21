@@ -1,8 +1,7 @@
 use miden_diagnostics::SourceSpan;
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 // CONSTANTS
 // ================================================================================================
@@ -38,19 +37,11 @@ fn constants_vectors() {
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.constants.insert(
         ident!(A),
-        Constant::new(
-            SourceSpan::UNKNOWN,
-            ident!(A),
-            ConstantExpr::Vector(vec![1, 2, 3, 4]),
-        ),
+        Constant::new(SourceSpan::UNKNOWN, ident!(A), ConstantExpr::Vector(vec![1, 2, 3, 4])),
     );
     expected.constants.insert(
         ident!(B),
-        Constant::new(
-            SourceSpan::UNKNOWN,
-            ident!(B),
-            ConstantExpr::Vector(vec![5, 6, 7, 8]),
-        ),
+        Constant::new(SourceSpan::UNKNOWN, ident!(B), ConstantExpr::Vector(vec![5, 6, 7, 8])),
     );
     ParseTest::new().expect_module_ast(source, expected);
 }

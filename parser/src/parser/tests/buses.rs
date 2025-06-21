@@ -1,8 +1,7 @@
 use miden_diagnostics::SourceSpan;
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 #[test]
 fn buses() {
@@ -15,14 +14,12 @@ fn buses() {
     }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
-    expected.buses.insert(
-        ident!(p),
-        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset),
-    );
-    expected.buses.insert(
-        ident!(q),
-        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup),
-    );
+    expected
+        .buses
+        .insert(ident!(p), Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset));
+    expected
+        .buses
+        .insert(ident!(q), Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup));
     ParseTest::new().expect_module_ast(source, expected);
 }
 

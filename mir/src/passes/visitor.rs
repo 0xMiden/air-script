@@ -1,17 +1,18 @@
+use std::ops::Deref;
+
 use crate::{
     CompileError,
     ir::{Graph, Link, Node, Op, Parent, Root},
 };
-use std::ops::Deref;
 
 /// A trait for visiting nodes in a MIR graph, from the leafs to the root.
 ///
 /// The process is as follows:
 /// - Starting from the root_nodes_to_visit, we scan a node
-/// - We recursively scan all the children of the node, depth-first,
-///   and store them on a stack in the same order.
-/// - Once we have scanned all the children,
-///   we visit the nodes in the stack starting from the last one
+/// - We recursively scan all the children of the node, depth-first, and store them on a stack in
+///   the same order.
+/// - Once we have scanned all the children, we visit the nodes in the stack starting from the last
+///   one
 /// - We then dispatch to the relevant `visit_*` method  based on the variant of the node
 pub trait Visitor {
     fn work_stack(&mut self) -> &mut Vec<Link<Node>>;

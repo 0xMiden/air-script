@@ -1,7 +1,6 @@
 use std::ops::Deref;
 
 use air_parser::ast::{self, Identifier};
-
 use miden_diagnostics::{SourceSpan, Spanned};
 
 use crate::{
@@ -12,7 +11,7 @@ use crate::{
 /// A Mir struct to represent a Bus definition
 /// we have 2 cases:
 ///
-/// - [BusType::Multiset]: multiset check
+/// - BusType::Multiset: multiset check
 ///
 /// these constraints:
 /// ```air
@@ -25,17 +24,17 @@ use crate::{
 /// ```
 /// with this bus definition:
 /// ```ignore
-/// Bus {
+/// struct Bus {
 ///     bus_type: BusType::Multiset,
 ///     columns: [a, b, c, d],
 ///     latches: [s, 1 - s],
 /// }
 /// ```
 /// with:
-///     a, b, c, d, s being [Link<Op>] in the graph
-///     s, 1 - s being [Link<Op>] representing booleans in the graph
+///     a, b, c, d, s being [`Link<Op>`] in the graph
+///     s, 1 - s being [`Link<Op>`] representing booleans in the graph
 ///
-/// - [BusType::Logup]: LogUp bus
+/// - BusType::Logup: LogUp bus
 ///
 /// these constraints:
 /// ```air
@@ -55,8 +54,8 @@ use crate::{
 /// }
 /// ```
 /// with:
-///     a, b, c, e, f, g being [Link<Op>] in the graph
-///     d, s being [Link<Op>], s is boolean, d is a number.
+///     a, b, c, e, f, g being [`Link<Op>`] in the graph
+///     d, s being [`Link<Op>`], s is boolean, d is a number.
 #[derive(Default, Clone, Eq, Debug, Spanned)]
 pub struct Bus {
     /// Identifier of the bus

@@ -12,9 +12,8 @@ mod boundary_constraints;
 use boundary_constraints::{add_fn_get_assertions, add_fn_get_aux_assertions};
 
 mod transition_constraints;
-use transition_constraints::{add_fn_evaluate_aux_transition, add_fn_evaluate_transition};
-
 use air_ir::{Air, BusBoundary, BusType, ConstraintDomain, Identifier, TraceSegmentId};
+use transition_constraints::{add_fn_evaluate_aux_transition, add_fn_evaluate_transition};
 
 use super::{Impl, Scope};
 
@@ -48,17 +47,11 @@ pub(super) fn add_air(scope: &mut Scope, ir: &Air) {
 /// Updates the provided scope with a custom Air struct.
 fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
     // define the custom Air struct.
-    let air_struct = scope
-        .new_struct(name)
-        .vis("pub")
-        .field("context", "AirContext<Felt>");
+    let air_struct = scope.new_struct(name).vis("pub").field("context", "AirContext<Felt>");
 
     // add public inputs
     for public_input in ir.public_inputs() {
-        air_struct.field(
-            public_input.name().as_str(),
-            public_input_type_to_string(public_input),
-        );
+        air_struct.field(public_input.name().as_str(), public_input_type_to_string(public_input));
     }
 
     // add the custom Air implementation block
@@ -80,10 +73,10 @@ fn add_air_struct(scope: &mut Scope, ir: &Air, name: &str) {
                 match bus.bus_type {
                     BusType::Multiset => {
                         add_bus_multiset_boundary_varlen = true;
-                    }
+                    },
                     BusType::Logup => {
                         add_bus_logup_boundary_varlen = true;
-                    }
+                    },
                 }
             }
         }
@@ -194,10 +187,7 @@ fn add_air_trait(scope: &mut Scope, ir: &Air, name: &str) {
         .associate_type("PublicInputs", "PublicInputs");
 
     // add default function "context".
-    let fn_context = air_impl
-        .new_fn("context")
-        .arg_ref_self()
-        .ret("&AirContext<Felt>");
+    let fn_context = air_impl.new_fn("context").arg_ref_self().ret("&AirContext<Felt>");
     fn_context.line("&self.context");
 
     // add the method implementations required by the AIR trait.
@@ -232,16 +222,10 @@ fn add_fn_new(impl_ref: &mut Impl, ir: &Air) {
     add_constraint_degrees(new, ir, 1, "aux_degrees");
 
     // define the number of main trace boundary constraints `num_main_assertions`.
-    new.line(format!(
-        "let num_main_assertions = {};",
-        ir.num_boundary_constraints(0)
-    ));
+    new.line(format!("let num_main_assertions = {};", ir.num_boundary_constraints(0)));
 
     // define the number of aux trace boundary constraints `num_aux_assertions`.
-    new.line(format!(
-        "let num_aux_assertions = {};",
-        num_bus_boundary_constraints(ir)
-    ));
+    new.line(format!("let num_aux_assertions = {};", num_bus_boundary_constraints(ir)));
 
     // define the context.
     let context = "
@@ -295,7 +279,7 @@ fn call_bus_boundary_varlen_pubinput(
         ),
         BusType::Logup => {
             format!("Self::bus_logup_boundary_varlen(aux_rand_elements, &self.{table_name}.iter())",)
-        }
+        },
     }
 }
 
@@ -314,8 +298,8 @@ fn num_bus_boundary_constraints(ir: &Air) -> usize {
             match bus_boundary {
                 air_ir::BusBoundary::PublicInputTable(_) | air_ir::BusBoundary::Null => {
                     num_bus_boundary_constraints += 1;
-                }
-                air_ir::BusBoundary::Unconstrained => {}
+                },
+                air_ir::BusBoundary::Unconstrained => {},
             }
         }
     }

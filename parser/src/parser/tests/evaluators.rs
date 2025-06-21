@@ -1,8 +1,7 @@
 use miden_diagnostics::{SourceSpan, Span};
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 // EVALUATOR FUNCTIONS
 // ================================================================================================
@@ -51,13 +50,10 @@ fn ev_fn_call_simple() {
     }";
 
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
+    expected.trace_columns.push(trace_segment!(0, "$main", [(clk, 1)]));
     expected
-        .trace_columns
-        .push(trace_segment!(0, "$main", [(clk, 1)]));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
-    );
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2));
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
         vec![enforce!(eq!(bounded_access!(a, Boundary::First), int!(0)))],
@@ -95,10 +91,9 @@ fn ev_fn_call() {
     expected
         .trace_columns
         .push(trace_segment!(0, "$main", [(a, 2), (b, 4), (c, 6)]));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
-    );
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2));
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
         vec![enforce!(eq!(bounded_access!(a, Boundary::First), int!(0)))],
@@ -164,10 +159,9 @@ fn ev_fn_call_with_more_than_two_args() {
     expected
         .trace_columns
         .push(trace_segment!(0, "$main", [(a, 1), (b, 1), (c, 1)]));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
-    );
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2));
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
         vec![enforce!(eq!(bounded_access!(a, Boundary::First), int!(0)))],

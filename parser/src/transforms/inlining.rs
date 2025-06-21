@@ -7,25 +7,23 @@ use std::{
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Severity, SourceSpan, Span, Spanned};
 
+use super::constant_propagation;
 use crate::{
     ast::{visit::VisitMut, *},
     sema::{BindingType, LexicalScope, SemanticAnalysisError},
     symbols,
 };
 
-use super::constant_propagation;
-
 /// This pass performs the following transformations on a [Program]:
 ///
 /// * Monomorphizing and inlining evaluators/functions at their call sites
 /// * Unrolling constraint comprehensions into a sequence of scalar constraints
-/// * Unrolling list comprehensions into a tree of `let` statements which end in
-///   a vector expression (the implicit result of the tree). Each iteration of the
-///   unrolled comprehension is reified as a value and bound to a variable so that
-///   other transformations may refer to it directly.
+/// * Unrolling list comprehensions into a tree of `let` statements which end in a vector expression
+///   (the implicit result of the tree). Each iteration of the unrolled comprehension is reified as
+///   a value and bound to a variable so that other transformations may refer to it directly.
 /// * Rewriting aliases of top-level declarations to refer to those declarations directly
-/// * Removing let-bound variables which are unused, which is also used to clean up
-///   after the aliasing rewrite mentioned above.
+/// * Removing let-bound variables which are unused, which is also used to clean up after the
+///   aliasing rewrite mentioned above.
 ///
 /// The trickiest transformation comes with inlining the body of evaluators at their
 /// call sites, as evaluator parameter lists can arbitrarily destructure/regroup columns
@@ -57,7 +55,8 @@ use super::constant_propagation;
 /// be observed at this stage of compilation (e.g. no references to constant declarations, no
 /// undefined variables, expressions are well-typed, etc.).
 pub struct Inlining<'a> {
-    // This may be unused for now, but it's helpful to assume its needed in case we want it in the future
+    // This may be unused for now, but it's helpful to assume its needed in case we want it in the
+    // future
     #[allow(unused)]
     diagnostics: &'a DiagnosticsHandler,
     /// The name of the root module
@@ -100,17 +99,9 @@ impl Pass for Inlining<'_> {
 
     fn run<'a>(&mut self, mut program: Self::Input<'a>) -> Result<Self::Output<'a>, Self::Error> {
         self.root = program.name;
-        self.evaluators = program
-            .evaluators
-            .iter()
-            .map(|(k, v)| (*k, v.clone()))
-            .collect();
+        self.evaluators = program.evaluators.iter().map(|(k, v)| (*k, v.clone())).collect();
 
-        self.functions = program
-            .functions
-            .iter()
-            .map(|(k, v)| (*k, v.clone()))
-            .collect();
+        self.functions = program.functions.iter().map(|(k, v)| (*k, v.clone())).collect();
 
         // We'll be referencing the trace configuration during inlining, so keep a copy of it
         self.trace.clone_from(&program.trace_columns);
@@ -151,12 +142,11 @@ impl Pass for Inlining<'_> {
         }
         // Public inputs..
         for input in program.public_inputs.values() {
-            self.bindings.insert(
-                input.name(),
-                BindingType::PublicInput(Type::Vector(input.size())),
-            );
+            self.bindings
+                .insert(input.name(), BindingType::PublicInput(Type::Vector(input.size())));
         }
-        // For periodic columns, we register the imported item, but do not add any to the local bindings.
+        // For periodic columns, we register the imported item, but do not add any to the local
+        // bindings.
         for (name, periodic) in program.periodic_columns.iter() {
             let binding_ty = BindingType::PeriodicColumn(periodic.values.len());
             self.imported.insert(*name, binding_ty);
@@ -262,22 +252,25 @@ impl<'a> Inlining<'a> {
         statement: Statement,
     ) -> Result<Vec<Statement>, SemanticAnalysisError> {
         match statement {
-            // Expanding a let requires special treatment, as let-bound values may be inlined as a block
-            // of statements, which requires us to rewrite the `let` into a `let` tree
+            // Expanding a let requires special treatment, as let-bound values may be inlined as a
+            // block of statements, which requires us to rewrite the `let` into a `let`
+            // tree
             Statement::Let(expr) => self.expand_let(expr),
-            // A call to an evaluator function is expanded by inlining the function itself at the call site
+            // A call to an evaluator function is expanded by inlining the function itself at the
+            // call site
             Statement::Enforce(ScalarExpr::Call(call)) => self.expand_evaluator_callsite(call),
             // Constraints are inlined by expanding the constraint expression
             Statement::Enforce(expr) => self.expand_constraint(expr),
-            // Constraint comprehensions are inlined by unrolling the comprehension into a sequence of constraints
+            // Constraint comprehensions are inlined by unrolling the comprehension into a sequence
+            // of constraints
             Statement::EnforceAll(expr) => {
                 let in_cc = core::mem::replace(&mut self.in_comprehension_constraint, true);
                 let result = self.expand_comprehension(expr);
                 self.in_comprehension_constraint = in_cc;
                 result
-            }
-            // Conditional constraints are expanded like regular constraints, except the selector is applied
-            // to all constraints in the expansion.
+            },
+            // Conditional constraints are expanded like regular constraints, except the selector is
+            // applied to all constraints in the expansion.
             Statement::EnforceIf(expr, mut selector) => {
                 let mut statements = match expr {
                     ScalarExpr::Call(call) => self.expand_evaluator_callsite(call)?,
@@ -286,18 +279,16 @@ impl<'a> Inlining<'a> {
                 self.rewrite_scalar_expr(&mut selector)?;
                 // We need to make sure the selector is applied to all constraints in the expansion
                 for statement in statements.iter_mut() {
-                    let mut visitor = ApplyConstraintSelector {
-                        selector: &selector,
-                    };
+                    let mut visitor = ApplyConstraintSelector { selector: &selector };
                     if let ControlFlow::Break(err) = visitor.visit_mut_statement(statement) {
                         return Err(err);
                     }
                 }
                 Ok(statements)
-            }
+            },
             // Expresssions containing function calls require expansion via inlining, otherwise
-            // all other expression types are introduced during inlining and are thus already expanded,
-            // but we must still visit them to apply rewrites.
+            // all other expression types are introduced during inlining and are thus already
+            // expanded, but we must still visit them to apply rewrites.
             Statement::Expr(expr) => match self.expand_expr(expr)? {
                 Expr::Let(let_expr) => Ok(vec![Statement::Let(*let_expr)]),
                 expr => Ok(vec![Statement::Expr(expr)]),
@@ -308,7 +299,7 @@ impl<'a> Inlining<'a> {
                     .with_message("buses are not implemented for this Pipeline")
                     .emit();
                 Err(SemanticAnalysisError::Invalid)
-            }
+            },
         }
     }
 
@@ -320,7 +311,7 @@ impl<'a> Inlining<'a> {
                     elements.push(self.expand_expr(elem)?);
                 }
                 Ok(Expr::Vector(elements))
-            }
+            },
             Expr::Matrix(mut rows) => {
                 for row in rows.iter_mut() {
                     let cols = Vec::with_capacity(row.len());
@@ -329,19 +320,19 @@ impl<'a> Inlining<'a> {
                     }
                 }
                 Ok(Expr::Matrix(rows))
-            }
+            },
             Expr::Binary(expr) => self.expand_binary_expr(expr),
             Expr::Call(expr) => self.expand_call(expr),
             Expr::ListComprehension(expr) => {
                 let mut block = self.expand_comprehension(expr)?;
                 assert_eq!(block.len(), 1);
                 Expr::try_from(block.pop().unwrap()).map_err(SemanticAnalysisError::InvalidExpr)
-            }
+            },
             Expr::Let(expr) => {
                 let mut block = self.expand_let(*expr)?;
                 assert_eq!(block.len(), 1);
                 Expr::try_from(block.pop().unwrap()).map_err(SemanticAnalysisError::InvalidExpr)
-            }
+            },
             expr @ (Expr::Const(_) | Expr::Range(_) | Expr::SymbolAccess(_)) => Ok(expr),
             Expr::BusOperation(_) | Expr::Null(_) | Expr::Unconstrained(_) => {
                 self.diagnostics
@@ -349,34 +340,34 @@ impl<'a> Inlining<'a> {
                     .with_message("buses are not implemented for this Pipeline")
                     .emit();
                 Err(SemanticAnalysisError::Invalid)
-            }
+            },
         }
     }
 
     /// Let expressions are expanded using the following rules:
     ///
-    /// * The let-bound expression is expanded first. If it expands to a statement block and
-    ///   not an expression, the block is inlined in place of the let being expanded, and the
-    ///   rest of the expansion takes place at the end of the block; replacing the last statement
-    ///   in the block. If the last statement in the block was an expression, it is treated as
-    ///   the let-bound value. If the last statement in the block was another `let` however, then
-    ///   we recursively walk down the let tree until we reach the bottom, which must always be
-    ///   an expression statement.
+    /// * The let-bound expression is expanded first. If it expands to a statement block and not an
+    ///   expression, the block is inlined in place of the let being expanded, and the rest of the
+    ///   expansion takes place at the end of the block; replacing the last statement in the block.
+    ///   If the last statement in the block was an expression, it is treated as the let-bound
+    ///   value. If the last statement in the block was another `let` however, then we recursively
+    ///   walk down the let tree until we reach the bottom, which must always be an expression
+    ///   statement.
     ///
     /// * The body is expanded in-place after the previous step has been completed.
     ///
-    /// * If a let-bound variable is an alias for a declaration, we replace all uses
-    ///   of the variable with direct references to the declaration, making the let-bound
-    ///   variable dead
+    /// * If a let-bound variable is an alias for a declaration, we replace all uses of the variable
+    ///   with direct references to the declaration, making the let-bound variable dead
     ///
-    /// * If a let-bound variable is dead (i.e. has no references), then the let is elided,
-    ///   by replacing it with the result of expanding its body
+    /// * If a let-bound variable is dead (i.e. has no references), then the let is elided, by
+    ///   replacing it with the result of expanding its body
     fn expand_let(&mut self, expr: Let) -> Result<Vec<Statement>, SemanticAnalysisError> {
         let span = expr.span();
         let name = expr.name;
         let body = expr.body;
 
-        // Visit the let-bound expression first, since it determines how the rest of the process goes
+        // Visit the let-bound expression first, since it determines how the rest of the process
+        // goes
         let value = match expr.value {
             // When expanding a call in this context, we're expecting a single
             // statement of either `Expr` or `Let` type, as calls to pure functions
@@ -391,11 +382,11 @@ impl<'a> Inlining<'a> {
                     Statement::Let(let_expr) => Expr::Let(Box::new(let_expr)),
                     Statement::Expr(expr) => expr,
                     Statement::Enforce(_)
-                    | Statement::EnforceIf(_, _)
+                    | Statement::EnforceIf(..)
                     | Statement::EnforceAll(_)
                     | Statement::BusEnforce(_) => unreachable!(),
                 }
-            }
+            },
             // The operands of a binary expression can contain function calls, so we must ensure
             // that we expand the operands as needed, and then proceed with expanding the let.
             Expr::Binary(expr) => self.expand_binary_expr(expr)?,
@@ -403,15 +394,10 @@ impl<'a> Inlining<'a> {
             mut expr => {
                 self.rewrite_expr(&mut expr)?;
                 expr
-            }
+            },
         };
 
-        let expr = Let {
-            span,
-            name,
-            value,
-            body,
-        };
+        let expr = Let { span, name, value, body };
 
         self.expand_let_tree(expr)
     }
@@ -462,11 +448,11 @@ impl<'a> Inlining<'a> {
                 symbols::Sum => {
                     assert_eq!(call.args.len(), 1);
                     self.expand_fold(BinaryOp::Add, call.args.pop().unwrap())
-                }
+                },
                 symbols::Prod => {
                     assert_eq!(call.args.len(), 1);
                     self.expand_fold(BinaryOp::Mul, call.args.pop().unwrap())
-                }
+                },
                 other => unimplemented!("unhandled builtin: {}", other),
             }
         } else {
@@ -483,14 +469,14 @@ impl<'a> Inlining<'a> {
                 self.expand_binary_expr(expr).and_then(|expr| {
                     ScalarExpr::try_from(expr).map_err(SemanticAnalysisError::InvalidExpr)
                 })
-            }
+            },
             ScalarExpr::Call(lhs) => self.expand_call(lhs).and_then(|expr| {
                 ScalarExpr::try_from(expr).map_err(SemanticAnalysisError::InvalidExpr)
             }),
             mut expr => {
                 self.rewrite_scalar_expr(&mut expr)?;
                 Ok(expr)
-            }
+            },
         }
     }
 
@@ -508,13 +494,15 @@ impl<'a> Inlining<'a> {
         }))
     }
 
-    /// Expand a list folding operation (e.g. sum/prod) over an expression of aggregate type into an equivalent expression tree
+    /// Expand a list folding operation (e.g. sum/prod) over an expression of aggregate type into an
+    /// equivalent expression tree
     fn expand_fold(&mut self, op: BinaryOp, list: Expr) -> Result<Expr, SemanticAnalysisError> {
         let span = list.span();
         match list {
             Expr::Vector(mut elems) => self.expand_vector_fold(span, op, &mut elems),
             Expr::ListComprehension(lc) => {
-                // Expand the comprehension, but ensure we don't treat it like a comprehension constraint
+                // Expand the comprehension, but ensure we don't treat it like a comprehension
+                // constraint
                 let in_cc = core::mem::replace(&mut self.in_comprehension_constraint, false);
                 let mut expanded = self.expand_comprehension(lc)?;
                 self.in_comprehension_constraint = in_cc;
@@ -527,7 +515,7 @@ impl<'a> Inlining<'a> {
                             let folded = inliner.expand_vector_fold(span, op, elems)?;
                             *value = folded;
                             Ok(None)
-                        }
+                        },
                         _ => unreachable!(),
                     }
                 })?;
@@ -535,11 +523,11 @@ impl<'a> Inlining<'a> {
                     Statement::Expr(expr) => Ok(expr),
                     Statement::Let(expr) => Ok(Expr::Let(Box::new(expr))),
                     Statement::Enforce(_)
-                    | Statement::EnforceIf(_, _)
+                    | Statement::EnforceIf(..)
                     | Statement::EnforceAll(_)
                     | Statement::BusEnforce(_) => unreachable!(),
                 }
-            }
+            },
             Expr::SymbolAccess(ref access) => {
                 match self.let_bound.get(access.name.as_ref()).cloned() {
                     Some(expr) => self.expand_fold(op, expr),
@@ -552,11 +540,11 @@ impl<'a> Inlining<'a> {
                                 ));
                             }
                             self.expand_vector_fold(span, op, &mut vector)
-                        }
+                        },
                         Ok(_) | Err(_) => unimplemented!(),
                     },
                 }
-            }
+            },
             // Constant propagation will have already folded calls to list-folding builtins
             // with constant arguments, so we should panic if we ever see one here
             Expr::Const(_) => panic!("expected constant to have been folded"),
@@ -565,7 +553,8 @@ impl<'a> Inlining<'a> {
         }
     }
 
-    /// Expand a list folding operation (e.g. sum/prod) over a vector into an equivalent expression tree
+    /// Expand a list folding operation (e.g. sum/prod) over a vector into an equivalent expression
+    /// tree
     fn expand_vector_fold(
         &mut self,
         span: SourceSpan,
@@ -593,12 +582,7 @@ impl<'a> Inlining<'a> {
         // The constraint itself must be an equality at this point, as evaluator
         // calls are handled separately in `expand_statement`
         match constraint {
-            ScalarExpr::Binary(BinaryExpr {
-                op: BinaryOp::Eq,
-                lhs,
-                rhs,
-                span,
-            }) => {
+            ScalarExpr::Binary(BinaryExpr { op: BinaryOp::Eq, lhs, rhs, span }) => {
                 let lhs = self.expand_scalar_expr(*lhs)?;
                 let rhs = self.expand_scalar_expr(*rhs)?;
 
@@ -608,12 +592,13 @@ impl<'a> Inlining<'a> {
                     lhs: Box::new(lhs),
                     rhs: Box::new(rhs),
                 }))])
-            }
+            },
             invalid => unreachable!("unexpected constraint node: {:#?}", invalid),
         }
     }
 
-    /// This function rewrites expressions which contain accesses for which rewrites have been registered.
+    /// This function rewrites expressions which contain accesses for which rewrites have been
+    /// registered.
     fn rewrite_expr(&mut self, expr: &mut Expr) -> Result<(), SemanticAnalysisError> {
         match expr {
             Expr::Const(_) | Expr::Range(_) => return Ok(()),
@@ -621,34 +606,35 @@ impl<'a> Inlining<'a> {
                 for elem in elems.iter_mut() {
                     self.rewrite_expr(elem)?;
                 }
-            }
+            },
             Expr::Matrix(rows) => {
                 for row in rows.iter_mut() {
                     for col in row.iter_mut() {
                         self.rewrite_scalar_expr(col)?;
                     }
                 }
-            }
+            },
             Expr::Binary(binary_expr) => {
                 self.rewrite_scalar_expr(binary_expr.lhs.as_mut())?;
                 self.rewrite_scalar_expr(binary_expr.rhs.as_mut())?;
-            }
+            },
             Expr::SymbolAccess(access) => {
                 if let Some(rewrite) = self.get_trace_access_rewrite(access) {
                     *access = rewrite;
                 }
-            }
+            },
             Expr::Call(call) => {
                 for arg in call.args.iter_mut() {
                     self.rewrite_expr(arg)?;
                 }
-            }
-            // Comprehension rewrites happen when they are expanded, but we do visit the iterables now
+            },
+            // Comprehension rewrites happen when they are expanded, but we do visit the iterables
+            // now
             Expr::ListComprehension(lc) => {
                 for expr in lc.iterables.iter_mut() {
                     self.rewrite_expr(expr)?;
                 }
-            }
+            },
             Expr::Let(let_expr) => {
                 let mut next = Some(let_expr.as_mut());
                 while let Some(next_let) = next.take() {
@@ -656,29 +642,30 @@ impl<'a> Inlining<'a> {
                     match next_let.body.last_mut().unwrap() {
                         Statement::Let(inner) => {
                             next = Some(inner);
-                        }
+                        },
                         Statement::Expr(expr) => {
                             self.rewrite_expr(expr)?;
-                        }
+                        },
                         Statement::Enforce(_)
-                        | Statement::EnforceIf(_, _)
+                        | Statement::EnforceIf(..)
                         | Statement::EnforceAll(_)
                         | Statement::BusEnforce(_) => unreachable!(),
                     }
                 }
-            }
+            },
             Expr::BusOperation(_) | Expr::Null(_) | Expr::Unconstrained(_) => {
                 self.diagnostics
                     .diagnostic(Severity::Error)
                     .with_message("buses are not implemented for this Pipeline")
                     .emit();
                 return Err(SemanticAnalysisError::Invalid);
-            }
+            },
         }
         Ok(())
     }
 
-    /// This function rewrites scalar expressions which contain accesses for which rewrites have been registered.
+    /// This function rewrites scalar expressions which contain accesses for which rewrites have
+    /// been registered.
     fn rewrite_scalar_expr(&mut self, expr: &mut ScalarExpr) -> Result<(), SemanticAnalysisError> {
         match expr {
             ScalarExpr::Const(_) => Ok(()),
@@ -688,7 +675,7 @@ impl<'a> Inlining<'a> {
                     *access = rewrite;
                 }
                 Ok(())
-            }
+            },
             ScalarExpr::Binary(BinaryExpr { op, lhs, rhs, .. }) => {
                 self.rewrite_scalar_expr(lhs.as_mut())?;
                 self.rewrite_scalar_expr(rhs.as_mut())?;
@@ -698,13 +685,13 @@ impl<'a> Inlining<'a> {
                     )),
                     _ => Ok(()),
                 }
-            }
+            },
             ScalarExpr::Call(expr) => {
                 for arg in expr.args.iter_mut() {
                     self.rewrite_expr(arg)?;
                 }
                 Ok(())
-            }
+            },
             ScalarExpr::Let(let_expr) => {
                 let mut next = Some(let_expr.as_mut());
                 while let Some(next_let) = next.take() {
@@ -712,25 +699,25 @@ impl<'a> Inlining<'a> {
                     match next_let.body.last_mut().unwrap() {
                         Statement::Let(inner) => {
                             next = Some(inner);
-                        }
+                        },
                         Statement::Expr(expr) => {
                             self.rewrite_expr(expr)?;
-                        }
+                        },
                         Statement::Enforce(_)
-                        | Statement::EnforceIf(_, _)
+                        | Statement::EnforceIf(..)
                         | Statement::EnforceAll(_)
                         | Statement::BusEnforce(_) => unreachable!(),
                     }
                 }
                 Ok(())
-            }
+            },
             ScalarExpr::BusOperation(_) | ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_) => {
                 self.diagnostics
                     .diagnostic(Severity::Error)
                     .with_message("buses are not implemented for this Pipeline")
                     .emit();
                 Err(SemanticAnalysisError::Invalid)
-            }
+            },
         }
     }
 
@@ -772,11 +759,10 @@ impl<'a> Inlining<'a> {
             let name = self.get_next_ident(span);
             let ty = match param {
                 Expr::Call(Call { callee, .. }) => {
-                    let callee = callee
-                        .resolved()
-                        .expect("callee should have been resolved by now");
+                    let callee =
+                        callee.resolved().expect("callee should have been resolved by now");
                     self.functions[&callee].return_type
-                }
+                },
                 _ => unsafe { core::hint::unreachable_unchecked() },
             };
             let param = core::mem::replace(
@@ -793,7 +779,7 @@ impl<'a> Inlining<'a> {
                 Expr::Call(call) => {
                     lifted_bindings.push((name, BindingType::Local(ty)));
                     lifted.push((name, call));
-                }
+                },
                 _ => unsafe { core::hint::unreachable_unchecked() },
             }
         }
@@ -812,8 +798,9 @@ impl<'a> Inlining<'a> {
                 self.bindings.insert(*name, binding_ty.clone());
             }
             let expansion = self.expand_comprehension_iteration(&expr, i)?;
-            // An expansion can be empty if a constraint selector with a constant selector expression
-            // evaluates to false (allowing us to elide the constraint for that iteration entirely).
+            // An expansion can be empty if a constraint selector with a constant selector
+            // expression evaluates to false (allowing us to elide the constraint for
+            // that iteration entirely).
             if !expansion.is_empty() {
                 statement_groups.push(expansion);
             }
@@ -828,7 +815,8 @@ impl<'a> Inlining<'a> {
         // In short, we must take this list of statement groups, and flatten/treeify it. Once
         // a let binding is introduced into scope, all subsequent statements must occur in the body
         // of that let, forming a tree. Consecutive statements which introduce no new bindings do
-        // not require any nesting, resulting in the groups containing those statements being flattened.
+        // not require any nesting, resulting in the groups containing those statements being
+        // flattened.
         //
         // Lastly, whether this is a list or constraint comprehension determines if we will also be
         // constructing a vector from the values produced by each iteration, and returning it as the
@@ -849,7 +837,8 @@ impl<'a> Inlining<'a> {
                 .iter()
                 .map(|_| self.get_next_ident_lc(span))
                 .collect::<Vec<_>>();
-            // Generate the list of elements for the vector which is to be the result of the let-tree
+            // Generate the list of elements for the vector which is to be the result of the
+            // let-tree
             let vars = statement_groups
                 .iter()
                 .zip(symbols.iter().copied())
@@ -878,15 +867,17 @@ impl<'a> Inlining<'a> {
                 acc,
                 |acc, (mut group, name)| {
                     match group.pop().unwrap() {
-                        // If the current statement is an expression, it represents the value of this
-                        // iteration of the comprehension, and we must generate a let to bind it, using
-                        // the accumulator expression as the body
+                        // If the current statement is an expression, it represents the value of
+                        // this iteration of the comprehension, and we must
+                        // generate a let to bind it, using the accumulator
+                        // expression as the body
                         Statement::Expr(expr) => {
                             group.push(Statement::Let(Let::new(span, name, expr, acc)));
-                        }
-                        // If the current statement is a `let`-tree, we need to generate a new `let` at
-                        // the bottom of the tree, which binds the result expression as the value of the
-                        // generated `let`, and uses the accumulator as the body
+                        },
+                        // If the current statement is a `let`-tree, we need to generate a new `let`
+                        // at the bottom of the tree, which binds the result
+                        // expression as the value of the generated `let`,
+                        // and uses the accumulator as the body
                         Statement::Let(mut wrapper) => {
                             with_let_result(self, &mut wrapper.body, move |_, value| {
                                 let value = core::mem::replace(
@@ -896,7 +887,7 @@ impl<'a> Inlining<'a> {
                                 Ok(Some(Statement::Let(Let::new(span, name, value, acc))))
                             })?;
                             group.push(Statement::Let(wrapper));
-                        }
+                        },
                         _ => unreachable!(),
                     }
                     Ok::<_, SemanticAnalysisError>(group)
@@ -916,7 +907,7 @@ impl<'a> Inlining<'a> {
                             Ok(Some(Statement::Let(Let::new(span, name, value, acc))))
                         })?;
                         Ok(vec![Statement::Let(*wrapper)])
-                    }
+                    },
                     expr => Ok(vec![Statement::Let(Let::new(span, name, expr, acc))]),
                 }
             })
@@ -936,30 +927,29 @@ impl<'a> Inlining<'a> {
         let mut bound_values = HashMap::<Identifier, Expr>::default();
         for (iterable, binding) in lc.iterables.iter().zip(lc.bindings.iter().copied()) {
             let abstract_value = match iterable {
-                // If the iterable is constant, the value of it's corresponding binding is also constant
+                // If the iterable is constant, the value of it's corresponding binding is also
+                // constant
                 Expr::Const(constant) => {
                     let span = constant.span();
                     let value = match constant.item {
                         ConstantExpr::Vector(ref elems) => ConstantExpr::Scalar(elems[index]),
                         ConstantExpr::Matrix(ref rows) => ConstantExpr::Vector(rows[index].clone()),
-                        // An iterable may never be a scalar value, this will be caught by semantic analysis
+                        // An iterable may never be a scalar value, this will be caught by semantic
+                        // analysis
                         ConstantExpr::Scalar(_) => unreachable!(),
                     };
                     let binding_ty = BindingType::Constant(value.ty());
                     self.bindings.insert(binding, binding_ty);
                     Expr::Const(Span::new(span, value))
-                }
+                },
                 // Ranges are constant, so same rules as above apply here
                 Expr::Range(range) => {
                     let span = range.span();
                     let range = range.to_slice_range();
                     let binding_ty = BindingType::Constant(Type::Felt);
                     self.bindings.insert(binding, binding_ty);
-                    Expr::Const(Span::new(
-                        span,
-                        ConstantExpr::Scalar((range.start + index) as u64),
-                    ))
-                }
+                    Expr::Const(Span::new(span, ConstantExpr::Scalar((range.start + index) as u64)))
+                },
                 // If the iterable was a vector, the abstract value is whatever expression is at
                 // the corresponding index of the vector.
                 Expr::Vector(elems) => {
@@ -967,16 +957,13 @@ impl<'a> Inlining<'a> {
                     let binding_ty = self.expr_binding_type(&abstract_value).unwrap();
                     self.bindings.insert(binding, binding_ty);
                     abstract_value
-                }
+                },
                 // If the iterable was a matrix, the abstract value is a vector of expressions
                 // representing the current row of the matrix. We calculate the binding type of
                 // each element in that vector so that accesses into the vector are well typed.
                 Expr::Matrix(rows) => {
-                    let row: Vec<Expr> = rows[index]
-                        .iter()
-                        .cloned()
-                        .map(|se| se.try_into().unwrap())
-                        .collect();
+                    let row: Vec<Expr> =
+                        rows[index].iter().cloned().map(|se| se.try_into().unwrap()).collect();
                     let mut tys = vec![];
                     for elem in row.iter() {
                         tys.push(self.expr_binding_type(elem).unwrap());
@@ -984,11 +971,12 @@ impl<'a> Inlining<'a> {
                     let binding_ty = BindingType::Vector(tys);
                     self.bindings.insert(binding, binding_ty);
                     Expr::Vector(Span::new(rows.span(), row))
-                }
+                },
                 // If the iterable was a variable/access, then we must first index into that
                 // access, and then rewrite it, if applicable.
                 Expr::SymbolAccess(access) => {
-                    // The access here must be of aggregate type, so index into it for the current iteration
+                    // The access here must be of aggregate type, so index into it for the current
+                    // iteration
                     let mut current_access = access.access(AccessType::Index(index)).unwrap();
                     // Rewrite the resulting access if we have a rewrite for the underlying symbol
                     if let Some(rewrite) = self.get_trace_access_rewrite(&current_access) {
@@ -997,7 +985,7 @@ impl<'a> Inlining<'a> {
                     let binding_ty = self.access_binding_type(&current_access).unwrap();
                     self.bindings.insert(binding, binding_ty);
                     Expr::SymbolAccess(current_access)
-                }
+                },
                 // Binary expressions are scalar, so cannot be used as iterables, and we don't
                 // (currently) support nested comprehensions, so it is never possible to observe
                 // these expression types here. Calls should have been lifted prior to expansion.
@@ -1009,7 +997,7 @@ impl<'a> Inlining<'a> {
                 | Expr::Null(_)
                 | Expr::Unconstrained(_) => {
                     unreachable!()
-                }
+                },
             };
             bound_values.insert(binding, abstract_value);
         }
@@ -1018,21 +1006,22 @@ impl<'a> Inlining<'a> {
         let mut body = lc.body.as_ref().clone();
 
         // Rewrite all references to the iterable bindings in the comprehension body
-        let mut visitor = RewriteIterableBindingsVisitor {
-            values: &bound_values,
-        };
+        let mut visitor = RewriteIterableBindingsVisitor { values: &bound_values };
         if let ControlFlow::Break(err) = visitor.visit_mut_scalar_expr(&mut body) {
             return Err(err);
         }
 
         // Next, handle comprehension filters/selectors as follows:
         //
-        // 1. Selectors are evaluated in the same context as the body, so we must visit iterable references in the same way.
-        // 2. If a selector has a constant value, we can elide the selector for this iteration. Furthermore, in situations where
+        // 1. Selectors are evaluated in the same context as the body, so we must visit iterable
+        //    references in the same way.
+        // 2. If a selector has a constant value, we can elide the selector for this iteration.
+        //    Furthermore, in situations where
         // the selector is known false, we can elide the expansion of this iteration entirely.
         //
-        // Since the selector is the last piece we need to construct the Statement corresponding to the expansion of
-        // this iteration, we do that now before proceeding to the next step.
+        // Since the selector is the last piece we need to construct the Statement corresponding to
+        // the expansion of this iteration, we do that now before proceeding to the next
+        // step.
         let statement = if let Some(mut selector) = lc.selector.clone() {
             assert!(
                 self.in_comprehension_constraint,
@@ -1048,7 +1037,8 @@ impl<'a> Inlining<'a> {
                 ScalarExpr::Const(value) if value.item == 0 => return Ok(vec![]),
                 // If the selector value is non-zero, or true, we can elide just the selector
                 ScalarExpr::Const(_) => Statement::Enforce(body),
-                // We have a selector that requires evaluation at runtime, we need to emit a conditional scalar constraint
+                // We have a selector that requires evaluation at runtime, we need to emit a
+                // conditional scalar constraint
                 other => Statement::EnforceIf(body, other),
             }
         } else if self.in_comprehension_constraint {
@@ -1059,8 +1049,8 @@ impl<'a> Inlining<'a> {
 
         // Next, although we've rewritten the comprehension body corresponding to this iteration, we
         // haven't yet performed inlining on it. We do that now, while all of the bindings are
-        // in scope with the proper values. The result of that expansion is what we emit as the result
-        // for this iteration.
+        // in scope with the proper values. The result of that expansion is what we emit as the
+        // result for this iteration.
         self.expand_statement(statement)
     }
 
@@ -1076,10 +1066,7 @@ impl<'a> Inlining<'a> {
         call: Call,
     ) -> Result<Vec<Statement>, SemanticAnalysisError> {
         // The callee is guaranteed to be resolved and exist at this point
-        let callee = call
-            .callee
-            .resolved()
-            .expect("callee should have been resolved by now");
+        let callee = call.callee.resolved().expect("callee should have been resolved by now");
         // We clone the evaluator here as we will be modifying the body during the
         // inlining process, and we must not modify the original
         let mut evaluator = self.evaluators.get(&callee).unwrap().clone();
@@ -1132,10 +1119,8 @@ impl<'a> Inlining<'a> {
             }
 
             for input in self.public_inputs.values() {
-                eval_bindings.insert(
-                    input.name(),
-                    BindingType::PublicInput(Type::Vector(input.size())),
-                );
+                eval_bindings
+                    .insert(input.name(), BindingType::PublicInput(Type::Vector(input.size())));
             }
         }
 
@@ -1167,10 +1152,7 @@ impl<'a> Inlining<'a> {
     fn expand_function_callsite(&mut self, call: Call) -> Result<Expr, SemanticAnalysisError> {
         self.bindings.enter();
         // The callee is guaranteed to be resolved and exist at this point
-        let callee = call
-            .callee
-            .resolved()
-            .expect("callee should have been resolved by now");
+        let callee = call.callee.resolved().expect("callee should have been resolved by now");
 
         if self.call_stack.contains(&callee) {
             let ifd = self
@@ -1242,10 +1224,8 @@ impl<'a> Inlining<'a> {
             }
 
             for input in self.public_inputs.values() {
-                function_bindings.insert(
-                    input.name(),
-                    BindingType::PublicInput(Type::Vector(input.size())),
-                );
+                function_bindings
+                    .insert(input.name(), BindingType::PublicInput(Type::Vector(input.size())));
             }
         }
 
@@ -1277,17 +1257,19 @@ impl<'a> Inlining<'a> {
             Statement::Expr(expr) => Ok(expr),
             Statement::Let(expr) => Ok(Expr::Let(Box::new(expr))),
             Statement::Enforce(_)
-            | Statement::EnforceIf(_, _)
+            | Statement::EnforceIf(..)
             | Statement::EnforceAll(_)
             | Statement::BusEnforce(_) => {
                 panic!("unexpected constraint in function body")
-            }
+            },
         }
     }
 
-    /// Populate the set of access rewrites, as well as the initial set of bindings to use when inlining an evaluator function.
+    /// Populate the set of access rewrites, as well as the initial set of bindings to use when
+    /// inlining an evaluator function.
     ///
-    /// This is done by resolving the arguments provided by the call to the evaluator, with the parameter list of the evaluator itself.
+    /// This is done by resolving the arguments provided by the call to the evaluator, with the
+    /// parameter list of the evaluator itself.
     fn populate_evaluator_rewrites(
         &mut self,
         eval_bindings: &mut LexicalScope<Identifier, BindingType>,
@@ -1297,25 +1279,29 @@ impl<'a> Inlining<'a> {
         // Reset the rewrites set
         self.rewrites.clear();
 
-        // Each argument corresponds to a function parameter, each of which represents a single trace segment
+        // Each argument corresponds to a function parameter, each of which represents a single
+        // trace segment
         for (arg, segment) in args.iter().zip(params.iter()) {
             match arg {
                 // A variable was passed as an argument for this segment
                 //
                 // Arguments by now must have been validated by semantic analysis, and specifically
-                // in this case, the number of columns in the variable and the number expected by the
-                // parameter we're binding must be the same. However, a variable may represent a single
-                // column, a contiguous slice of columns, or a vector of such variables which may be
-                // non-contiguous.
+                // in this case, the number of columns in the variable and the number expected by
+                // the parameter we're binding must be the same. However, a variable
+                // may represent a single column, a contiguous slice of columns, or
+                // a vector of such variables which may be non-contiguous.
                 Expr::SymbolAccess(access) => {
-                    // We use a `BindingType` to track the state of the current input binding being processed.
+                    // We use a `BindingType` to track the state of the current input binding being
+                    // processed.
                     //
-                    // The initial state is given by the binding type of the access itself, but as we destructure
-                    // the binding according to the parameter binding pattern, we may pop off columns, in which
+                    // The initial state is given by the binding type of the access itself, but as
+                    // we destructure the binding according to the parameter
+                    // binding pattern, we may pop off columns, in which
                     // case the binding type here gets updated with the remaining columns
                     let mut binding_ty = Some(self.access_binding_type(access).unwrap());
-                    // We visit each binding in the trace segment represented by the parameter pattern,
-                    // consuming columns from the input argument until all bindings are matched up.
+                    // We visit each binding in the trace segment represented by the parameter
+                    // pattern, consuming columns from the input argument until
+                    // all bindings are matched up.
                     for binding in segment.bindings.iter() {
                         // Trace binding declarations are never anonymous, i.e. always have a name
                         let binding_name = binding.name.unwrap();
@@ -1326,67 +1312,74 @@ impl<'a> Inlining<'a> {
                         //
                         // We can safely assume we were able to obtain all of the needed columns,
                         // as the semantic analyzer should have caught mismatches. Note, however,
-                        // that these columns may have been gathered from multiple bindings in the caller
+                        // that these columns may have been gathered from multiple bindings in the
+                        // caller
                         let (matched, rest) = bt.split_columns(binding.size).unwrap();
                         self.rewrites.insert(binding_name);
                         eval_bindings.insert(binding_name, matched);
                         // Update `binding_ty` with whatever remains of the input
                         binding_ty = rest;
                     }
-                }
+                },
                 // An empty vector means there are no bindings for this segment
-                Expr::Const(Span {
-                    item: ConstantExpr::Vector(items),
-                    ..
-                }) if items.is_empty() => {
+                Expr::Const(Span { item: ConstantExpr::Vector(items), .. }) if items.is_empty() => {
                     continue;
-                }
+                },
                 // A vector of bindings was passed as an argument for this segment
                 //
                 // This is by far the most complicated scenario to handle when matching up arguments
                 // to parameters, as we can get them in a variety of combinations:
                 //
-                // 1. An exact match in the number and size of bindings in both the input vector and the
-                //    segment represented by the current parameter
-                // 2. The same number of elements in the vector as bindings in the segment, but the elements
-                //    have different sizes, implicitly regrouping columns between caller/callee
-                // 3. More elements in the vector than bindings in the segment, typically because the function
-                //    parameter groups together columns passed individually in the caller
-                // 4. Fewer elements in the vector than bindings in the segment, typically because the function
-                //    parameter destructures an input into multiple bindings
+                // 1. An exact match in the number and size of bindings in both the input vector and
+                //    the segment represented by the current parameter
+                // 2. The same number of elements in the vector as bindings in the segment, but the
+                //    elements have different sizes, implicitly regrouping columns between
+                //    caller/callee
+                // 3. More elements in the vector than bindings in the segment, typically because
+                //    the function parameter groups together columns passed individually in the
+                //    caller
+                // 4. Fewer elements in the vector than bindings in the segment, typically because
+                //    the function parameter destructures an input into multiple bindings
                 Expr::Vector(inputs) => {
                     // The index of the input we're currently extracting columns from
                     let mut index = 0;
-                    // A `BindingType` representing the current trace binding we're extracting columns from,
-                    // can be either of TraceColumn or Vector type
+                    // A `BindingType` representing the current trace binding we're extracting
+                    // columns from, can be either of TraceColumn or Vector type
                     let mut binding_ty = None;
-                    // We drive the matching process by consuming input columns for each segment binding in turn
+                    // We drive the matching process by consuming input columns for each segment
+                    // binding in turn
                     'next_binding: for binding in segment.bindings.iter() {
                         let binding_name = binding.name.unwrap();
                         let mut needed = binding.size;
 
-                        // When there are insufficient columns for the current parameter binding in the current
-                        // input, we must construct a vector of trace bindings to use as the binding type of
-                        // the current parameter binding when we have all of the needed columns. This is because
-                        // the input columns may come from different trace bindings in the caller, so we can't
+                        // When there are insufficient columns for the current parameter binding in
+                        // the current input, we must construct a vector of
+                        // trace bindings to use as the binding type of
+                        // the current parameter binding when we have all of the needed columns.
+                        // This is because the input columns may come from
+                        // different trace bindings in the caller, so we can't
                         // use a single trace binding to represent them.
                         let mut set = vec![];
 
-                        // We may need to consume multiple input elements to fulfill the needed columns of
-                        // the current parameter binding - we advance this loop whenever we have exhausted
-                        // an input and need to move on to the next one. We may enter this loop with the
-                        // same input index across multiple parameter bindings when the input element is
-                        // larger than the parameter binding, in which case we have split the input and
+                        // We may need to consume multiple input elements to fulfill the needed
+                        // columns of the current parameter binding - we
+                        // advance this loop whenever we have exhausted
+                        // an input and need to move on to the next one. We may enter this loop with
+                        // the same input index across multiple parameter
+                        // bindings when the input element is larger than
+                        // the parameter binding, in which case we have split the input and
                         // stored the remainder in `binding_ty`.
                         loop {
                             let input = &inputs[index];
-                            // The input expression must have been a symbol access, as matrices of columns
-                            // aren't a thing, and there is no other expression type which can produce trace
+                            // The input expression must have been a symbol access, as matrices of
+                            // columns aren't a thing, and there is no
+                            // other expression type which can produce trace
                             // bindings.
                             let Expr::SymbolAccess(access) = input else {
                                 panic!("unexpected element in trace column vector: {input:#?}")
                             };
-                            // Unless we have leftover input, initialize `binding_ty` with the binding type of this input
+                            // Unless we have leftover input, initialize `binding_ty` with the
+                            // binding type of this input
                             let bt = binding_ty
                                 .take()
                                 .unwrap_or_else(|| self.access_binding_type(access).unwrap());
@@ -1395,9 +1388,12 @@ impl<'a> Inlining<'a> {
                                     let eval_binding = match matched {
                                         BindingType::TraceColumn(matched) => {
                                             if !set.is_empty() {
-                                                // We've obtained all the remaining columns from the current input element,
-                                                // possibly with leftovers in the input. However, because we've started
-                                                // constructing a vector binding, we must ensure the matched binding is
+                                                // We've obtained all the remaining columns from the
+                                                // current input element,
+                                                // possibly with leftovers in the input. However,
+                                                // because we've started
+                                                // constructing a vector binding, we must ensure the
+                                                // matched binding is
                                                 // expanded into individual columns
                                                 for offset in 0..matched.size {
                                                     set.push(BindingType::TraceColumn(
@@ -1410,24 +1406,30 @@ impl<'a> Inlining<'a> {
                                                 }
                                                 BindingType::Vector(set)
                                             } else {
-                                                // The input element perfectly matched the current binding
+                                                // The input element perfectly matched the current
+                                                // binding
                                                 BindingType::TraceColumn(matched)
                                             }
-                                        }
+                                        },
                                         BindingType::Vector(mut matched) => {
                                             if set.is_empty() {
-                                                // The input binding was a vector, and had the same number, or
-                                                // more, of columns expected by the parameter binding, but may contain
-                                                // non-contiguous bindings, so we are unable to use the symbol of
-                                                // the access when rewriting accesses to this parameter
+                                                // The input binding was a vector, and had the same
+                                                // number, or
+                                                // more, of columns expected by the parameter
+                                                // binding, but may contain
+                                                // non-contiguous bindings, so we are unable to use
+                                                // the symbol of
+                                                // the access when rewriting accesses to this
+                                                // parameter
                                                 BindingType::Vector(matched)
                                             } else {
-                                                // Same as above, but we need to append the matched bindings to
+                                                // Same as above, but we need to append the matched
+                                                // bindings to
                                                 // the set we've already started building
                                                 set.append(&mut matched);
                                                 BindingType::Vector(set)
                                             }
-                                        }
+                                        },
                                         _ => unreachable!(),
                                     };
                                     // This binding has been fulfilled, move to the next one
@@ -1440,10 +1442,11 @@ impl<'a> Inlining<'a> {
                                         index += 1;
                                     }
                                     continue 'next_binding;
-                                }
+                                },
                                 Err(BindingType::TraceColumn(partial)) => {
-                                    // The input binding wasn't big enough for the parameter, so we must
-                                    // start constructing a vector of bindings since the next input is
+                                    // The input binding wasn't big enough for the parameter, so we
+                                    // must start constructing a
+                                    // vector of bindings since the next input is
                                     // unlikely to be contiguous with the current input
                                     for offset in 0..partial.size {
                                         set.push(BindingType::TraceColumn(TraceBinding {
@@ -1454,20 +1457,20 @@ impl<'a> Inlining<'a> {
                                     }
                                     needed -= partial.size;
                                     index += 1;
-                                }
+                                },
                                 Err(BindingType::Vector(mut partial)) => {
                                     // Same as above, but we got a vector instead
                                     set.append(&mut partial);
                                     needed -= partial.len();
                                     index += 1;
-                                }
+                                },
                                 Err(_) => unreachable!(),
                             }
                         }
                     }
-                }
-                // This should not be possible at this point, but would be an invalid evaluator call,
-                // only trace columns are permitted
+                },
+                // This should not be possible at this point, but would be an invalid evaluator
+                // call, only trace columns are permitted
                 expr => unreachable!("{:#?}", expr),
             }
         }
@@ -1494,8 +1497,9 @@ impl<'a> Inlining<'a> {
 
     /// Returns a new [SymbolAccess] which should be used in place of `access` in the current scope.
     ///
-    /// This function should only be called on accesses which have a trace column/param [BindingType],
-    /// but it will simply return `None` for other types, so it is safe to call on all accesses.
+    /// This function should only be called on accesses which have a trace column/param
+    /// [BindingType], but it will simply return `None` for other types, so it is safe to call
+    /// on all accesses.
     fn get_trace_access_rewrite(&self, access: &SymbolAccess) -> Option<SymbolAccess> {
         if self.rewrites.contains(access.name.as_ref()) {
             // If we have a rewrite for this access, then the bindings map will
@@ -1503,18 +1507,12 @@ impl<'a> Inlining<'a> {
             // relative to that trace binding
             match self.access_binding_type(access).unwrap() {
                 BindingType::TraceColumn(tb) => {
-                    let original_binding = self.trace[tb.segment]
-                        .bindings
-                        .iter()
-                        .find(|b| b.name == tb.name)
-                        .unwrap();
+                    let original_binding =
+                        self.trace[tb.segment].bindings.iter().find(|b| b.name == tb.name).unwrap();
                     let (access_type, ty) = if original_binding.size == 1 {
                         (AccessType::Default, Type::Felt)
                     } else if tb.size == 1 {
-                        (
-                            AccessType::Index(tb.offset - original_binding.offset),
-                            Type::Felt,
-                        )
+                        (AccessType::Index(tb.offset - original_binding.offset), Type::Felt)
                     } else {
                         let start = tb.offset - original_binding.offset;
                         (
@@ -1529,7 +1527,7 @@ impl<'a> Inlining<'a> {
                         offset: access.offset,
                         ty: Some(ty),
                     })
-                }
+                },
                 // We only have a rewrite when the binding type is TraceColumn
                 invalid => panic!(
                     "unexpected trace access binding type, expected column(s), got: {:#?}",
@@ -1560,9 +1558,7 @@ fn eval_expr_binding_type(
 ) -> Result<BindingType, InvalidAccessError> {
     match expr {
         Expr::Const(constant) => Ok(BindingType::Local(constant.ty())),
-        Expr::Range(range) => Ok(BindingType::Local(Type::Vector(
-            range.to_slice_range().len(),
-        ))),
+        Expr::Range(range) => Ok(BindingType::Local(Type::Vector(range.to_slice_range().len()))),
         Expr::Vector(elems) => match elems[0].ty() {
             None | Some(Type::Felt) => {
                 let mut binding_tys = Vec::with_capacity(elems.len());
@@ -1570,18 +1566,18 @@ fn eval_expr_binding_type(
                     binding_tys.push(eval_expr_binding_type(elem, bindings, imported)?);
                 }
                 Ok(BindingType::Vector(binding_tys))
-            }
+            },
             Some(Type::Vector(cols)) => {
                 let rows = elems.len();
                 Ok(BindingType::Local(Type::Matrix(rows, cols)))
-            }
+            },
             Some(_) => unreachable!(),
         },
         Expr::Matrix(expr) => {
             let rows = expr.len();
             let columns = expr[0].len();
             Ok(BindingType::Local(Type::Matrix(rows, columns)))
-        }
+        },
         Expr::SymbolAccess(access) => eval_access_binding_type(access, bindings, imported),
         Expr::Call(Call { ty: None, .. }) => Err(InvalidAccessError::InvalidBinding),
         Expr::Call(Call { ty: Some(ty), .. }) => Ok(BindingType::Local(*ty)),
@@ -1591,11 +1587,11 @@ fn eval_expr_binding_type(
             // the comprehension is given by the type of the iterables. We
             // just pick the first iterable to tell us the type
             eval_expr_binding_type(&lc.iterables[0], bindings, imported)
-        }
+        },
         Expr::Let(let_expr) => eval_let_binding_ty(let_expr, bindings, imported),
         Expr::BusOperation(_) | Expr::Null(_) | Expr::Unconstrained(_) => {
             unimplemented!("buses are not implemented for this Pipeline")
-        }
+        },
     }
 }
 
@@ -1628,11 +1624,11 @@ fn eval_let_binding_ty(
         Statement::Let(inner_let) => eval_let_binding_ty(inner_let, bindings, imported)?,
         Statement::Expr(expr) => eval_expr_binding_type(expr, bindings, imported)?,
         Statement::Enforce(_)
-        | Statement::EnforceIf(_, _)
+        | Statement::EnforceIf(..)
         | Statement::EnforceAll(_)
         | Statement::BusEnforce(_) => {
             unreachable!()
-        }
+        },
     };
     bindings.exit();
     Ok(binding_ty)
@@ -1657,11 +1653,11 @@ impl RewriteIterableBindingsVisitor<'_> {
                     ConstantExpr::Scalar(value) => {
                         assert_eq!(access.access_type, AccessType::Default);
                         Some(ScalarExpr::Const(Span::new(span, value)))
-                    }
+                    },
                     ConstantExpr::Vector(ref elems) => match access.access_type {
                         AccessType::Index(idx) => {
                             Some(ScalarExpr::Const(Span::new(span, elems[idx])))
-                        }
+                        },
                         invalid => panic!(
                             "expected vector to be reduced to scalar by access, got {invalid:#?}"
                         ),
@@ -1669,26 +1665,25 @@ impl RewriteIterableBindingsVisitor<'_> {
                     ConstantExpr::Matrix(ref rows) => match access.access_type {
                         AccessType::Matrix(row, col) => {
                             Some(ScalarExpr::Const(Span::new(span, rows[row][col])))
-                        }
+                        },
                         invalid => panic!(
                             "expected matrix to be reduced to scalar by access, got {invalid:#?}",
                         ),
                     },
                 }
-            }
+            },
             Some(Expr::Range(range)) => {
                 let span = range.span();
                 let range = range.to_slice_range();
                 match access.access_type {
-                    AccessType::Index(idx) => Some(ScalarExpr::Const(Span::new(
-                        span,
-                        (range.start + idx) as u64,
-                    ))),
+                    AccessType::Index(idx) => {
+                        Some(ScalarExpr::Const(Span::new(span, (range.start + idx) as u64)))
+                    },
                     invalid => {
                         panic!("expected range to be reduced to scalar by access, got {invalid:#?}",)
-                    }
+                    },
                 }
-            }
+            },
             Some(Expr::Vector(elems)) => {
                 match access.access_type {
                     AccessType::Index(idx) => Some(elems[idx].clone().try_into().unwrap()),
@@ -1698,7 +1693,7 @@ impl RewriteIterableBindingsVisitor<'_> {
                         Expr::SymbolAccess(saccess) => {
                             let access = saccess.access(AccessType::Index(nested_idx)).unwrap();
                             self.rewrite_scalar_access(access)?
-                        }
+                        },
                         invalid => panic!(
                             "expected vector-like value at {}[{idx}], got: {invalid:#?}",
                             access.name.as_ref(),
@@ -1708,18 +1703,18 @@ impl RewriteIterableBindingsVisitor<'_> {
                         "expected vector to be reduced to scalar by access, got {invalid:#?}"
                     ),
                 }
-            }
+            },
             Some(Expr::Matrix(elems)) => match access.access_type {
                 AccessType::Matrix(row, col) => Some(elems[row][col].clone()),
                 invalid => {
                     panic!("expected matrix to be reduced to scalar by access, got {invalid:#?}")
-                }
+                },
             },
             Some(Expr::SymbolAccess(symbol_access)) => {
                 let mut new_access = symbol_access.access(access.access_type).unwrap();
                 new_access.offset = access.offset;
                 Some(ScalarExpr::SymbolAccess(new_access))
-            }
+            },
             // These types of expressions will never be observed in this context, as they are
             // not valid iterable expressions (except calls, but those are lifted prior to rewrite
             // so that their use in this context is always a symbol access).
@@ -1733,7 +1728,7 @@ impl RewriteIterableBindingsVisitor<'_> {
                 | Expr::Unconstrained(_),
             ) => {
                 unreachable!()
-            }
+            },
             None => None,
         };
         ControlFlow::Continue(result)
@@ -1750,9 +1745,10 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
             // If we observe an access, try to rewrite it as an iterable binding, if it is
             // not a candidate for rewrite, leave it alone.
             //
-            // NOTE: We handle BoundedSymbolAccess here even though comprehension constraints are not
-            // permitted in boundary_constraints currently. That is handled elsewhere, we just need to
-            // make sure the symbols themselves are rewritten properly here.
+            // NOTE: We handle BoundedSymbolAccess here even though comprehension constraints are
+            // not permitted in boundary_constraints currently. That is handled
+            // elsewhere, we just need to make sure the symbols themselves are rewritten
+            // properly here.
             ScalarExpr::SymbolAccess(access)
             | ScalarExpr::BoundedSymbolAccess(BoundedSymbolAccess { column: access, .. }) => {
                 if let Some(replacement) = self.rewrite_scalar_access(access.clone())? {
@@ -1760,7 +1756,7 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
                     return ControlFlow::Continue(());
                 }
                 ControlFlow::Continue(())
-            }
+            },
             // We need to visit both operands of a binary expression - but while we're here,
             // check to see if resolving the operands reduces to a constant expression that
             // can be folded.
@@ -1770,25 +1766,25 @@ impl VisitMut<SemanticAnalysisError> for RewriteIterableBindingsVisitor<'_> {
                     Ok(Some(folded)) => {
                         *expr = ScalarExpr::Const(folded);
                         ControlFlow::Continue(())
-                    }
+                    },
                     Ok(None) => ControlFlow::Continue(()),
                     Err(err) => ControlFlow::Break(SemanticAnalysisError::InvalidExpr(err)),
                 }
-            }
+            },
             // If we observe a call here, just rewrite the arguments, inlining happens elsewhere
             ScalarExpr::Call(call) => {
                 for arg in call.args.iter_mut() {
                     self.visit_mut_expr(arg)?;
                 }
                 ControlFlow::Continue(())
-            }
+            },
             // We rewrite comprehension bodies before they are expanded, so it should never be
             // the case that we encounter a let here, as they can only be introduced in scalar
             // expression position as a result of inlining/expansion
             ScalarExpr::Let(_) => unreachable!(),
             ScalarExpr::BusOperation(_) | ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_) => {
                 ControlFlow::Break(SemanticAnalysisError::Invalid)
-            }
+            },
         }
     }
 }
@@ -1812,7 +1808,7 @@ impl VisitMut<SemanticAnalysisError> for ApplyConstraintSelector<'_> {
                     core::mem::replace(expr, ScalarExpr::Const(Span::new(SourceSpan::UNKNOWN, 0)));
                 *statement = Statement::EnforceIf(expr, self.selector.clone());
                 ControlFlow::Continue(())
-            }
+            },
             Statement::EnforceIf(_, selector) => {
                 // Combine the selectors
                 let lhs = core::mem::replace(
@@ -1827,7 +1823,7 @@ impl VisitMut<SemanticAnalysisError> for ApplyConstraintSelector<'_> {
                     rhs,
                 ));
                 ControlFlow::Continue(())
-            }
+            },
             Statement::EnforceAll(_) => unreachable!(),
             Statement::Expr(_) => ControlFlow::Continue(()),
             Statement::BusEnforce(_) => ControlFlow::Break(SemanticAnalysisError::Invalid),
@@ -1891,12 +1887,12 @@ where
                     parent_block.pop();
                     parent_block.push(replacement);
                     break;
-                }
+                },
                 Ok(None) => break,
                 Err(err) => {
                     inliner.bindings = prev;
                     return Err(err);
-                }
+                },
             },
             // We've traversed down a level in the let-tree, but there are more to go.
             // Set up the next iteration to visit the next block down in the tree.
@@ -1907,7 +1903,7 @@ where
                 // Set up the next iteration
                 current_block = Some(&mut let_expr.body as *mut Vec<Statement>);
                 continue;
-            }
+            },
             // No other statements types are possible here
             _ => unreachable!(),
         }

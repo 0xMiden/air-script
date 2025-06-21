@@ -8,14 +8,15 @@ mod sema;
 pub mod symbols;
 pub mod transforms;
 
-pub use self::parser::{ParseError, Parser};
-pub use self::sema::{LexicalScope, SemanticAnalysisError};
-pub use self::symbols::Symbol;
-
-use std::path::Path;
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use miden_diagnostics::{CodeMap, DiagnosticsHandler};
+
+pub use self::{
+    parser::{ParseError, Parser},
+    sema::{LexicalScope, SemanticAnalysisError},
+    symbols::Symbol,
+};
 
 /// Parses the provided source and returns the AST.
 pub fn parse(
@@ -29,7 +30,7 @@ pub fn parse(
         Err(ParseError::Lexer(err)) => {
             diagnostics.emit(err);
             Err(ParseError::Failed)
-        }
+        },
         Err(err) => Err(err),
     }
 }
@@ -46,7 +47,7 @@ pub fn parse_file<P: AsRef<Path>>(
         Err(ParseError::Lexer(err)) => {
             diagnostics.emit(err);
             Err(ParseError::Failed)
-        }
+        },
         Err(err) => Err(err),
     }
 }
@@ -85,7 +86,7 @@ pub(crate) fn parse_module_from_file<P: AsRef<Path>>(
         Err(ParseError::Lexer(err)) => {
             diagnostics.emit(err);
             Err(ParseError::Failed)
-        }
+        },
         err @ Err(_) => err,
     }
 }
@@ -104,7 +105,7 @@ pub(crate) fn parse_module(
         Err(ParseError::Lexer(err)) => {
             diagnostics.emit(err);
             Err(ParseError::Failed)
-        }
+        },
         err @ Err(_) => err,
     }
 }

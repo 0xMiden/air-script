@@ -1,6 +1,8 @@
-use crate::Symbol;
-use crate::lexer::{Lexer, LexicalError, Token};
-use crate::parser::ParseError;
+use crate::{
+    Symbol,
+    lexer::{Lexer, LexicalError, Token},
+    parser::ParseError,
+};
 
 mod arithmetic_ops;
 mod boundary_constraints;
@@ -54,7 +56,7 @@ fn expect_error_at_location(source: &str, expected: LexicalError, line: u32, col
         LexicalError::UnexpectedCharacter { start, .. } => {
             let span = miden_diagnostics::SourceSpan::new(*start, *start);
             codemap.location(&span).unwrap()
-        }
+        },
     };
     assert_eq!(err, expected);
     assert_eq!(loc.line, LineIndex(line));

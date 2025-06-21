@@ -1,14 +1,12 @@
 use air_pass::Pass;
 use miden_diagnostics::SourceSpan;
-
 use pretty_assertions::assert_eq;
 
+use super::ParseTest;
 use crate::{
     ast::*,
     transforms::{ConstantPropagation, Inlining},
 };
-
-use super::ParseTest;
 
 /// This test inlines an evaluator function into the root
 /// integrity constraints. The evaluator is called with a
@@ -70,7 +68,7 @@ fn test_inlining_with_evaluator_split_input_binding() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -79,30 +77,20 @@ fn test_inlining_with_evaluator_split_input_binding() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
     expected
-        .constants
-        .insert(ident!(root, A), constant!(A = [2, 4, 6, 8]));
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
     expected
-        .constants
-        .insert(ident!(root, B), constant!(B = [[1, 1], [2, 2]]));
-    expected
-        .constants
-        .insert(ident!(lib, EXP), constant!(EXP = 2));
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
+    expected.constants.insert(ident!(root, A), constant!(A = [2, 4, 6, 8]));
+    expected.constants.insert(ident!(root, B), constant!(B = [[1, 1], [2, 2]]));
+    expected.constants.insert(ident!(lib, EXP), constant!(EXP = 2));
     // When constant propagation and inlining is done, the boundary constraints should look like:
     //     enf a.first = 1
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(a, Boundary::First, Type::Felt),
-        int!(1)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(a, Boundary::First, Type::Felt), int!(1))));
     // When constant propagation and inlining is done, the integrity constraints should look like:
     //     enf b[0] + 2 = b[1] + 4
     //     enf a + 4 = c + 5
@@ -184,7 +172,7 @@ fn test_inlining_with_vector_literal_binding_regrouped() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -193,20 +181,16 @@ fn test_inlining_with_vector_literal_binding_regrouped() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf clk + b[0] = b[1]
     expected.integrity_constraints.push(enforce!(eq!(
@@ -273,7 +257,7 @@ fn test_inlining_with_vector_literal_binding_unordered() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -282,20 +266,16 @@ fn test_inlining_with_vector_literal_binding_unordered() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf clk + b[0] = b[1]
     expected.integrity_constraints.push(enforce!(eq!(
@@ -362,7 +342,7 @@ fn test_inlining_with_vector_literal_binding_different_arity_many_to_few() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -371,20 +351,16 @@ fn test_inlining_with_vector_literal_binding_different_arity_many_to_few() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf clk + b[0] = a + b[1]
     expected.integrity_constraints.push(enforce!(eq!(
@@ -451,7 +427,7 @@ fn test_inlining_with_vector_literal_binding_different_arity_few_to_many() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -460,20 +436,16 @@ fn test_inlining_with_vector_literal_binding_different_arity_few_to_many() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf b[0] + b[1] = a
     expected.integrity_constraints.push(enforce!(eq!(
@@ -549,7 +521,7 @@ fn test_inlining_across_modules_with_nested_evaluators_variant1() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -558,20 +530,16 @@ fn test_inlining_across_modules_with_nested_evaluators_variant1() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf a + b[0] = b[1]
     expected.integrity_constraints.push(enforce!(eq!(
@@ -661,7 +629,7 @@ fn test_inlining_across_modules_with_nested_evaluators_variant2() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -670,20 +638,16 @@ fn test_inlining_across_modules_with_nested_evaluators_variant2() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf a + b[0] = b[1]
     expected.integrity_constraints.push(enforce!(eq!(
@@ -725,7 +689,8 @@ fn test_inlining_across_modules_with_nested_evaluators_variant2() {
     assert_eq!(program, expected);
 }
 
-/// This test verifies that constraint comprehensions (without a selector) are unrolled properly during inlining
+/// This test verifies that constraint comprehensions (without a selector) are unrolled properly
+/// during inlining
 ///
 /// In this variant, we do not involve other modules to keep the test focused on just the
 /// comprehension unrolling behavior. Other tests will expand on this to test it when combined
@@ -764,7 +729,7 @@ fn test_inlining_constraint_comprehensions_no_selector() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -773,23 +738,17 @@ fn test_inlining_constraint_comprehensions_no_selector() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
+    expected.constants.insert(ident!(root, YS), constant!(YS = [2, 4, 6, 8]));
     expected
-        .constants
-        .insert(ident!(root, YS), constant!(YS = [2, 4, 6, 8]));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf b[0]' = 2
     //     enf b[1]' = 4
@@ -803,7 +762,8 @@ fn test_inlining_constraint_comprehensions_no_selector() {
     assert_eq!(program, expected);
 }
 
-/// This test verifies that constraint comprehensions (with a selector) are unrolled properly during inlining
+/// This test verifies that constraint comprehensions (with a selector) are unrolled properly during
+/// inlining
 ///
 /// In this variant, we do not involve other modules to keep the test focused on just the
 /// comprehension unrolling behavior. Other tests will expand on this to test it when combined
@@ -842,7 +802,7 @@ fn test_inlining_constraint_comprehensions_with_selector() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -851,23 +811,17 @@ fn test_inlining_constraint_comprehensions_with_selector() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
+    expected.constants.insert(ident!(root, YS), constant!(YS = [2, 4, 6, 8]));
     expected
-        .constants
-        .insert(ident!(root, YS), constant!(YS = [2, 4, 6, 8]));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf b[0]' = 2 when c
     //     enf b[1]' = 4 when c
@@ -881,9 +835,10 @@ fn test_inlining_constraint_comprehensions_with_selector() {
     assert_eq!(program, expected);
 }
 
-/// This test verifies that constraint comprehensions (with a selector) are unrolled properly during inlining.
-/// Specifically, in this case we expect that because the selector is constant, only constraints for which the
-/// selector is "truthy" (i.e. non-zero) remain, and that the selector has been elided.
+/// This test verifies that constraint comprehensions (with a selector) are unrolled properly during
+/// inlining. Specifically, in this case we expect that because the selector is constant, only
+/// constraints for which the selector is "truthy" (i.e. non-zero) remain, and that the selector has
+/// been elided.
 ///
 /// In this variant, we do not involve other modules to keep the test focused on just the
 /// comprehension unrolling behavior. Other tests will expand on this to test it when combined
@@ -922,7 +877,7 @@ fn test_inlining_constraint_comprehensions_with_constant_selector() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -931,23 +886,17 @@ fn test_inlining_constraint_comprehensions_with_constant_selector() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
+    expected.constants.insert(ident!(root, YS), constant!(YS = [0, 4, 0, 8]));
     expected
-        .constants
-        .insert(ident!(root, YS), constant!(YS = [0, 4, 0, 8]));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 4), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 4), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf b[1]' = 4
     //     enf b[3]' = 8
@@ -961,10 +910,11 @@ fn test_inlining_constraint_comprehensions_with_constant_selector() {
     assert_eq!(program, expected);
 }
 
-/// This test verifies that constraint comprehensions present in evaluators are inlined into call sites correctly
+/// This test verifies that constraint comprehensions present in evaluators are inlined into call
+/// sites correctly
 ///
-/// This test exercises multiple edge cases in constant propagation/inlining in conjunction to make sure that all
-/// of the pieces integrate together even in odd scenarios
+/// This test exercises multiple edge cases in constant propagation/inlining in conjunction to make
+/// sure that all of the pieces integrate together even in odd scenarios
 #[test]
 fn test_inlining_constraint_comprehensions_in_evaluator() {
     let root = r#"
@@ -1001,7 +951,7 @@ fn test_inlining_constraint_comprehensions_in_evaluator() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -1010,23 +960,17 @@ fn test_inlining_constraint_comprehensions_in_evaluator() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
+    expected.constants.insert(ident!(root, YS), constant!(YS = [0, 4, 0, 8]));
     expected
-        .constants
-        .insert(ident!(root, YS), constant!(YS = [0, 4, 0, 8]));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 4), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 4), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     enf b[1]' = 16
     //     enf b[3]' = 64
@@ -1063,7 +1007,8 @@ fn test_inlining_constraint_comprehensions_in_evaluator() {
     assert_eq!(program, expected);
 }
 
-/// This test verifies that constraints involving let-bound, folded comprehensions behave as expected
+/// This test verifies that constraints involving let-bound, folded comprehensions behave as
+/// expected
 #[test]
 fn test_inlining_constraints_with_folded_comprehensions_in_evaluator() {
     let root = r#"
@@ -1096,7 +1041,7 @@ fn test_inlining_constraints_with_folded_comprehensions_in_evaluator() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -1105,20 +1050,16 @@ fn test_inlining_constraints_with_folded_comprehensions_in_evaluator() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 4), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 4), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // When constant propagation and inlining is done, integrity_constraints should look like:
     //     let y =
     //         let %lc0 = b[2]^7
@@ -1204,7 +1145,7 @@ fn test_inlining_with_function_call_as_binary_operand() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -1213,15 +1154,12 @@ fn test_inlining_with_function_call_as_binary_operand() {
     let program = pipeline.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 4), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 4), (c, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
     expected.functions.insert(
         function_ident!(root, fold_sum),
         Function::new(
@@ -1245,20 +1183,17 @@ fn test_inlining_with_function_call_as_binary_operand() {
             ident!(fold_vec),
             vec![(ident!(a), Type::Vector(4))],
             Type::Felt,
-            vec![
-                let_!("m" = expr!(mul!(access!(a[0], Type::Felt), access!(a[1], Type::Felt)))
-                => let_!("n" = expr!(mul!(access!(m, Type::Felt), access!(a[2], Type::Felt)))
-                => let_!("o" = expr!(mul!(access!(n, Type::Felt), access!(a[3], Type::Felt)))
-                => return_!(expr!(access!(o, Type::Felt)))
-                ))),
-            ],
+            vec![let_!("m" = expr!(mul!(access!(a[0], Type::Felt), access!(a[1], Type::Felt)))
+            => let_!("n" = expr!(mul!(access!(m, Type::Felt), access!(a[2], Type::Felt)))
+            => let_!("o" = expr!(mul!(access!(n, Type::Felt), access!(a[3], Type::Felt)))
+            => return_!(expr!(access!(o, Type::Felt)))
+            )))],
         ),
     );
     // The sole boundary constraint is already minimal
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
     // With constant propagation and inlining done
     //
     // let complex_fold =

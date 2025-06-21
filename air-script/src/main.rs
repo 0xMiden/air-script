@@ -1,5 +1,6 @@
-use clap::{Parser, Subcommand};
 use std::io::Write;
+
+use clap::{Parser, Subcommand};
 
 mod cli;
 

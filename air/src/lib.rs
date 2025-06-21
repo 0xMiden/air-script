@@ -5,11 +5,13 @@ pub mod passes;
 #[cfg(test)]
 mod tests;
 
-pub use self::codegen::CodeGenerator;
-pub use self::graph::{AlgebraicGraph, Node, NodeIndex};
-pub use self::ir::*;
-
 use miden_diagnostics::{Diagnostic, ToDiagnostic};
+
+pub use self::{
+    codegen::CodeGenerator,
+    graph::{AlgebraicGraph, Node, NodeIndex},
+    ir::*,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum CompileError {

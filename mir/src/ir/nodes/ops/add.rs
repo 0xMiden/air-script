@@ -1,8 +1,8 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
+
 /// A MIR operation to represent the addition of two MIR ops, `lhs` and `rhs`
-///
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Builder, Spanned)]
 #[enum_wrapper(Op)]
 pub struct Add {
@@ -17,13 +17,7 @@ pub struct Add {
 
 impl Add {
     pub fn create(lhs: Link<Op>, rhs: Link<Op>, span: SourceSpan) -> Link<Op> {
-        Op::Add(Self {
-            lhs,
-            rhs,
-            span,
-            ..Default::default()
-        })
-        .into()
+        Op::Add(Self { lhs, rhs, span, ..Default::default() }).into()
     }
 }
 

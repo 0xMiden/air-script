@@ -1,8 +1,7 @@
 use miden_diagnostics::SourceSpan;
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 // VARIABLES
 // ================================================================================================
@@ -45,10 +44,8 @@ fn variables_with_or_operators() {
     }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
-    let body = vec![
-        let_!(flag = expr!(or!(access!(n1), not!(access!(n2, 1)))) =>
-                   enforce_all!(lc!((("%1", range!(0..1))) => eq!(access!(clk, 1), add!(access!(clk), int!(1))), when access!(flag)))),
-    ];
+    let body = vec![let_!(flag = expr!(or!(access!(n1), not!(access!(n2, 1)))) =>
+                   enforce_all!(lc!((("%1", range!(0..1))) => eq!(access!(clk, 1), add!(access!(clk), int!(1))), when access!(flag))))];
     expected.evaluators.insert(
         ident!(test),
         EvaluatorFunction::new(

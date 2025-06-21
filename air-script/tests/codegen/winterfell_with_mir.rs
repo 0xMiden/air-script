@@ -1,5 +1,6 @@
-use super::helpers::{Pipeline, Target, Test};
 use expect_test::expect_file;
+
+use super::helpers::{Pipeline, Target, Test};
 
 // tests_wo_mir
 // ================================================================================================

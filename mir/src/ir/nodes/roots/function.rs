@@ -1,5 +1,6 @@
-use crate::ir::{Builder, Link, Node, Op, Owner, Parent, Root, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
+
+use crate::ir::{Builder, Link, Node, Op, Owner, Parent, Root, Singleton};
 
 /// A MIR Root to represent a Function definition
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Builder, Spanned)]

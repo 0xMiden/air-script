@@ -49,11 +49,12 @@ pub enum Statement {
     ///
     /// This variant is only present in the AST after inlining is performed, even though the parser
     /// could produce it directly from the parse tree. This is because this variant is equivalent to
-    /// a comprehension constraint with a single element, so we transform all syntax corresponding to
-    /// `EnforceIf` into `EnforceAll` form so we can reuse all of the analyses/optimizations/transformations
-    /// for both. However, when lowering to the IR, we perform inlining/unrolling of comprehensions, and
-    /// at that time we need `EnforceIf` in order to represent unrolled constraints which have a selector
-    /// that is only resolvable at runtime.
+    /// a comprehension constraint with a single element, so we transform all syntax corresponding
+    /// to `EnforceIf` into `EnforceAll` form so we can reuse all of the
+    /// analyses/optimizations/transformations for both. However, when lowering to the IR, we
+    /// perform inlining/unrolling of comprehensions, and at that time we need `EnforceIf` in
+    /// order to represent unrolled constraints which have a selector that is only resolvable at
+    /// runtime.
     EnforceIf(#[span] ScalarExpr, ScalarExpr),
     /// Declares a constraint to be enforced over a vector of values produced by a comprehension.
     ///
@@ -71,20 +72,16 @@ impl Statement {
     /// one or more constraints in its body.
     pub fn has_constraints(&self) -> bool {
         match self {
-            Self::Enforce(_)
-            | Self::EnforceIf(_, _)
-            | Self::EnforceAll(_)
-            | Self::BusEnforce(_) => true,
+            Self::Enforce(_) | Self::EnforceIf(..) | Self::EnforceAll(_) | Self::BusEnforce(_) => {
+                true
+            },
             Self::Let(Let { body, .. }) => body.iter().any(|s| s.has_constraints()),
             Self::Expr(_) => false,
         }
     }
 
     pub fn display(&self, indent: usize) -> DisplayStatement<'_> {
-        DisplayStatement {
-            statement: self,
-            indent,
-        }
+        DisplayStatement { statement: self, indent }
     }
 }
 impl From<Expr> for Statement {
@@ -142,32 +139,28 @@ pub struct Let {
 }
 impl Let {
     pub fn new(span: SourceSpan, name: Identifier, value: Expr, body: Vec<Statement>) -> Self {
-        Self {
-            span,
-            name,
-            value,
-            body,
-        }
+        Self { span, name, value, body }
     }
 
     /// Return the type of the overall `let` expression.
     ///
     /// A `let` with an empty body, or with a body that terminates with a non-expression statement
-    /// has no type (or rather, one could consider the type it returns to be of "void" or "unit" type).
+    /// has no type (or rather, one could consider the type it returns to be of "void" or "unit"
+    /// type).
     ///
     /// For `let` statements with a non-empty body that terminates with an expression, the `let` can
-    /// be used in expression position, producing the value of the terminating expression in its body,
-    /// and having the same type as that value.
+    /// be used in expression position, producing the value of the terminating expression in its
+    /// body, and having the same type as that value.
     pub fn ty(&self) -> Option<Type> {
         let mut last = self.body.last();
         while let Some(stmt) = last.take() {
             match stmt {
                 Statement::Let(let_expr) => {
                     last = let_expr.body.last();
-                }
+                },
                 Statement::Expr(expr) => return expr.ty(),
                 Statement::Enforce(_)
-                | Statement::EnforceIf(_, _)
+                | Statement::EnforceIf(..)
                 | Statement::EnforceAll(_)
                 | Statement::BusEnforce(_) => break,
             }

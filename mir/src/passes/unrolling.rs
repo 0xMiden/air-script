@@ -4,15 +4,14 @@ use air_parser::ast::AccessType;
 use air_pass::Pass;
 use miden_diagnostics::{DiagnosticsHandler, Spanned};
 
-use crate::{CompileError, ir::*};
-
 use super::{duplicate_node_or_replace, visitor::Visitor};
+use crate::{CompileError, ir::*};
 
 /// This pass follows a similar approach as the Inlining pass.
 /// It requires that this Inlining pass has already been done.
 ///
-/// * In the first step, we visit the graph, unrolling each node type except For nodes.
-///   Instead, for these node types we gather the context to inline them in the second pass.
+/// * In the first step, we visit the graph, unrolling each node type except For nodes. Instead, for
+///   these node types we gather the context to inline them in the second pass.
 /// * In the second pass, we inline the bodies of For nodes.
 ///
 /// TODO:
@@ -44,7 +43,8 @@ pub struct UnrollingFirstPass<'a> {
     // general context
     work_stack: Vec<Link<Node>>,
 
-    // For each child of a For node encountered, we store the context to inline it in the second pass
+    // For each child of a For node encountered, we store the context to inline it in the second
+    // pass
     bodies_to_inline: Vec<(Link<Op>, ForInliningContext)>,
 
     // We keep track of all parameters referencing a given For node
@@ -140,7 +140,7 @@ impl UnrollingFirstPass<'_> {
             let mir_value = value_ref.value.value.clone();
             match mir_value {
                 MirValue::Constant(c) => match c {
-                    ConstantValue::Felt(_) => {}
+                    ConstantValue::Felt(_) => {},
                     ConstantValue::Vector(v) => {
                         let mut vec = vec![];
                         for val in v {
@@ -151,7 +151,7 @@ impl UnrollingFirstPass<'_> {
                             vec.push(val);
                         }
                         updated_value = Some(Vector::create(vec, value_ref.span()));
-                    }
+                    },
                     ConstantValue::Matrix(m) => {
                         let mut res_m = vec![];
                         for row in m {
@@ -167,13 +167,13 @@ impl UnrollingFirstPass<'_> {
                             res_m.push(res_row_vec);
                         }
                         updated_value = Some(Matrix::create(res_m, value_ref.span()));
-                    }
+                    },
                 },
-                MirValue::TraceAccess(_) => {}
-                MirValue::PeriodicColumn(_) => {}
-                MirValue::PublicInput(_) => {}
-                MirValue::PublicInputTable(_) => {}
-                MirValue::RandomValue(_) => {}
+                MirValue::TraceAccess(_) => {},
+                MirValue::PeriodicColumn(_) => {},
+                MirValue::PublicInput(_) => {},
+                MirValue::PublicInputTable(_) => {},
+                MirValue::RandomValue(_) => {},
                 MirValue::TraceAccessBinding(trace_access_binding) => {
                     // Create Trace Access based on this binding
                     if trace_access_binding.size == 1 {
@@ -201,10 +201,10 @@ impl UnrollingFirstPass<'_> {
                         }
                         updated_value = Some(Vector::create(vec, value_ref.span()));
                     }
-                }
-                MirValue::BusAccess(_) => {}
-                MirValue::Null => {}
-                MirValue::Unconstrained => {}
+                },
+                MirValue::BusAccess(_) => {},
+                MirValue::Null => {},
+                MirValue::Unconstrained => {},
             }
         }
 
@@ -400,14 +400,14 @@ impl UnrollingFirstPass<'_> {
                         let new_acc_node = Add::create(acc_node, iterator_node, fold_ref.span());
                         acc_node = new_acc_node;
                     }
-                }
+                },
                 FoldOperator::Mul => {
                     for iterator_node in iterator_nodes {
                         let new_acc_node = Mul::create(acc_node, iterator_node, fold_ref.span());
                         acc_node = new_acc_node;
                     }
-                }
-                FoldOperator::None => {}
+                },
+                FoldOperator::None => {},
             }
             updated_fold = Some(acc_node);
         }
@@ -604,11 +604,11 @@ impl UnrollingFirstPass<'_> {
                                         }),
                                     });
                                     updated_accessor = Some(new_node);
-                                }
+                                },
                                 _ => unreachable!(),
                             }
                         }
-                    }
+                    },
                     AccessType::Index(index) => {
                         // Check that the child node is a vector, raise diag otherwise
                         // Replace the current node by the index-th element of the vector
@@ -634,10 +634,10 @@ impl UnrollingFirstPass<'_> {
                                             }),
                                         });
                                         updated_accessor = Some(new_node);
-                                    }
+                                    },
                                     _ => {
                                         updated_accessor = Some(child_accessed.clone());
-                                    }
+                                    },
                                 }
                             } else {
                                 updated_accessor = Some(child_accessed.clone());
@@ -645,7 +645,7 @@ impl UnrollingFirstPass<'_> {
                         } else {
                             unreachable!("indexable is {:?}", indexable); // raise diag
                         };
-                    }
+                    },
                     AccessType::Matrix(row, col) => {
                         // Check that the child node is a matrix, raise diag otherwise
                         // Replace the current node by the index-th element of the vector
@@ -690,11 +690,11 @@ impl UnrollingFirstPass<'_> {
                                 unreachable!(); // raise diag
                             };
                         };
-                    }
+                    },
 
                     AccessType::Slice(_range_expr) => {
                         unreachable!(); // Slices are not scalar, raise diag
-                    }
+                    },
                 }
             }
         }
@@ -720,12 +720,12 @@ impl UnrollingFirstPass<'_> {
                             },
                             None => {
                                 unreachable!(); // Raise diag
-                            }
+                            },
                         }
-                    }
+                    },
                     _ => unreachable!(), // Raise diag
                 },
-                AccessType::Matrix(_, _) => 1,
+                AccessType::Matrix(..) => 1,
             },
             Op::Parameter(parameter) => match parameter.ty {
                 MirType::Felt => 1,
@@ -746,8 +746,10 @@ impl UnrollingFirstPass<'_> {
         {
             // For each value produced by the iterators, we need to:
             // - Duplicate the body
-            // - Visit the body and replace the Variables with the value (with the correct index depending on the binding)
-            // If there is a selector, we need to enforce the selector on the body through an if node ?
+            // - Visit the body and replace the Variables with the value (with the correct index
+            //   depending on the binding)
+            // If there is a selector, we need to enforce the selector on the body through an if
+            // node ?
 
             let for_node_clone = for_node.clone();
             let for_ref = for_node_clone.as_for().unwrap();
@@ -784,15 +786,16 @@ impl UnrollingFirstPass<'_> {
                             Op::Vector(vector) => {
                                 let children = vector.children().borrow().deref().clone();
                                 children[i].clone()
-                            }
+                            },
                             Op::Matrix(matrix) => {
                                 let children = matrix.children().borrow().deref().clone();
                                 children[i].clone()
-                            }
+                            },
                             Op::Accessor(accessor) => {
                                 match accessor.indexable.borrow().deref() {
-                                    // If we access an outer loop parameter in the body of an inner loop,
-                                    // we need to create an Accessor for the correct index in this parameter
+                                    // If we access an outer loop parameter in the body of an inner
+                                    // loop, we need to create
+                                    // an Accessor for the correct index in this parameter
                                     Op::Parameter(_parameter) => Accessor::create(
                                         accessor.indexable.clone(),
                                         AccessType::Index(i),
@@ -801,7 +804,7 @@ impl UnrollingFirstPass<'_> {
                                     ),
                                     _ => op.clone(),
                                 }
-                            }
+                            },
                             _ => op.clone(),
                         }
                     })
@@ -825,10 +828,7 @@ impl UnrollingFirstPass<'_> {
 
             let new_vec_op = Vector::create(new_vec.clone(), for_node.span());
             for param in new_vec {
-                param
-                    .as_parameter_mut()
-                    .unwrap()
-                    .set_ref_node(new_vec_op.as_owner().unwrap());
+                param.as_parameter_mut().unwrap().set_ref_node(new_vec_op.as_owner().unwrap());
             }
             updated_for = Some(new_vec_op);
         }
@@ -880,7 +880,8 @@ impl Visitor for UnrollingFirstPass<'_> {
         &mut self.work_stack
     }
     // We visit all boundary constraints and all integrity constraints
-    // No need to visit the functions or evaluators, as they should have been inlined before this pass
+    // No need to visit the functions or evaluators, as they should have been inlined before this
+    // pass
     fn root_nodes_to_visit(&self, graph: &Graph) -> Vec<Link<Node>> {
         let boundary_constraints_roots_ref = graph.boundary_constraints_roots.borrow();
         let integrity_constraints_roots_ref = graph.integrity_constraints_roots.borrow();
@@ -893,12 +894,7 @@ impl Visitor for UnrollingFirstPass<'_> {
             .clone()
             .into_iter()
             .map(|bc| bc.as_node())
-            .chain(
-                integrity_constraints_roots_ref
-                    .clone()
-                    .into_iter()
-                    .map(|ic| ic.as_node()),
-            )
+            .chain(integrity_constraints_roots_ref.clone().into_iter().map(|ic| ic.as_node()))
             .chain(bus_roots.into_iter().map(|b| b.as_node()));
         combined_roots.collect()
     }
@@ -908,8 +904,7 @@ impl Visitor for UnrollingFirstPass<'_> {
         if let Some(owner) = node.clone().as_owner() {
             if let Some(op) = owner.clone().as_op() {
                 if let Some(_for_node) = op.as_for() {
-                    self.all_for_nodes
-                        .insert(op.get_ptr(), (op.clone(), owner.clone()));
+                    self.all_for_nodes.insert(op.get_ptr(), (op.clone(), owner.clone()));
                 }
             }
         }
@@ -917,14 +912,14 @@ impl Visitor for UnrollingFirstPass<'_> {
         let updated_op: Result<Option<Link<Op>>, CompileError> = match node.borrow().deref() {
             Node::Function(_f) => {
                 unreachable!("Functions should have been inlined before this pass")
-            }
+            },
             Node::Evaluator(_e) => {
                 unreachable!("Evaluators should have been inlined before this pass")
-            }
+            },
             Node::Enf(e) => to_link_and(e.clone(), graph, |g, el| self.visit_enf_bis(g, el)),
             Node::Boundary(b) => {
                 to_link_and(b.clone(), graph, |g, el| self.visit_boundary_bis(g, el))
-            }
+            },
             Node::Add(a) => to_link_and(a.clone(), graph, |g, el| self.visit_add_bis(g, el)),
             Node::Sub(s) => to_link_and(s.clone(), graph, |g, el| self.visit_sub_bis(g, el)),
             Node::Mul(m) => to_link_and(m.clone(), graph, |g, el| self.visit_mul_bis(g, el)),
@@ -937,11 +932,11 @@ impl Visitor for UnrollingFirstPass<'_> {
             Node::Matrix(m) => to_link_and(m.clone(), graph, |g, el| self.visit_matrix_bis(g, el)),
             Node::Accessor(a) => {
                 to_link_and(a.clone(), graph, |g, el| self.visit_accessor_bis(g, el))
-            }
+            },
             Node::BusOp(_b) => Ok(None),
             Node::Parameter(p) => {
                 to_link_and(p.clone(), graph, |g, el| self.visit_parameter_bis(g, el))
-            }
+            },
             Node::Value(v) => to_link_and(v.clone(), graph, |g, el| self.visit_value_bis(g, el)),
             Node::None(_) => Ok(None),
         };
@@ -980,44 +975,34 @@ impl Visitor for UnrollingSecondPass<'_> {
             });
 
             self.for_inlining_context = for_inlining_context;
-            // We inline a new body, so we clear the nodes to replace and the parameters for the ref node
+            // We inline a new body, so we clear the nodes to replace and the parameters for the ref
+            // node
             self.nodes_to_replace.clear();
             self.params_for_ref_node.clear();
 
-            self.scan_node(
-                graph,
-                self.for_inlining_context.clone().unwrap().body.as_node(),
-            )?;
+            self.scan_node(graph, self.for_inlining_context.clone().unwrap().body.as_node())?;
             while let Some(node) = self.work_stack().pop() {
                 self.visit_node(graph, node.clone())?;
             }
 
             // We have finished inlining the body, we can now replace the Root node with the body
             let body = self.for_inlining_context.clone().unwrap().body;
-            let new_node = self
-                .nodes_to_replace
-                .get(&body.get_ptr())
-                .unwrap()
-                .1
-                .clone();
+            let new_node = self.nodes_to_replace.get(&body.get_ptr()).unwrap().1.clone();
 
             // If there is a selector, we need to enforce it on the body
-            let new_node_with_selector_if_needed =
-                if let Some(selector) = self.for_inlining_context.clone().unwrap().selector {
-                    let zero_node = Value::create(SpannedMirValue {
-                        span: Default::default(),
-                        value: MirValue::Constant(ConstantValue::Felt(0)),
-                    });
-                    // FIXME: The Sub here is used to keep the form of Eq(lhs, rhs) -> Enf(Sub(lhs, rhs) == 0),
-                    // but it introduces an unnecessary zero node
-                    Sub::create(
-                        Mul::create(selector, new_node, root.span()),
-                        zero_node,
-                        root.span(),
-                    )
-                } else {
-                    new_node
-                };
+            let new_node_with_selector_if_needed = if let Some(selector) =
+                self.for_inlining_context.clone().unwrap().selector
+            {
+                let zero_node = Value::create(SpannedMirValue {
+                    span: Default::default(),
+                    value: MirValue::Constant(ConstantValue::Felt(0)),
+                });
+                // FIXME: The Sub here is used to keep the form of Eq(lhs, rhs) -> Enf(Sub(lhs, rhs)
+                // == 0), but it introduces an unnecessary zero node
+                Sub::create(Mul::create(selector, new_node, root.span()), zero_node, root.span())
+            } else {
+                new_node
+            };
 
             root.as_op().unwrap().set(&new_node_with_selector_if_needed);
 
@@ -1036,21 +1021,10 @@ impl Visitor for UnrollingSecondPass<'_> {
                 &mut self.nodes_to_replace,
                 op,
                 self.for_inlining_context.clone().unwrap().iterators.clone(),
-                self.for_inlining_context
-                    .clone()
-                    .unwrap()
-                    .ref_node
-                    .as_node(),
+                self.for_inlining_context.clone().unwrap().ref_node.as_node(),
                 Some(
                     self.all_for_nodes
-                        .get(
-                            &self
-                                .for_inlining_context
-                                .clone()
-                                .unwrap()
-                                .ref_node
-                                .get_ptr(),
-                        )
+                        .get(&self.for_inlining_context.clone().unwrap().ref_node.get_ptr())
                         .unwrap()
                         .1
                         .clone(),
@@ -1058,10 +1032,7 @@ impl Visitor for UnrollingSecondPass<'_> {
                 &mut self.params_for_ref_node,
             );
         } else {
-            unreachable!(
-                "UnrollingSecondPass::visit_node on a non-Op node: {:?}",
-                node
-            );
+            unreachable!("UnrollingSecondPass::visit_node on a non-Op node: {:?}", node);
         }
         Ok(())
     }

@@ -1,6 +1,6 @@
 [package]
 name = "air-script"
-version = "0.4.0"
+version = "0.5.0"
 description = "AirScript language compiler"
 authors.workspace = true
 readme = "README.md"
@@ -17,15 +17,15 @@ name = "airc"
 path = "src/main.rs"
 
 [dependencies]
-air-codegen-winter = { package = "air-codegen-winter", path = "../codegen/winterfell", version = "0.4" }
-air-ir = { package = "air-ir", path = "../air", version = "0.4" }
-air-parser = { package = "air-parser", path = "../parser", version = "0.4" }
-air-pass = { package = "air-pass", path = "../pass", version = "0.4" }
-clap = { version = "4.2", features = ["derive"] }
+air-codegen-winter = { package = "air-codegen-winter", path = "../codegen/winterfell", version = "0.5" }
+air-ir = { package = "air-ir", path = "../air", version = "0.5" }
+air-parser = { package = "air-parser", path = "../parser", version = "0.5" }
+air-pass = { package = "air-pass", path = "../pass", version = "0.5" }
+clap = { version = "4.5", features = ["derive"] }
 env_logger = "0.11"
 log = { version = "0.4", default-features = false }
 miden-diagnostics = { workspace = true }
-mir = { package = "air-mir", path = "../mir", version = "0.4" }
+mir = { package = "air-mir", path = "../mir", version = "0.5" }
 
 [dev-dependencies]
 expect-test = "1.4"

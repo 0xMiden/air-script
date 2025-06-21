@@ -13,16 +13,8 @@ fn err_trace_cols_empty() {
     integrity_constraints {
         enf clk' = clk + 1";
 
-    expect_diagnostic(
-        source,
-        "missing 'main' declaration in this section",
-        Pipeline::WithoutMIR,
-    );
-    expect_diagnostic(
-        source,
-        "missing 'main' declaration in this section",
-        Pipeline::WithMIR,
-    );
+    expect_diagnostic(source, "missing 'main' declaration in this section", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "missing 'main' declaration in this section", Pipeline::WithMIR);
 }
 
 #[test]
@@ -40,11 +32,7 @@ fn err_trace_cols_omitted() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(
-        source,
-        "missing trace_columns section",
-        Pipeline::WithoutMIR,
-    );
+    expect_diagnostic(source, "missing trace_columns section", Pipeline::WithoutMIR);
     expect_diagnostic(source, "missing trace_columns section", Pipeline::WithMIR);
 }
 
@@ -64,11 +52,7 @@ fn err_pub_inputs_empty() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(
-        source,
-        "expected one of: 'identifier'",
-        Pipeline::WithoutMIR,
-    );
+    expect_diagnostic(source, "expected one of: 'identifier'", Pipeline::WithoutMIR);
     expect_diagnostic(source, "expected one of: 'identifier'", Pipeline::WithMIR);
 }
 
@@ -115,16 +99,8 @@ fn err_bc_empty() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(
-        source,
-        "expected one of: '\"enf\"', '\"let\"'",
-        Pipeline::WithoutMIR,
-    );
-    expect_diagnostic(
-        source,
-        "expected one of: '\"enf\"', '\"let\"'",
-        Pipeline::WithMIR,
-    );
+    expect_diagnostic(source, "expected one of: '\"enf\"', '\"let\"'", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "expected one of: '\"enf\"', '\"let\"'", Pipeline::WithMIR);
 }
 
 #[test]
@@ -170,16 +146,8 @@ fn err_ic_empty() {
     }
     integrity_constraints {}";
 
-    expect_diagnostic(
-        source,
-        "expected one of: '\"enf\"', '\"let\"'",
-        Pipeline::WithoutMIR,
-    );
-    expect_diagnostic(
-        source,
-        "expected one of: '\"enf\"', '\"let\"'",
-        Pipeline::WithMIR,
-    );
+    expect_diagnostic(source, "expected one of: '\"enf\"', '\"let\"'", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "expected one of: '\"enf\"', '\"let\"'", Pipeline::WithMIR);
 }
 
 #[test]

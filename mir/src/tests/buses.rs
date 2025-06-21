@@ -1,3 +1,9 @@
+use core::slice;
+
+use air_parser::{Symbol, ast};
+use miden_diagnostics::{SourceSpan, Spanned};
+
+use super::{compile, expect_diagnostic};
 use crate::{
     ir::{
         Add, Builder, Bus, Fold, FoldOperator, Link, Mir, MirValue, Op, PublicInputTableAccess,
@@ -5,11 +11,6 @@ use crate::{
     },
     tests::translate,
 };
-use air_parser::{Symbol, ast};
-use miden_diagnostics::{SourceSpan, Spanned};
-
-use super::{compile, expect_diagnostic};
-use core::slice;
 
 #[test]
 fn buses_in_boundary_constraints() {
@@ -127,11 +128,8 @@ fn buses_args_expr_in_integrity_expr() {
         .initial_value(From::from(0))
         .span(SourceSpan::default())
         .build();
-    let x: Link<Op> = Add::builder()
-        .lhs(vec_sum)
-        .rhs(b.clone())
-        .span(SourceSpan::default())
-        .build();
+    let x: Link<Op> =
+        Add::builder().lhs(vec_sum).rhs(b.clone()).span(SourceSpan::default()).build();
     let sel: Link<Op> = From::from(1);
     let _p_add = bus.insert(slice::from_ref(&x), sel.clone(), SourceSpan::default());
     let not_sel: Link<Op> = From::from(0);
@@ -140,9 +138,7 @@ fn buses_args_expr_in_integrity_expr() {
     let bus_name = ast::Identifier::new(bus_ident.span(), bus_ident.name());
     bus.borrow_mut().set_name_unchecked(bus_name);
     let mut expected_mir = Mir::new(result_mir.name);
-    let _ = expected_mir
-        .constraint_graph_mut()
-        .insert_bus(*bus_ident, bus.clone());
+    let _ = expected_mir.constraint_graph_mut().insert_bus(*bus_ident, bus.clone());
     assert_bus_eq(&mut expected_mir, &mut result_mir);
 }
 
@@ -176,11 +172,8 @@ fn buses_table_in_boundary_constraints() {
     assert!(result.is_ok());
 
     let get_name = |op: &Link<Op>| -> (ast::Identifier, usize) {
-        let MirValue::PublicInputTable(PublicInputTableAccess {
-            table_name,
-            num_cols,
-            ..
-        }) = op.as_value().unwrap().value.value
+        let MirValue::PublicInputTable(PublicInputTableAccess { table_name, num_cols, .. }) =
+            op.as_value().unwrap().value.value
         else {
             panic!("Expected a public input, got {op:#?}");
         };

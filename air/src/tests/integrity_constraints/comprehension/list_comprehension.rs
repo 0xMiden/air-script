@@ -63,16 +63,8 @@ fn lc_with_non_const_exp() {
         enf clk = enumerate[3];
     }";
 
-    expect_diagnostic(
-        source,
-        "expected exponent to be a constant",
-        Pipeline::WithoutMIR,
-    );
-    expect_diagnostic(
-        source,
-        "expected exponent to be a constant",
-        Pipeline::WithMIR,
-    );
+    expect_diagnostic(source, "expected exponent to be a constant", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "expected exponent to be a constant", Pipeline::WithMIR);
 }
 
 #[test]
@@ -224,16 +216,8 @@ fn err_non_const_exp_ident_iterable() {
         enf clk = invalid_exp_lc[1];
     }";
 
-    expect_diagnostic(
-        source,
-        "expected exponent to be a constant",
-        Pipeline::WithoutMIR,
-    );
-    expect_diagnostic(
-        source,
-        "expected exponent to be a constant",
-        Pipeline::WithMIR,
-    );
+    expect_diagnostic(source, "expected exponent to be a constant", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "expected exponent to be a constant", Pipeline::WithMIR);
 }
 
 #[test]
@@ -256,16 +240,8 @@ fn err_non_const_exp_slice_iterable() {
         enf clk = invalid_exp_lc[1];
     }";
 
-    expect_diagnostic(
-        source,
-        "expected exponent to be a constant",
-        Pipeline::WithoutMIR,
-    );
-    expect_diagnostic(
-        source,
-        "expected exponent to be a constant",
-        Pipeline::WithMIR,
-    );
+    expect_diagnostic(source, "expected exponent to be a constant", Pipeline::WithoutMIR);
+    expect_diagnostic(source, "expected exponent to be a constant", Pipeline::WithMIR);
 }
 
 #[test]

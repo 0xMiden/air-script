@@ -1,7 +1,8 @@
-use crate::circuit::Node;
+use std::{collections::BTreeMap, ops::Range};
+
 use air_ir::{Air, Identifier, PublicInputAccess, TraceAccess};
-use std::collections::BTreeMap;
-use std::ops::Range;
+
+use crate::circuit::Node;
 
 /// For each set of inputs read from the transcript, we treat them as extension field elements
 /// and pad them with zeros to the next multiple of 4. They can then be unhashed to a double-word
@@ -12,19 +13,20 @@ const NUM_QUOTIENT_PARTS: usize = 8;
 
 /// Describes the layout of inputs given to an ACE circuit.
 /// Each set of variables is aligned to the next multiple of 4, ensuring they can be efficiently
-/// unhashed from the transcript and that each input region is aligned to [`HASH_ALIGNMENT`].
+/// unhashed from the transcript and that each input region is aligned to `HASH_ALIGNMENT`.
 ///
 /// We assume the following about the underlying `Air` from which the layout is constructed
 /// - The proof always contains a `main` and `aux` segment, even when the latter is unused,
 /// - The maximal degree of an [`Air`] is `9`, such that the quotient can be decomposed in 8 chunks.
-///   TODO(Issue: #391): Derive the degree generically.  
+///   TODO(Issue: #391): Derive the degree generically.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Layout {
     /// Region for each set of public inputs, sorted by `Identifier`
     pub public_inputs: BTreeMap<Identifier, InputRegion>,
     /// Region for auxiliary random inputs.
     pub random_values: InputRegion,
-    /// Regions containing the evaluations of each segment, ordered by `trace[row_offset][segment]`.
+    /// Regions containing the evaluations of each segment, ordered by
+    /// `trace[row_offset][segment]`.
     ///
     /// # Detail:
     /// Note that we make the following assumptions which do not affect the evaluation of the
@@ -34,12 +36,10 @@ pub struct Layout {
     /// - The [`Air`] from which the layout is derived can only contain a *main* and *aux* trace
     ///   (the latter can be empty).
     /// - We treat the *quotient* as the third trace, handling it in the same way as the witness
-    ///   traces. This requires the prover to provide the out-of-domain evaluations in
-    ///   the *next* row of each quotient part. These are unused by the circuit.
-    /// - The rows must be ordered as follows:
-    ///   ```ignore
-    ///   main_curr, aux_curr, quotient_curr, main_next, aux_next, quotient_next.
-    ///   ```
+    ///   traces. This requires the prover to provide the out-of-domain evaluations in the *next*
+    ///   row of each quotient part. These are unused by the circuit.
+    /// - The rows must be ordered as follows: ```ignore main_curr, aux_curr, quotient_curr,
+    ///   main_next, aux_next, quotient_next. ```
     /// - Each trace must be padded with zero columns such that each row is word-aligned.
     ///
     /// # TODO(Issue #391):
@@ -54,7 +54,7 @@ pub struct Layout {
 
 impl Layout {
     /// Returns a new [`Layout`] from a description of an [`Air`]. All regions are padded according
-    /// to [`HASH_ALIGNMENT`], ensuring that each section starts at a word-aligned memory pointer.
+    /// to `HASH_ALIGNMENT`, ensuring that each section starts at a word-aligned memory pointer.
     pub fn new(air: &Air) -> Self {
         let mut inputs_offset = 0;
 
@@ -121,11 +121,7 @@ impl Layout {
 
     /// Input node associated with a trace variable.
     pub fn trace_access_node(&self, trace_access: &TraceAccess) -> Option<Node> {
-        let TraceAccess {
-            segment,
-            column,
-            row_offset,
-        } = *trace_access;
+        let TraceAccess { segment, column, row_offset } = *trace_access;
         // We should only be able to access the main and aux segments.
         if segment > 1 {
             return None;

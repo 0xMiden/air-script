@@ -51,10 +51,7 @@ impl AirTester for BusesAirTester {
         aux_trace.update_row(length - 2, &[Felt::new(1), Felt::new(0)]);
         let aux_rand_elements = AuxRandElements::new(vec![Felt::new(0); num_rand_values]);
 
-        let aux_trace_with_meta = AuxTraceWithMetadata {
-            aux_trace,
-            aux_rand_elements,
-        };
+        let aux_trace_with_meta = AuxTraceWithMetadata { aux_trace, aux_rand_elements };
         Some(aux_trace_with_meta)
     }
 }

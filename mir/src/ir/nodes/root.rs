@@ -58,24 +58,18 @@ impl Link<Root> {
     pub fn as_node(&self) -> Link<Node> {
         let back: BackLink<Root> = self.clone().into();
         match self.borrow_mut().deref_mut() {
-            Root::Function(Function {
-                _node: Singleton(Some(link)),
-                ..
-            }) => link.clone(),
+            Root::Function(Function { _node: Singleton(Some(link)), .. }) => link.clone(),
             Root::Function(f) => {
                 let node: Link<Node> = Node::Function(back).into();
                 f._node = Singleton::from(node.clone());
                 node
-            }
-            Root::Evaluator(Evaluator {
-                _node: Singleton(Some(link)),
-                ..
-            }) => link.clone(),
+            },
+            Root::Evaluator(Evaluator { _node: Singleton(Some(link)), .. }) => link.clone(),
             Root::Evaluator(e) => {
                 let node: Link<Node> = Node::Evaluator(back).into();
                 e._node = Singleton::from(node.clone());
                 node
-            }
+            },
             Root::None(span) => Node::None(*span).into(),
         }
     }
@@ -84,24 +78,18 @@ impl Link<Root> {
     pub fn as_owner(&self) -> Link<Owner> {
         let back: BackLink<Root> = self.clone().into();
         match self.borrow_mut().deref_mut() {
-            Root::Function(Function {
-                _owner: Singleton(Some(link)),
-                ..
-            }) => link.clone(),
+            Root::Function(Function { _owner: Singleton(Some(link)), .. }) => link.clone(),
             Root::Function(f) => {
                 let owner: Link<Owner> = Owner::Function(back).into();
                 f._owner = Singleton::from(owner.clone());
                 owner
-            }
-            Root::Evaluator(Evaluator {
-                _owner: Singleton(Some(link)),
-                ..
-            }) => link.clone(),
+            },
+            Root::Evaluator(Evaluator { _owner: Singleton(Some(link)), .. }) => link.clone(),
             Root::Evaluator(e) => {
                 let owner: Link<Owner> = Owner::Evaluator(back).into();
                 e._owner = Singleton::from(owner.clone());
                 owner
-            }
+            },
             Root::None(span) => Owner::None(*span).into(),
         }
     }

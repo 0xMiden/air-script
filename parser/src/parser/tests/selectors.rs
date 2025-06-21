@@ -1,8 +1,7 @@
 use miden_diagnostics::{SourceSpan, Span};
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 // SELECTORS
 // ================================================================================================
@@ -28,19 +27,13 @@ fn single_selector() {
         enf clk' = clk when n1;
     }"#;
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
+    expected.trace_columns.push(trace_segment!(0, "$main", [(clk, 1), (n1, 1)]));
     expected
-        .trace_columns
-        .push(trace_segment!(0, "$main", [(clk, 1), (n1, 1)]));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
-    );
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2));
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(
-            bounded_access!(clk, Boundary::First),
-            int!(0)
-        ))],
+        vec![enforce!(eq!(bounded_access!(clk, Boundary::First), int!(0)))],
     ));
     expected.integrity_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -72,21 +65,15 @@ fn chained_selectors() {
         enf clk' = clk when (n1 & !n2) | !n3;
     }"#;
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (n1, 1), (n2, 1), (n3, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
-    );
+    expected
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (n1, 1), (n2, 1), (n3, 1)]));
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2));
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(
-            bounded_access!(clk, Boundary::First),
-            int!(0)
-        ))],
+        vec![enforce!(eq!(bounded_access!(clk, Boundary::First), int!(0)))],
     ));
     expected.integrity_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
