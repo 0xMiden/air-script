@@ -1,9 +1,12 @@
 [package]
 name = "air-derive-ir"
+description = "Macros for MIR representation of the AirScript language"
 version = "0.4.0"
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+categories = ["compilers", "cryptography"]
+keywords = ["air", "stark", "zero-knowledge", "zkp"]
 rust-version.workspace = true
 edition.workspace = true
 
