@@ -12,12 +12,12 @@ WARNINGS=RUSTDOCFLAGS="-D warnings"
 
 .PHONY: clippy
 clippy: ## Run Clippy with configs
-	$(WARNINGS) cargo +nightly clippy --workspace --all-targets --all-features
+	$(WARNINGS) cargo clippy --workspace --all-targets --all-features
 
 
 .PHONY: fix
 fix: ## Run Fix with configs
-	cargo +nightly fix --allow-staged --allow-dirty --all-targets --all-features
+	cargo fix --allow-staged --allow-dirty --all-targets --all-features
 
 
 .PHONY: format
