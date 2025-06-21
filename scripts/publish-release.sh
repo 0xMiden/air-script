@@ -7,6 +7,7 @@
 
 cargo publish -p air-pass
 cargo publish -p air-parser
+cargo publish -p air-derive-ir
 cargo publish -p air-mir
 cargo publish -p air-ir
 cargo publish -p air-codegen-ace

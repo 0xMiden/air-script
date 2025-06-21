@@ -1,7 +1,11 @@
 [package]
-name = "derive-ir"
-version = "0.1.0"
-edition = "2021"
+name = "air-derive-ir"
+version = "0.4.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+edition.workspace = true
 
 [dependencies]
 syn = { version = "2.0", features = ["extra-traits"] }

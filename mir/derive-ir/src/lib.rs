@@ -3,7 +3,7 @@ mod helpers;
 
 use builder::impl_builder;
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 ///
 /// Derive the [Builder] trait for a struct.

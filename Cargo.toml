@@ -4,6 +4,7 @@ members = [
     "parser",
     "pass",
     "mir",
+    "mir/derive-ir",
     "air",
     "codegen/winterfell",
     "codegen/ace",

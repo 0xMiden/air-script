@@ -15,7 +15,7 @@ edition.workspace = true
 air-parser = { package = "air-parser", path = "../parser", version = "0.4" }
 air-pass = { package = "air-pass", path = "../pass", version = "0.4" }
 anyhow = { workspace = true }
-derive-ir = { package = "derive-ir", path = "./derive-ir", version = "0.1" }
+derive-ir = { package = "air-derive-ir", path = "./derive-ir", version = "0.4" }
 miden-diagnostics = { workspace = true }
 pretty_assertions = "1.4"
 thiserror = { workspace = true }
