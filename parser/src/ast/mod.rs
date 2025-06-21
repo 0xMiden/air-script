@@ -8,15 +8,6 @@ mod trace;
 mod types;
 pub mod visit;
 
-pub use self::declarations::*;
-pub(crate) use self::display::*;
-pub use self::errors::*;
-pub use self::expression::*;
-pub use self::module::*;
-pub use self::statement::*;
-pub use self::trace::*;
-pub use self::types::*;
-
 use std::{
     collections::{BTreeMap, HashMap, HashSet, VecDeque},
     fmt, mem,
@@ -28,6 +19,10 @@ use miden_diagnostics::{
     CodeMap, DiagnosticsHandler, FileName, Severity, SourceSpan, Span, Spanned,
 };
 
+pub(crate) use self::display::*;
+pub use self::{
+    declarations::*, errors::*, expression::*, module::*, statement::*, trace::*, types::*,
+};
 use crate::{
     Symbol,
     parser::ParseError,
@@ -132,8 +127,9 @@ impl Program {
         root: ModuleId,
         mut library: Library,
     ) -> Result<Self, SemanticAnalysisError> {
-        use crate::sema::DependencyType;
         use petgraph::visit::DfsPostOrder;
+
+        use crate::sema::DependencyType;
 
         let mut program = Program::new(root);
 
@@ -232,10 +228,7 @@ impl Program {
             // Make sure we move the buses into the program
             if !root_module.buses.is_empty() {
                 program.buses = BTreeMap::from_iter(root_module.buses.iter().map(|(k, v)| {
-                    (
-                        QualifiedIdentifier::new(root, NamespacedIdentifier::Binding(*k)),
-                        v.clone(),
-                    )
+                    (QualifiedIdentifier::new(root, NamespacedIdentifier::Binding(*k)), v.clone())
                 }));
             }
             for evaluator in root_module.evaluators.values() {
@@ -265,25 +258,25 @@ impl Program {
                             .constants
                             .entry(referenced)
                             .or_insert_with(|| referenced_module.constants[&id].clone());
-                    }
+                    },
                     DependencyType::Evaluator => {
                         program
                             .evaluators
                             .entry(referenced)
                             .or_insert_with(|| referenced_module.evaluators[&id].clone());
-                    }
+                    },
                     DependencyType::Function => {
                         program
                             .functions
                             .entry(referenced)
                             .or_insert_with(|| referenced_module.functions[&id].clone());
-                    }
+                    },
                     DependencyType::PeriodicColumn => {
                         program
                             .periodic_columns
                             .entry(referenced)
                             .or_insert_with(|| referenced_module.periodic_columns[&id].clone());
-                    }
+                    },
                 }
 
                 // Make sure we visit all of the dependencies of this dependency
@@ -330,12 +323,7 @@ impl fmt::Display for Program {
             writeln!(f, "periodic_columns {{")?;
             for (qid, column) in self.periodic_columns.iter() {
                 if qid.module == self.name {
-                    writeln!(
-                        f,
-                        "    {}: {}",
-                        &qid.item,
-                        DisplayList(column.values.as_slice())
-                    )?;
+                    writeln!(f, "    {}: {}", &qid.item, DisplayList(column.values.as_slice()))?;
                 } else {
                     writeln!(f, "    {}: {}", qid, DisplayList(column.values.as_slice()))?;
                 }
@@ -372,12 +360,7 @@ impl fmt::Display for Program {
         for (qid, evaluator) in self.evaluators.iter() {
             f.write_str("ev ")?;
             if qid.module == self.name {
-                writeln!(
-                    f,
-                    "{}{}",
-                    &qid.item,
-                    DisplayTuple(evaluator.params.as_slice())
-                )?;
+                writeln!(f, "{}{}", &qid.item, DisplayTuple(evaluator.params.as_slice()))?;
             } else {
                 writeln!(f, "{}{}", qid, DisplayTuple(evaluator.params.as_slice()))?;
             }
@@ -392,19 +375,9 @@ impl fmt::Display for Program {
         for (qid, function) in self.functions.iter() {
             f.write_str("fn ")?;
             if qid.module == self.name {
-                writeln!(
-                    f,
-                    "{}{}",
-                    &qid.item,
-                    DisplayTypedTuple(function.params.as_slice())
-                )?;
+                writeln!(f, "{}{}", &qid.item, DisplayTypedTuple(function.params.as_slice()))?;
             } else {
-                writeln!(
-                    f,
-                    "{}{}",
-                    qid,
-                    DisplayTypedTuple(function.params.as_slice())
-                )?;
+                writeln!(f, "{}{}", qid, DisplayTypedTuple(function.params.as_slice()))?;
             }
 
             for statement in function.body.iter() {
@@ -455,10 +428,10 @@ impl Library {
                         )
                         .with_secondary_label(prev_span, "originally defined here")
                         .emit();
-                }
+                },
                 Entry::Vacant(entry) => {
                     entry.insert(module);
-                }
+                },
             }
         }
 
@@ -476,11 +449,7 @@ impl Library {
                 if module.imports.is_empty() {
                     None
                 } else {
-                    let imports = module
-                        .imports
-                        .values()
-                        .map(|i| i.module())
-                        .collect::<Vec<_>>();
+                    let imports = module.imports.values().map(|i| i.module()).collect::<Vec<_>>();
                     Some((*name, imports))
                 }
             })
@@ -506,24 +475,24 @@ impl Library {
                 // or we have to fall back to the current working directory, but we have no relative
                 // path from which to base our search.
                 Ok(FileName::Virtual(_)) => cwd.clone(),
-                Ok(FileName::Real(path)) => path
-                    .parent()
-                    .unwrap_or_else(|| Path::new("."))
-                    .to_path_buf(),
+                Ok(FileName::Real(path)) => {
+                    path.parent().unwrap_or_else(|| Path::new(".")).to_path_buf()
+                },
             };
 
-            // For each module imported, try to load the module from the library, if it is unavailable
-            // we must do extra work to load it into the library, as described above.
+            // For each module imported, try to load the module from the library, if it is
+            // unavailable we must do extra work to load it into the library, as
+            // described above.
             for import in imports.drain(..) {
                 if let Entry::Vacant(entry) = lib.modules.entry(import) {
                     let filename = source_dir.join(format!("{}.air", import.as_str()));
-                    // Check if the module exists in the codemap first, so that we can add files directly
-                    // to the codemap during testing for convenience
+                    // Check if the module exists in the codemap first, so that we can add files
+                    // directly to the codemap during testing for convenience
                     let result = match codemap.get_by_name(&FileName::Real(filename.clone())) {
                         Some(file) => crate::parse_module(diagnostics, codemap.clone(), file),
                         None => {
                             crate::parse_module_from_file(diagnostics, codemap.clone(), &filename)
-                        }
+                        },
                     };
                     match result {
                         Ok(imported_module) => {
@@ -547,22 +516,24 @@ impl Library {
                                 }
                                 entry.insert(imported_module);
                             }
-                        }
+                        },
                         Err(ParseError::Failed) => {
-                            // Nothing interesting to emit as a diagnostic here, so just return an error
+                            // Nothing interesting to emit as a diagnostic here, so just return an
+                            // error
                             return Err(SemanticAnalysisError::ImportFailed(import.span()));
-                        }
+                        },
                         Err(err) => {
                             // Emit the error as a diagnostic and return an ImportError instead
                             diagnostics.emit(err);
                             return Err(SemanticAnalysisError::ImportFailed(import.span()));
-                        }
+                        },
                     }
                 }
             }
         }
 
-        // All imports have been resolved, but additional processing is required to merge modules together in a program
+        // All imports have been resolved, but additional processing is required to merge modules
+        // together in a program
         Ok(lib)
     }
 

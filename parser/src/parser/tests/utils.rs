@@ -74,44 +74,34 @@ impl ParseTest {
             no_warn: false,
             display: Default::default(),
         };
-        let diagnostics = Arc::new(DiagnosticsHandler::new(
-            config,
-            codemap.clone(),
-            emitter.clone(),
-        ));
+        let diagnostics =
+            Arc::new(DiagnosticsHandler::new(config, codemap.clone(), emitter.clone()));
         let parser = Parser::new((), codemap);
-        Self {
-            diagnostics,
-            emitter,
-            parser,
-        }
+        Self { diagnostics, emitter, parser }
     }
 
     /// This adds a new in-memory file to the [CodeMap] for this test.
     ///
-    /// This is used when we want to write a test with imports, without having to place files on disk
+    /// This is used when we want to write a test with imports, without having to place files on
+    /// disk
     pub fn add_virtual_file<P: AsRef<std::path::Path>>(&self, name: P, content: String) {
         self.parser.codemap.add(name.as_ref(), content);
     }
 
     pub fn parse_module_from_file(&self, path: &str) -> Result<Module, ParseError> {
-        self.parser
-            .parse_file::<Module, _, _>(&self.diagnostics, path)
+        self.parser.parse_file::<Module, _, _>(&self.diagnostics, path)
     }
 
     pub fn parse_program_from_file(&self, path: &str) -> Result<Program, ParseError> {
-        self.parser
-            .parse_file::<Program, _, _>(&self.diagnostics, path)
+        self.parser.parse_file::<Program, _, _>(&self.diagnostics, path)
     }
 
     pub fn parse_module(&self, source: &str) -> Result<Module, ParseError> {
-        self.parser
-            .parse_string::<Module, _, _>(&self.diagnostics, source)
+        self.parser.parse_string::<Module, _, _>(&self.diagnostics, source)
     }
 
     pub fn parse_program(&self, source: &str) -> Result<Program, ParseError> {
-        self.parser
-            .parse_string::<Program, _, _>(&self.diagnostics, source)
+        self.parser.parse_string::<Program, _, _>(&self.diagnostics, source)
     }
 
     // TEST METHODS
@@ -153,8 +143,8 @@ impl ParseTest {
         }
     }
 
-    /// Parses a [Program] from the given source string and asserts that executing the test will result
-    /// in the expected AST.
+    /// Parses a [Program] from the given source string and asserts that executing the test will
+    /// result in the expected AST.
     #[allow(unused)]
     #[track_caller]
     pub fn expect_program_ast(&self, source: &str, expected: Program) {
@@ -162,33 +152,33 @@ impl ParseTest {
             Err(err) => {
                 self.diagnostics.emit(err);
                 panic!("expected parsing to succeed, see diagnostics for details");
-            }
+            },
             Ok(ast) => assert_eq!(ast, expected),
         }
     }
 
-    /// Parses a [Module] from the given source string and asserts that executing the test will result
-    /// in the expected AST.
+    /// Parses a [Module] from the given source string and asserts that executing the test will
+    /// result in the expected AST.
     #[track_caller]
     pub fn expect_module_ast(&self, source: &str, expected: Module) {
         match self.parse_module(source) {
             Err(err) => {
                 self.diagnostics.emit(err);
                 panic!("expected parsing to succeed, see diagnostics for details");
-            }
+            },
             Ok(ast) => assert_eq!(ast, expected),
         }
     }
 
-    /// Parses a [Program] from the given source path and asserts that executing the test will result
-    /// in the expected AST.
+    /// Parses a [Program] from the given source path and asserts that executing the test will
+    /// result in the expected AST.
     #[track_caller]
     pub fn expect_program_ast_from_file(&self, path: &str, expected: Program) {
         match self.parse_program_from_file(path) {
             Err(err) => {
                 self.diagnostics.emit(err);
                 panic!("expected parsing to succeed, see diagnostics for details");
-            }
+            },
             Ok(ast) => assert_eq!(ast, expected),
         }
     }
@@ -202,7 +192,7 @@ impl ParseTest {
             Err(err) => {
                 self.diagnostics.emit(err);
                 panic!("expected parsing to succeed, see diagnostics for details");
-            }
+            },
             Ok(ast) => assert_eq!(ast, expected),
         }
     }

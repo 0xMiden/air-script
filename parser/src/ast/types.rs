@@ -16,7 +16,7 @@ impl Type {
     pub fn is_aggregate(&self) -> bool {
         match self {
             Self::Felt => false,
-            Self::Vector(_) | Self::Matrix(_, _) => true,
+            Self::Vector(_) | Self::Matrix(..) => true,
         }
     }
 
@@ -51,10 +51,10 @@ impl Type {
                     } else {
                         Ok(Self::Vector(slice_range.len()))
                     }
-                }
+                },
                 AccessType::Index(idx) if idx >= len => Err(InvalidAccessError::IndexOutOfBounds),
                 AccessType::Index(_) => Ok(Self::Felt),
-                AccessType::Matrix(_, _) => Err(InvalidAccessError::IndexIntoScalar),
+                AccessType::Matrix(..) => Err(InvalidAccessError::IndexIntoScalar),
                 _ => unreachable!(),
             },
             Self::Matrix(rows, cols) => match access_type {
@@ -65,13 +65,13 @@ impl Type {
                     } else {
                         Ok(Self::Matrix(slice_range.len(), cols))
                     }
-                }
+                },
                 AccessType::Index(idx) if idx >= rows => Err(InvalidAccessError::IndexOutOfBounds),
                 AccessType::Index(_) => Ok(Self::Vector(cols)),
                 AccessType::Matrix(row, col) if row >= rows || col >= cols => {
                     Err(InvalidAccessError::IndexOutOfBounds)
-                }
-                AccessType::Matrix(_, _) => Ok(Self::Felt),
+                },
+                AccessType::Matrix(..) => Ok(Self::Felt),
                 _ => unreachable!(),
             },
         }

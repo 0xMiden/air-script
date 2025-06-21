@@ -34,8 +34,7 @@ use syn::{DeriveInput, parse_macro_input};
 /// - `a: BackLink<Owner>`
 /// - `b: Vec<BackLink<Owner>>`
 /// - `e: Vec<Link<Op>>`
-/// - `f: Link<Vec<Link<Op>>>`
-///   and the required fields:
+/// - `f: Link<Vec<Link<Op>>>` and the required fields:
 /// - `c: i32`
 /// - `d: Link<Op>`
 ///

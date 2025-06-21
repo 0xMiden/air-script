@@ -44,7 +44,7 @@ impl PartialEq for SemanticAnalysisError {
             (Self::ImportUndefined(lm), Self::ImportUndefined(rm)) => lm == rm,
             (Self::ImportConflict { item: li, .. }, Self::ImportConflict { item: ri, .. }) => {
                 li == ri
-            }
+            },
             (Self::InvalidExpr(l), Self::InvalidExpr(r)) => l == r,
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }

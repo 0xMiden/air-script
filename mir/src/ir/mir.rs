@@ -1,11 +1,10 @@
+use std::collections::BTreeMap;
+
 use air_parser::ast::TraceSegment;
 pub use air_parser::{
     Symbol,
     ast::{Identifier, PeriodicColumn, PublicInput, QualifiedIdentifier},
 };
-
-use std::collections::BTreeMap;
-
 use miden_diagnostics::{SourceSpan, Spanned};
 
 use super::Graph;
@@ -41,10 +40,7 @@ pub struct Mir {
 }
 impl Default for Mir {
     fn default() -> Self {
-        Self::new(Identifier::new(
-            SourceSpan::UNKNOWN,
-            Symbol::intern("unnamed"),
-        ))
+        Self::new(Identifier::new(SourceSpan::UNKNOWN, Symbol::intern("unnamed")))
     }
 }
 impl Mir {

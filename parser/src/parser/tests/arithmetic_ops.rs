@@ -1,8 +1,7 @@
 use miden_diagnostics::SourceSpan;
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 // EXPRESSIONS
 // ================================================================================================
@@ -47,10 +46,7 @@ fn multi_addition() {
             SourceSpan::UNKNOWN,
             ident!(test),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
-            vec![enforce!(eq!(
-                add!(add!(access!(clk, 1), access!(clk)), int!(2)),
-                int!(0)
-            ))],
+            vec![enforce!(eq!(add!(add!(access!(clk, 1), access!(clk)), int!(2)), int!(0)))],
         ),
     );
     ParseTest::new().expect_module_ast(source, expected);
@@ -96,10 +92,7 @@ fn multi_subtraction() {
             SourceSpan::UNKNOWN,
             ident!(test),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
-            vec![enforce!(eq!(
-                sub!(sub!(access!(clk, 1), access!(clk)), int!(1)),
-                int!(0)
-            ))],
+            vec![enforce!(eq!(sub!(sub!(access!(clk, 1), access!(clk)), int!(1)), int!(0)))],
         ),
     );
     ParseTest::new().expect_module_ast(source, expected);
@@ -145,10 +138,7 @@ fn multi_multiplication() {
             SourceSpan::UNKNOWN,
             ident!(test),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
-            vec![enforce!(eq!(
-                mul!(mul!(access!(clk, 1), access!(clk)), int!(2)),
-                int!(0)
-            ))],
+            vec![enforce!(eq!(mul!(mul!(access!(clk, 1), access!(clk)), int!(2)), int!(0)))],
         ),
     );
     ParseTest::new().expect_module_ast(source, expected);
@@ -194,10 +184,7 @@ fn ops_with_parens() {
             SourceSpan::UNKNOWN,
             ident!(test),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
-            vec![enforce!(eq!(
-                mul!(add!(access!(clk, 1), access!(clk)), int!(2)),
-                int!(4)
-            ))],
+            vec![enforce!(eq!(mul!(add!(access!(clk, 1), access!(clk)), int!(2)), int!(4)))],
         ),
     );
     ParseTest::new().expect_module_ast(source, expected);
@@ -243,10 +230,7 @@ fn non_const_exponentiation() {
             SourceSpan::UNKNOWN,
             ident!(test),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
-            vec![enforce!(eq!(
-                exp!(access!(clk, 1), add!(access!(clk), int!(2))),
-                int!(1)
-            ))],
+            vec![enforce!(eq!(exp!(access!(clk, 1), add!(access!(clk), int!(2))), int!(1)))],
         ),
     );
     ParseTest::new().expect_module_ast(source, expected);
@@ -326,10 +310,7 @@ fn multi_arithmetic_ops_different_precedence() {
             ident!(test),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
             vec![enforce!(eq!(
-                sub!(
-                    sub!(exp!(access!(clk, 1), int!(2)), mul!(access!(clk), int!(2))),
-                    int!(1)
-                ),
+                sub!(sub!(exp!(access!(clk, 1), int!(2)), mul!(access!(clk), int!(2))), int!(1)),
                 int!(0)
             ))],
         ),
@@ -361,10 +342,7 @@ fn multi_arithmetic_ops_different_precedence_w_parens() {
             ident!(test),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
             vec![enforce!(eq!(
-                sub!(
-                    access!(clk, 1),
-                    mul!(exp!(access!(clk), int!(2)), sub!(int!(2), int!(1)))
-                ),
+                sub!(access!(clk, 1), mul!(exp!(access!(clk), int!(2)), sub!(int!(2), int!(1)))),
                 int!(0)
             ))],
         ),

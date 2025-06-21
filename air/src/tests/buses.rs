@@ -29,11 +29,7 @@ fn buses_in_boundary_constraints() {
         enf a = 0;
     }";
 
-    expect_diagnostic(
-        source,
-        "buses are not implemented for this Pipeline",
-        Pipeline::WithoutMIR,
-    );
+    expect_diagnostic(source, "buses are not implemented for this Pipeline", Pipeline::WithoutMIR);
     assert!(compile(source, Pipeline::WithMIR).is_ok());
 }
 
@@ -74,11 +70,7 @@ fn buses_in_integrity_constraints() {
         q.remove(1, 2) with 2;
     }";
 
-    expect_diagnostic(
-        source,
-        "buses are not implemented for this Pipeline",
-        Pipeline::WithoutMIR,
-    );
+    expect_diagnostic(source, "buses are not implemented for this Pipeline", Pipeline::WithoutMIR);
     assert!(compile(source, Pipeline::WithMIR).is_ok());
 }
 

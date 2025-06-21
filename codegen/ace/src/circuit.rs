@@ -1,7 +1,8 @@
-use crate::QuadFelt;
-use crate::layout::Layout;
-use miden_core::Felt;
 use std::collections::BTreeMap;
+
+use miden_core::Felt;
+
+use crate::{QuadFelt, layout::Layout};
 
 /// One of the 3 arithmetic operations supported by the ACE chiplet.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]

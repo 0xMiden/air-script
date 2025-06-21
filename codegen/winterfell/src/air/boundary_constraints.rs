@@ -2,9 +2,8 @@ use core::panic;
 
 use air_ir::{Air, AlgebraicGraph, ConstraintDomain, NodeIndex, Operation, TraceAccess, Value};
 
-use crate::air::call_bus_boundary_varlen_pubinput;
-
 use super::{Codegen, ElemType, Impl};
+use crate::air::call_bus_boundary_varlen_pubinput;
 
 // HELPERS TO GENERATE THE WINTERFELL BOUNDARY CONSTRAINT METHODS
 // ================================================================================================
@@ -14,10 +13,8 @@ use super::{Codegen, ElemType, Impl};
 /// TODO: add result types to these functions.
 pub(super) fn add_fn_get_assertions(impl_ref: &mut Impl, ir: &Air) {
     // define the function
-    let get_assertions = impl_ref
-        .new_fn("get_assertions")
-        .arg_ref_self()
-        .ret("Vec<Assertion<Felt>>");
+    let get_assertions =
+        impl_ref.new_fn("get_assertions").arg_ref_self().ret("Vec<Assertion<Felt>>");
 
     // add the boundary constraints
     add_main_trace_assertions(get_assertions, ir);
@@ -127,8 +124,8 @@ fn add_aux_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
                     );
 
                     func_body.line(assertion);
-                }
-                air_ir::BusBoundary::Null | air_ir::BusBoundary::Unconstrained => {}
+                },
+                air_ir::BusBoundary::Null | air_ir::BusBoundary::Unconstrained => {},
             }
         }
     }
@@ -168,7 +165,7 @@ pub fn split_boundary_constraint(
                     "InvalidUsage: index {index:?} is not the constraint root of a boundary constraint"
                 );
             }
-        }
+        },
         _ => panic!("InvalidUsage: index {index:?} is not the root index of a constraint"),
     }
 }

@@ -125,10 +125,7 @@ fn err_index_out_of_range_lc_ident() {
         enf clk = x[2];
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]
@@ -151,10 +148,7 @@ fn err_index_out_of_range_lc_slice() {
         enf clk = x[3];
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]

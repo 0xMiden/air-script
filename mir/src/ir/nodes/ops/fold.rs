@@ -1,13 +1,15 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
-/// A MIR operation to represent folding a given Vector operator according to a given operator and initial value
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
+
+/// A MIR operation to represent folding a given Vector operator according to a given operator and
+/// initial value
 ///
 /// Notes:
 /// - operators, of type FoldOperator, can either represent an Addition or a Multiplication
-/// - the Fold operation will be unrolled during the Unrolling pass (as a chain of Add or Mul operations)
+/// - the Fold operation will be unrolled during the Unrolling pass (as a chain of Add or Mul
+///   operations)
 /// - After the Unrolling pass, no Fold ops should be present in the graph
-///
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Builder, Spanned)]
 #[enum_wrapper(Op)]
 pub struct Fold {

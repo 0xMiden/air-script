@@ -1,8 +1,7 @@
 use miden_diagnostics::{SourceSpan, Span};
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 // BOUNDARY STATEMENTS
 // ================================================================================================
@@ -54,25 +53,18 @@ integrity_constraints {
 /// This is used as a common base for most tests in this module
 fn test_module() -> Module {
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
+    expected.trace_columns.push(trace_segment!(0, "$main", [(clk, 1)]));
     expected
-        .trace_columns
-        .push(trace_segment!(0, "$main", [(clk, 1)]));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
-    );
-    expected.buses.insert(
-        ident!(p),
-        Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset),
-    );
-    expected.buses.insert(
-        ident!(q),
-        Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup),
-    );
-    expected.integrity_constraints = Some(Span::new(
-        SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(access!(clk), int!(0)))],
-    ));
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2));
+    expected
+        .buses
+        .insert(ident!(p), Bus::new(SourceSpan::UNKNOWN, ident!(p), BusType::Multiset));
+    expected
+        .buses
+        .insert(ident!(q), Bus::new(SourceSpan::UNKNOWN, ident!(q), BusType::Logup));
+    expected.integrity_constraints =
+        Some(Span::new(SourceSpan::UNKNOWN, vec![enforce!(eq!(access!(clk), int!(0)))]));
     expected
 }
 
@@ -90,10 +82,7 @@ fn boundary_constraint_at_first() {
     let mut expected = test_module();
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(
-            bounded_access!(clk, Boundary::First),
-            int!(0)
-        ))],
+        vec![enforce!(eq!(bounded_access!(clk, Boundary::First), int!(0)))],
     ));
     ParseTest::new().expect_module_ast(&source, expected);
 }
@@ -112,10 +101,7 @@ fn boundary_constraint_at_last() {
     let mut expected = test_module();
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(
-            bounded_access!(clk, Boundary::Last),
-            int!(15)
-        ))],
+        vec![enforce!(eq!(bounded_access!(clk, Boundary::Last), int!(15)))],
     ));
     ParseTest::new().expect_module_ast(&source, expected);
 }
@@ -194,10 +180,7 @@ fn boundary_constraint_with_pub_input() {
     let mut expected = test_module();
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
-        vec![enforce!(eq!(
-            bounded_access!(clk, Boundary::First),
-            access!(inputs[0])
-        ))],
+        vec![enforce!(eq!(bounded_access!(clk, Boundary::First), access!(inputs[0])))],
     ));
     ParseTest::new().expect_module_ast(&source, expected);
 }
@@ -242,9 +225,7 @@ fn boundary_constraint_with_const() {
     let mut expected = test_module();
     expected.constants.insert(ident!(A), constant!(A = 1));
     expected.constants.insert(ident!(B), constant!(B = [0, 1]));
-    expected
-        .constants
-        .insert(ident!(C), constant!(C = [[0, 1], [1, 0]]));
+    expected.constants.insert(ident!(C), constant!(C = [[0, 1], [1, 0]]));
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
         vec![enforce!(eq!(

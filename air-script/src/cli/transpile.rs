@@ -2,7 +2,6 @@ use std::{fs, path::PathBuf, sync::Arc};
 
 use air_ir::{CodeGenerator, CompileError};
 use air_pass::Pass;
-
 use clap::{Args, ValueEnum};
 use miden_diagnostics::{
     CodeMap, DefaultEmitter, DiagnosticsHandler, term::termcolor::ColorChoice,
@@ -37,11 +36,7 @@ pub struct Transpile {
     )]
     output: Option<PathBuf>,
 
-    #[arg(
-        short,
-        long,
-        help = "Defines the target language, defaults to Winterfell"
-    )]
+    #[arg(short, long, help = "Defines the target language, defaults to Winterfell")]
     target: Option<Target>,
 
     #[arg(
@@ -79,7 +74,7 @@ impl Transpile {
                                 .chain(air_ir::passes::BusOpExpand::new(&diagnostics));
                         pipeline.run(ast)
                     })
-            }
+            },
             Pipeline::WithoutMIR => {
                 println!("Transpiling without Mir pipeline...");
                 air_parser::parse_file(&diagnostics, codemap, input_path)
@@ -91,7 +86,7 @@ impl Transpile {
                                 .chain(air_ir::passes::AstToAir::new(&diagnostics));
                         pipeline.run(ast)
                     })
-            }
+            },
         };
 
         match air {
@@ -109,7 +104,7 @@ impl Transpile {
                         let mut path = input_path.clone();
                         path.set_extension(target.extension());
                         path
-                    }
+                    },
                 };
                 let code = backend.generate(&air).expect("code generation failed");
                 if let Err(err) = fs::write(&output_path, code) {
@@ -120,11 +115,11 @@ impl Transpile {
                 println!("============================================================");
 
                 Ok(())
-            }
+            },
             Err(err) => {
                 diagnostics.emit(err);
                 Err("compilation failed".into())
-            }
+            },
         }
     }
 }

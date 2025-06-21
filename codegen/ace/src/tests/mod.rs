@@ -1,10 +1,15 @@
-use crate::circuit::{Circuit, Node};
-use crate::{AceVars, QuadFelt, build_ace_circuit};
-use air_ir::Air;
-use miden_diagnostics::term::termcolor::ColorChoice;
-use miden_diagnostics::{CodeMap, DefaultEmitter, DiagnosticsHandler};
 use std::sync::Arc;
+
+use air_ir::Air;
+use miden_diagnostics::{
+    CodeMap, DefaultEmitter, DiagnosticsHandler, term::termcolor::ColorChoice,
+};
 use winter_math::FieldElement;
+
+use crate::{
+    AceVars, QuadFelt, build_ace_circuit,
+    circuit::{Circuit, Node},
+};
 
 mod quotient;
 mod random;

@@ -13,10 +13,10 @@ pub fn strip_spans(mir: &mut Mir) {
     let graph = mir.constraint_graph_mut();
     let mut visitor = StripSpansVisitor::default();
     match visitor.run(graph) {
-        Ok(_) => {}
+        Ok(_) => {},
         Err(e) => {
             panic!("Error stripping spans: {e:?}");
-        }
+        },
     }
 }
 
@@ -47,14 +47,10 @@ pub fn extract_roots(
     }
     if include_bus {
         let buses = graph.get_bus_nodes();
-        let bus_columns = buses
-            .iter()
-            .flat_map(|b| b.borrow().columns.clone())
-            .map(|n| n.as_node());
-        let bus_latches = buses
-            .iter()
-            .flat_map(|b| b.borrow().latches.clone())
-            .map(|n| n.as_node());
+        let bus_columns =
+            buses.iter().flat_map(|b| b.borrow().columns.clone()).map(|n| n.as_node());
+        let bus_latches =
+            buses.iter().flat_map(|b| b.borrow().latches.clone()).map(|n| n.as_node());
         nodes.extend(bus_columns);
         nodes.extend(bus_latches);
     }
@@ -227,8 +223,8 @@ impl Visitor for StripSpansVisitor {
         let mut value = value.as_value_mut().unwrap();
         value.value.span = Default::default();
         match &mut value.value.value {
-            MirValue::Constant(_) => {}
-            MirValue::TraceAccess(_) => {}
+            MirValue::Constant(_) => {},
+            MirValue::TraceAccess(_) => {},
             MirValue::PeriodicColumn(v) => {
                 v.name.module.0 = Span::new(SourceSpan::default(), v.name.module.0.item);
                 match v.name.item {
@@ -237,25 +233,25 @@ impl Visitor for StripSpansVisitor {
                             SourceSpan::default(),
                             f.0.item,
                         ));
-                    }
+                    },
                     NamespacedIdentifier::Binding(b) => {
                         v.name.item = NamespacedIdentifier::Binding(Identifier::new(
                             SourceSpan::default(),
                             b.0.item,
                         ));
-                    }
+                    },
                 };
-            }
+            },
             MirValue::PublicInput(v) => {
                 v.name.0 = Span::new(SourceSpan::default(), v.name.0.item);
-            }
+            },
             MirValue::PublicInputTable(v) => {
                 v.table_name.0 = Span::new(SourceSpan::default(), v.table_name.0.item);
-            }
-            MirValue::RandomValue(_) => {}
-            MirValue::TraceAccessBinding(_) => {}
-            MirValue::BusAccess(_) => {}
-            MirValue::Null | MirValue::Unconstrained => {}
+            },
+            MirValue::RandomValue(_) => {},
+            MirValue::TraceAccessBinding(_) => {},
+            MirValue::BusAccess(_) => {},
+            MirValue::Null | MirValue::Unconstrained => {},
         }
         Ok(())
     }

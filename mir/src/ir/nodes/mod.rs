@@ -3,11 +3,12 @@ mod ops;
 mod root;
 mod roots;
 
+use std::cell::{Ref, RefMut};
+
 pub use op::Op;
 pub use ops::*;
 pub use root::Root;
 pub use roots::*;
-use std::cell::{Ref, RefMut};
 
 /// Apply a getter function to a Ref<T> and return a Ref<U> if the getter succeeds
 pub fn get_inner<T, U>(obj: Ref<T>, getter: impl Fn(&T) -> Option<&U>) -> Option<Ref<U>> {

@@ -1,8 +1,8 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 use miden_diagnostics::{SourceSpan, Spanned};
 
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
+
 /// A MIR operation to enforce that a given MIR op, `expr` equals zero
-///
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Builder, Spanned)]
 #[enum_wrapper(Op)]
 pub struct Enf {
@@ -16,12 +16,7 @@ pub struct Enf {
 
 impl Enf {
     pub fn create(expr: Link<Op>, span: SourceSpan) -> Link<Op> {
-        Op::Enf(Self {
-            expr,
-            span,
-            ..Default::default()
-        })
-        .into()
+        Op::Enf(Self { expr, span, ..Default::default() }).into()
     }
 }
 

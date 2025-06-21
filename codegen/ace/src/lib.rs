@@ -7,15 +7,19 @@ mod layout;
 #[cfg(test)]
 mod tests;
 
-pub use crate::circuit::{Circuit as AceCircuit, Node as AceNode};
-pub use crate::encoded::EncodedCircuit as EncodedAceCircuit;
-pub use crate::inputs::{AceVars, AirInputs};
-pub use crate::layout::Layout as AirLayout;
-
-use crate::builder::{CircuitBuilder, LinearCombination};
-use crate::layout::StarkVar;
 use air_ir::{Air, ConstraintDomain};
 use miden_core::{Felt, QuadExtension};
+
+use crate::{
+    builder::{CircuitBuilder, LinearCombination},
+    layout::StarkVar,
+};
+pub use crate::{
+    circuit::{Circuit as AceCircuit, Node as AceNode},
+    encoded::EncodedCircuit as EncodedAceCircuit,
+    inputs::{AceVars, AirInputs},
+    layout::Layout as AirLayout,
+};
 
 type QuadFelt = QuadExtension<Felt>;
 
@@ -24,7 +28,8 @@ type QuadFelt = QuadExtension<Felt>;
 /// The roots in each group are linearly combined with powers of a random challenge `α`:
 ///   - `int = ∑ᵢ int_roots[i]⋅αⁱ` for `i` from 0 to `|int_roots|`
 ///   - `bf = ∑ᵢ bf_roots[i]⋅αⁱ⁺ᵒ` for `i` from 0 to `|int_roots|`, and `o = |int_roots|`
-///   - `bl = ∑ᵢ_i bl_roots[i]⋅αⁱ⁺ᵒ` for `i` from 0 to `|bf_roots|` and `o = |int_roots| + |bf_roots|`
+///   - `bl = ∑ᵢ_i bl_roots[i]⋅αⁱ⁺ᵒ` for `i` from 0 to `|bf_roots|` and `o = |int_roots| +
+///     |bf_roots|`
 ///
 /// This function builds a circuit that computes the following formula which must evaluate to zero:
 /// `z₋₂²⋅z₋₁⋅z₀⋅int + zₙ⋅z₋₂⋅bf + zₙ⋅z₀⋅bl - Q(z)⋅zₙ⋅z₀⋅z₋₂`. The variables are given by:
@@ -54,7 +59,8 @@ type QuadFelt = QuadExtension<Felt>;
 /// Additionally, the ACE chiplet expects the following 5 auxiliary "STARK" inputs, whose order
 /// is defined by [`StarkVar`], given by `[g⁻¹, g⁻¹, α, z, zⁿ, zᵐᵃˣ`].
 pub fn build_ace_circuit(air: &Air) -> anyhow::Result<(AceNode, AceCircuit)> {
-    // A circuit builder is instantiated with the inputs of the circuits plus the 13 needed by the ACE chiplet
+    // A circuit builder is instantiated with the inputs of the circuits plus the 13 needed by the
+    // ACE chiplet
     let mut cb = CircuitBuilder::new(air);
 
     let segments = [0, 1];
@@ -66,11 +72,11 @@ pub fn build_ace_circuit(air: &Air) -> anyhow::Result<(AceNode, AceCircuit)> {
             //                   all-row constraints
             ConstraintDomain::EveryRow | ConstraintDomain::EveryFrame(2) => {
                 Some(cb.node_from_index(air, constraint.node_index()))
-            }
+            },
             ConstraintDomain::FirstRow | ConstraintDomain::LastRow => None,
             ConstraintDomain::EveryFrame(_) => {
                 panic!("invalid integrity constraint domain")
-            }
+            },
         })
         .collect();
 
@@ -113,13 +119,7 @@ pub fn build_ace_circuit(air: &Air) -> anyhow::Result<(AceNode, AceCircuit)> {
     // z₋₂²⋅z₋₁⋅z₀⋅int
     {
         let int = lc.next_linear_combination(&mut cb, integrity_roots);
-        let res = cb.prod([
-            vanish_first,
-            vanish_penultimate,
-            vanish_last,
-            vanish_penultimate,
-            int,
-        ]);
+        let res = cb.prod([vanish_first, vanish_penultimate, vanish_last, vanish_penultimate, int]);
         lhs = cb.add(lhs, res);
     };
 

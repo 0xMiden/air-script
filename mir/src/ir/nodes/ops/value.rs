@@ -16,11 +16,7 @@ pub struct Value {
 
 impl Value {
     pub fn create(value: SpannedMirValue) -> Link<Op> {
-        Op::Value(Self {
-            value,
-            ..Default::default()
-        })
-        .into()
+        Op::Value(Self { value, ..Default::default() }).into()
     }
 }
 
@@ -69,7 +65,8 @@ pub enum MirValue {
     PublicInputTable(PublicInputTableAccess),
     /// A reference to a specific index in the random values array.
     ///
-    /// Random values are not provided by the user in the AirScript program, but are used to expand Bus constraints.
+    /// Random values are not provided by the user in the AirScript program, but are used to expand
+    /// Bus constraints.
     RandomValue(usize),
     /// A binding to a set of consecutive trace columns of a given size.
     TraceAccessBinding(TraceAccessBinding),
@@ -109,7 +106,8 @@ pub enum ConstantValue {
     Matrix(Vec<Vec<u64>>),
 }
 
-/// [TraceAccess] is like [SymbolAccess], but is used to describe an access to a specific trace column or columns.
+/// [TraceAccess] is like [SymbolAccess], but is used to describe an access to a specific trace
+/// column or columns.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TraceAccess {
     /// The trace segment being accessed
@@ -127,11 +125,7 @@ pub struct TraceAccess {
 impl TraceAccess {
     /// Creates a new [TraceAccess].
     pub const fn new(segment: TraceSegmentId, column: TraceColumnIndex, row_offset: usize) -> Self {
-        Self {
-            segment,
-            column,
-            row_offset,
-        }
+        Self { segment, column, row_offset }
     }
 }
 
@@ -213,18 +207,13 @@ pub struct PublicInputTableAccess {
 
 impl PublicInputTableAccess {
     pub const fn new(table_name: Identifier, num_cols: usize) -> Self {
-        Self {
-            table_name,
-            bus_name: None,
-            num_cols,
-        }
+        Self { table_name, bus_name: None, num_cols }
     }
     pub fn set_bus_name(&mut self, bus_name: Identifier) {
         self.bus_name = Some(bus_name);
     }
     pub fn bus_name(&self) -> Identifier {
-        self.bus_name
-            .expect("Bus name should have already been set")
+        self.bus_name.expect("Bus name should have already been set")
     }
 }
 

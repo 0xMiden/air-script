@@ -1,6 +1,5 @@
-use crate::ir::assert_integrity_eq;
-
 use super::compile;
+use crate::ir::assert_integrity_eq;
 
 #[test]
 fn list_comprehension_nested_nobind() {

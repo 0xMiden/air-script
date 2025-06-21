@@ -29,7 +29,8 @@ pub struct TraceSegment {
     pub boundary_constrained: Vec<Span<ColumnBoundaryFlags>>,
 }
 impl TraceSegment {
-    /// Constructs a new [TraceSegment] given a span, segment id, name, and a vector of (Identifier, size) pairs.
+    /// Constructs a new [TraceSegment] given a span, segment id, name, and a vector of (Identifier,
+    /// size) pairs.
     pub fn new(
         span: SourceSpan,
         id: TraceSegmentId,
@@ -44,14 +45,7 @@ impl TraceSegment {
                 1 => Type::Felt,
                 n => Type::Vector(n),
             };
-            bindings.push(TraceBinding::new(
-                binding.span(),
-                name,
-                id,
-                offset,
-                size,
-                ty,
-            ));
+            bindings.push(TraceBinding::new(binding.span(), name, id, offset, size, ty));
             offset += size;
         }
 
@@ -108,10 +102,7 @@ impl fmt::Debug for TraceSegment {
             .field("name", &self.name)
             .field("size", &self.size)
             .field("bindings", &self.bindings)
-            .field(
-                "boundary_constrained",
-                &FormatConstrainedFlags(&self.boundary_constrained),
-            )
+            .field("boundary_constrained", &FormatConstrainedFlags(&self.boundary_constrained))
             .finish()
     }
 }
@@ -195,9 +186,7 @@ impl std::ops::BitAnd<Boundary> for ColumnBoundaryFlags {
 struct FormatConstrainedFlags<'a>(&'a [Span<ColumnBoundaryFlags>]);
 impl fmt::Debug for FormatConstrainedFlags<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_list()
-            .entries(self.0.iter().map(|c| c.item))
-            .finish()
+        f.debug_list().entries(self.0.iter().map(|c| c.item)).finish()
     }
 }
 
@@ -269,19 +258,14 @@ impl TraceBinding {
                         ..*self
                     })
                 }
-            }
+            },
             AccessType::Index(_) if self.is_scalar() => Err(InvalidAccessError::IndexIntoScalar),
             AccessType::Index(idx) if idx >= self.size => Err(InvalidAccessError::IndexOutOfBounds),
             AccessType::Index(idx) => {
                 let offset = self.offset + idx;
-                Ok(Self {
-                    offset,
-                    size: 1,
-                    ty: Type::Felt,
-                    ..*self
-                })
-            }
-            AccessType::Matrix(_, _) => Err(InvalidAccessError::IndexIntoScalar),
+                Ok(Self { offset, size: 1, ty: Type::Felt, ..*self })
+            },
+            AccessType::Matrix(..) => Err(InvalidAccessError::IndexIntoScalar),
         }
     }
 }
@@ -309,18 +293,9 @@ impl fmt::Debug for TraceBinding {
 impl fmt::Display for TraceBinding {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.size == 1 {
-            write!(
-                f,
-                "{}",
-                self.name.as_ref().map(|n| n.as_str()).unwrap_or("?")
-            )
+            write!(f, "{}", self.name.as_ref().map(|n| n.as_str()).unwrap_or("?"))
         } else {
-            write!(
-                f,
-                "{}[{}]",
-                self.name.as_ref().map(|n| n.as_str()).unwrap_or("?"),
-                self.size
-            )
+            write!(f, "{}[{}]", self.name.as_ref().map(|n| n.as_str()).unwrap_or("?"), self.size)
         }
     }
 }

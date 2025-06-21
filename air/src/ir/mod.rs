@@ -5,19 +5,21 @@ mod operation;
 mod trace;
 mod value;
 
-pub use self::bus::{Bus, BusBoundary, BusOp, BusOpKind, BusType, PublicInputTableAccess};
-pub use self::constraints::{ConstraintDomain, ConstraintError, ConstraintRoot, Constraints};
-pub use self::degree::IntegrityConstraintDegree;
-pub use self::operation::Operation;
-pub use self::trace::TraceAccess;
-pub use self::value::{PeriodicColumnAccess, PublicInputAccess, Value};
-
 pub use air_parser::{
     Symbol,
     ast::{
         AccessType, Boundary, Identifier, PeriodicColumn, PublicInput, QualifiedIdentifier,
         TraceSegmentId,
     },
+};
+
+pub use self::{
+    bus::{Bus, BusBoundary, BusOp, BusOpKind, BusType, PublicInputTableAccess},
+    constraints::{ConstraintDomain, ConstraintError, ConstraintRoot, Constraints},
+    degree::IntegrityConstraintDegree,
+    operation::Operation,
+    trace::TraceAccess,
+    value::{PeriodicColumnAccess, PublicInputAccess, Value},
 };
 
 /// The default segment against which a constraint is applied is the main trace segment.
@@ -69,10 +71,7 @@ pub struct Air {
 }
 impl Default for Air {
     fn default() -> Self {
-        Self::new(Identifier::new(
-            SourceSpan::UNKNOWN,
-            Symbol::intern("unnamed"),
-        ))
+        Self::new(Identifier::new(SourceSpan::UNKNOWN, Symbol::intern("unnamed")))
     }
 }
 impl Air {

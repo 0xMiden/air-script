@@ -21,10 +21,7 @@ fn invalid_vector_access_in_boundary_constraint() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]
@@ -48,10 +45,7 @@ fn invalid_matrix_row_access_in_boundary_constraint() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]
@@ -75,10 +69,7 @@ fn invalid_matrix_column_access_in_boundary_constraint() {
         enf clk' = clk + 1;
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]
@@ -102,10 +93,7 @@ fn invalid_vector_access_in_integrity_constraint() {
         enf clk' = clk + A + B[3] - C[1][2];
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]
@@ -129,10 +117,7 @@ fn invalid_matrix_row_access_in_integrity_constraint() {
         enf clk' = clk + A + B[1] - C[3][2];
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }
 
 #[test]
@@ -156,8 +141,5 @@ fn invalid_matrix_column_access_in_integrity_constraint() {
         enf clk' = clk + A + B[1] - C[1][3];
     }";
 
-    expect_diagnostic(
-        source,
-        "attempted to access an index which is out of bounds",
-    );
+    expect_diagnostic(source, "attempted to access an index which is out of bounds");
 }

@@ -1,5 +1,6 @@
-use miden_diagnostics::{SourceSpan, Spanned};
 use std::ops::Deref;
+
+use miden_diagnostics::{SourceSpan, Spanned};
 
 use crate::ir::{BackLink, Child, Link, Node, Op, Parent, Root};
 
@@ -10,8 +11,7 @@ use crate::ir::{BackLink, Child, Link, Node, Op, Parent, Root};
 /// so it can be updated to the correct variant when the inner struct is updated
 /// Note: The [None] variant is used to represent a [Owner] that:
 /// - is not yet initialized
-/// - no longer exists (due to its ref-count dropping to 0).
-///   We refer to those as "stale" nodes.
+/// - no longer exists (due to its ref-count dropping to 0). We refer to those as "stale" nodes.
 #[derive(Clone, Eq, Debug, Spanned)]
 pub enum Owner {
     Function(BackLink<Root>),

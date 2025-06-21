@@ -1,9 +1,13 @@
-use crate::QuadFelt;
-use crate::layout::{InputRegion, Layout};
+use std::iter::zip;
+
 use air_ir::Air;
 use miden_core::Felt;
-use std::iter::zip;
 use winter_math::{FieldElement, StarkField};
+
+use crate::{
+    QuadFelt,
+    layout::{InputRegion, Layout},
+};
 
 /// Set of all inputs required to perform the DEEP-ALI constraint evaluations check.
 /// Note that these should correspond to all values included in the proof transcript,
@@ -46,10 +50,7 @@ impl AirInputs {
         let [main_curr, main_next] = self.main;
         let [aux_curr, aux_next] = self.aux;
         let [quotient_curr, quotient_next] = self.quotient;
-        let segments = [
-            [main_curr, aux_curr, quotient_curr],
-            [main_next, aux_next, quotient_next],
-        ];
+        let segments = [[main_curr, aux_curr, quotient_curr], [main_next, aux_next, quotient_next]];
         AceVars {
             public: self.public,
             segments,
@@ -97,11 +98,7 @@ impl StarkInputs {
         let n = 1 << log_trace_len;
         let z_pow_n = z.exp_vartime(n);
 
-        let max_cycle_len = air
-            .periodic_columns
-            .values()
-            .map(|col| col.values.len() as u64)
-            .max();
+        let max_cycle_len = air.periodic_columns.values().map(|col| col.values.len() as u64).max();
         let z_max_cycle_pow = max_cycle_len.map(|cycle_len| n / cycle_len).unwrap_or(0);
         let z_max_cycle = z.exp_vartime(z_max_cycle_pow);
 
@@ -150,10 +147,9 @@ impl AceVars {
 
         // Trace values
         for row_offset in [0, 1] {
-            for (segment_row, region) in zip(
-                &self.segments[row_offset],
-                &layout.trace_segments[row_offset],
-            ) {
+            for (segment_row, region) in
+                zip(&self.segments[row_offset], &layout.trace_segments[row_offset])
+            {
                 store(&mut mem, region, segment_row.as_slice());
             }
         }

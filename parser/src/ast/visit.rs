@@ -105,7 +105,6 @@ use crate::ast;
 ///     }
 /// }
 /// ```
-///
 pub trait VisitMut<T> {
     fn visit_mut_module(&mut self, module: &mut ast::Module) -> ControlFlow<T> {
         visit_mut_module(self, module)
@@ -600,13 +599,13 @@ where
             visitor.visit_mut_range_bound(&mut range.start)?;
             visitor.visit_mut_range_bound(&mut range.end)?;
             ControlFlow::Continue(())
-        }
+        },
         ast::Expr::Vector(exprs) => {
             for expr in exprs.iter_mut() {
                 visitor.visit_mut_expr(expr)?;
             }
             ControlFlow::Continue(())
-        }
+        },
         ast::Expr::Matrix(matrix) => {
             for exprs in matrix.iter_mut() {
                 for expr in exprs.iter_mut() {
@@ -614,7 +613,7 @@ where
                 }
             }
             ControlFlow::Continue(())
-        }
+        },
         ast::Expr::SymbolAccess(expr) => visitor.visit_mut_symbol_access(expr),
         ast::Expr::Binary(expr) => visitor.visit_mut_binary_expr(expr),
         ast::Expr::Call(expr) => visitor.visit_mut_call(expr),
@@ -709,13 +708,13 @@ where
     V: ?Sized + VisitMut<T>,
 {
     match expr {
-        ast::AccessType::Default | ast::AccessType::Index(_) | ast::AccessType::Matrix(_, _) => {
+        ast::AccessType::Default | ast::AccessType::Index(_) | ast::AccessType::Matrix(..) => {
             ControlFlow::Continue(())
-        }
+        },
         ast::AccessType::Slice(range) => {
             visitor.visit_mut_range_bound(&mut range.start)?;
             visitor.visit_mut_range_bound(&mut range.end)
-        }
+        },
     }
 }
 

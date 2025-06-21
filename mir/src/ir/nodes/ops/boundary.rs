@@ -1,12 +1,13 @@
-use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
+use std::hash::Hash;
+
 use air_parser::ast::Boundary as BoundaryKind;
 use miden_diagnostics::{SourceSpan, Spanned};
-use std::hash::Hash;
+
+use crate::ir::{BackLink, Builder, Child, Link, Node, Op, Owner, Parent, Singleton};
 
 /// A MIR operation to represent bounding a given op, `expr`, to access either the first or last row
 ///
 /// Note: Boundary ops are only valid to describe boundary constraints, not integrity constraints
-///
 #[derive(Clone, PartialEq, Default, Eq, Debug, Builder, Spanned)]
 #[enum_wrapper(Op)]
 pub struct Boundary {
@@ -31,13 +32,7 @@ impl Hash for Boundary {
 
 impl Boundary {
     pub fn create(expr: Link<Op>, kind: BoundaryKind, span: SourceSpan) -> Link<Op> {
-        Op::Boundary(Self {
-            expr,
-            kind,
-            span,
-            ..Default::default()
-        })
-        .into()
+        Op::Boundary(Self { expr, kind, span, ..Default::default() }).into()
     }
 }
 

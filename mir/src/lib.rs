@@ -5,9 +5,9 @@ pub mod passes;
 #[cfg(test)]
 mod tests;
 
-pub use self::codegen::CodeGenerator;
-
 use miden_diagnostics::{Diagnostic, ToDiagnostic};
+
+pub use self::codegen::CodeGenerator;
 
 /// Error type that can be returned during the Mir passes
 #[derive(Debug, thiserror::Error)]

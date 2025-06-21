@@ -14,8 +14,8 @@
 //! * `boundary_constraints`
 //! * `integrity_constraints`
 //!
-//! All other declarations are module-scoped, and must be explicitly imported by a module which wishes
-//! to reference them. Not all items are importable however, only the following:
+//! All other declarations are module-scoped, and must be explicitly imported by a module which
+//! wishes to reference them. Not all items are importable however, only the following:
 //!
 //! * constants
 //! * evaluators
@@ -83,11 +83,7 @@ pub struct Bus {
 impl Bus {
     /// Creates a new bus declaration
     pub const fn new(span: SourceSpan, name: Identifier, bus_type: BusType) -> Self {
-        Self {
-            span,
-            name,
-            bus_type,
-        }
+        Self { span, name, bus_type }
     }
 }
 #[derive(Default, Copy, Hash, Debug, Clone, PartialEq, Eq)]
@@ -173,7 +169,7 @@ impl ConstantExpr {
                 let num_rows = rows.len();
                 let num_cols = rows.first().unwrap().len();
                 Type::Matrix(num_rows, num_cols)
-            }
+            },
         }
     }
 
@@ -188,7 +184,7 @@ impl fmt::Display for ConstantExpr {
             Self::Scalar(value) => write!(f, "{value}"),
             Self::Vector(values) => {
                 write!(f, "{}", DisplayList(values.as_slice()))
-            }
+            },
             Self::Matrix(values) => write!(
                 f,
                 "{}",
@@ -225,16 +221,11 @@ impl PartialEq for Import {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::All { module: l }, Self::All { module: r }) => l == r,
-            (
-                Self::Partial {
-                    module: l,
-                    items: ls,
-                },
-                Self::Partial {
-                    module: r,
-                    items: rs,
-                },
-            ) if l == r => ls.difference(rs).next().is_none(),
+            (Self::Partial { module: l, items: ls }, Self::Partial { module: r, items: rs })
+                if l == r =>
+            {
+                ls.difference(rs).next().is_none()
+            },
             _ => false,
         }
     }
@@ -352,22 +343,12 @@ impl Eq for PublicInput {}
 impl PartialEq for PublicInput {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (
-                Self::Vector {
-                    name: l, size: ls, ..
-                },
-                Self::Vector {
-                    name: r, size: rs, ..
-                },
-            ) => l == r && ls == rs,
-            (
-                Self::Table {
-                    name: l, size: lc, ..
-                },
-                Self::Table {
-                    name: r, size: rc, ..
-                },
-            ) => l == r && lc == rc,
+            (Self::Vector { name: l, size: ls, .. }, Self::Vector { name: r, size: rs, .. }) => {
+                l == r && ls == rs
+            },
+            (Self::Table { name: l, size: lc, .. }, Self::Table { name: r, size: rc, .. }) => {
+                l == r && lc == rc
+            },
             _ => false,
         }
     }
@@ -392,12 +373,7 @@ impl EvaluatorFunction {
         params: Vec<TraceSegment>,
         body: Vec<Statement>,
     ) -> Self {
-        Self {
-            span,
-            name,
-            params,
-            body,
-        }
+        Self { span, name, params, body }
     }
 }
 impl Eq for EvaluatorFunction {}
@@ -430,13 +406,7 @@ impl Function {
         return_type: Type,
         body: Vec<Statement>,
     ) -> Self {
-        Self {
-            span,
-            name,
-            params,
-            return_type,
-            body,
-        }
+        Self { span, name, params, return_type, body }
     }
 
     pub fn param_types(&self) -> Vec<Type> {

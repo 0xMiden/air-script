@@ -44,11 +44,7 @@ pub struct PublicInputTableAccess {
 }
 impl PublicInputTableAccess {
     pub const fn new(table_name: Identifier, bus_name: Identifier, num_cols: usize) -> Self {
-        Self {
-            table_name,
-            num_cols,
-            bus_name,
-        }
+        Self { table_name, num_cols, bus_name }
     }
 }
 
@@ -65,11 +61,7 @@ pub struct BusOp {
 
 impl BusOp {
     pub fn new(columns: Vec<NodeIndex>, latch: NodeIndex, op_kind: BusOpKind) -> Self {
-        Self {
-            columns,
-            latch,
-            op_kind,
-        }
+        Self { columns, latch, op_kind }
     }
 }
 
@@ -81,12 +73,6 @@ impl Bus {
         last: BusBoundary,
         bus_ops: Vec<BusOp>,
     ) -> Self {
-        Self {
-            name,
-            bus_type,
-            first,
-            last,
-            bus_ops,
-        }
+        Self { name, bus_type, first, last, bus_ops }
     }
 }

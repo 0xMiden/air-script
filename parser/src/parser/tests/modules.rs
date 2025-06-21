@@ -1,8 +1,7 @@
 use miden_diagnostics::SourceSpan;
 
-use crate::ast::*;
-
 use super::ParseTest;
+use crate::ast::*;
 
 #[test]
 fn use_declaration() {
@@ -85,26 +84,18 @@ fn modules_integration_test() {
             vec![enforce_all!(lc!((("%1", range!(0..1))) => eq!(access!(clk, 1, Type::Felt), add!(access!(clk, Type::Felt), int!(1))), when access!(foo, k0, Type::Felt)))],
         ),
     );
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
-    );
+    expected
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2));
     expected
         .integrity_constraints
-        .push(enforce!(call!(foo::foo_constraint(vector!(access!(
-            clk,
-            Type::Felt
-        ))))));
+        .push(enforce!(call!(foo::foo_constraint(vector!(access!(clk, Type::Felt))))));
     expected
         .integrity_constraints
-        .push(enforce!(call!(bar::bar_constraint(vector!(access!(
-            clk,
-            Type::Felt
-        ))))));
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(clk, Boundary::First, Type::Felt),
-        int!(0)
-    )));
+        .push(enforce!(call!(bar::bar_constraint(vector!(access!(clk, Type::Felt))))));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(clk, Boundary::First, Type::Felt), int!(0))));
 
     ParseTest::new()
         .expect_program_ast_from_file("src/parser/tests/input/import_example.air", expected);

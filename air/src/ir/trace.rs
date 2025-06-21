@@ -1,6 +1,7 @@
 use air_parser::ast::{TraceColumnIndex, TraceSegmentId};
 
-/// [TraceAccess] is like [SymbolAccess], but is used to describe an access to a specific trace column or columns.
+/// [TraceAccess] is like [SymbolAccess], but is used to describe an access to a specific trace
+/// column or columns.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TraceAccess {
     /// The trace segment being accessed
@@ -18,11 +19,7 @@ pub struct TraceAccess {
 impl TraceAccess {
     /// Creates a new [TraceAccess].
     pub const fn new(segment: TraceSegmentId, column: TraceColumnIndex, row_offset: usize) -> Self {
-        Self {
-            segment,
-            column,
-            row_offset,
-        }
+        Self { segment, column, row_offset }
     }
 
     /// Creates a new [TraceAccess] with a new column index that is updated according to the

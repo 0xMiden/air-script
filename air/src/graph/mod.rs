@@ -112,14 +112,14 @@ impl AlgebraicGraph {
                     );
                     // the default domain for [IntegrityConstraints] is `EveryRow`
                     Ok((DEFAULT_SEGMENT, ConstraintDomain::EveryRow))
-                }
+                },
                 Value::PublicInput(_) => {
                     assert!(
                         !default_domain.is_integrity(),
                         "unexpected access to public input in integrity constraint"
                     );
                     Ok((DEFAULT_SEGMENT, default_domain))
-                }
+                },
                 Value::TraceAccess(trace_access) => {
                     let domain = if default_domain.is_boundary() {
                         assert_eq!(
@@ -132,7 +132,7 @@ impl AlgebraicGraph {
                     };
 
                     Ok((trace_access.segment, domain))
-                }
+                },
             },
             Operation::Add(lhs, rhs) | Operation::Sub(lhs, rhs) | Operation::Mul(lhs, rhs) => {
                 let (lhs_segment, lhs_domain) = self.node_details(lhs, default_domain)?;
@@ -142,7 +142,7 @@ impl AlgebraicGraph {
                 let domain = lhs_domain.merge(rhs_domain)?;
 
                 Ok((trace_segment, domain))
-            }
+            },
         }
     }
 
@@ -177,23 +177,23 @@ impl AlgebraicGraph {
                 Value::PeriodicColumn(pc) => {
                     cycles.insert(pc.name, pc.cycle);
                     0
-                }
+                },
             },
             Operation::Add(lhs, rhs) => {
                 let lhs_base = self.accumulate_degree(cycles, lhs);
                 let rhs_base = self.accumulate_degree(cycles, rhs);
                 lhs_base.max(rhs_base)
-            }
+            },
             Operation::Sub(lhs, rhs) => {
                 let lhs_base = self.accumulate_degree(cycles, lhs);
                 let rhs_base = self.accumulate_degree(cycles, rhs);
                 lhs_base.max(rhs_base)
-            }
+            },
             Operation::Mul(lhs, rhs) => {
                 let lhs_base = self.accumulate_degree(cycles, lhs);
                 let rhs_base = self.accumulate_degree(cycles, rhs);
                 lhs_base + rhs_base
-            }
+            },
         }
     }
 }

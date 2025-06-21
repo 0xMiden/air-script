@@ -12,12 +12,12 @@ mod source_sections;
 mod trace;
 mod variables;
 
-pub use crate::CompileError;
-
 use std::sync::Arc;
 
 use air_pass::Pass;
 use miden_diagnostics::{CodeMap, DiagnosticsConfig, DiagnosticsHandler, Verbosity};
+
+pub use crate::CompileError;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Pipeline {
@@ -33,7 +33,7 @@ pub fn compile(source: &str, pipeline: Pipeline) -> Result<crate::Air, ()> {
             compiler.diagnostics.emit(err);
             compiler.emitter.print_captured_to_stderr();
             Err(())
-        }
+        },
     }
 }
 
@@ -43,7 +43,7 @@ pub fn expect_diagnostic(source: &str, expected: &str, pipeline: Pipeline) {
     let err = match compiler.compile(source, pipeline) {
         Ok(ref ast) => {
             panic!("expected compilation to fail, got {ast:#?}");
-        }
+        },
         Err(err) => err,
     };
     compiler.diagnostics.emit(err);
@@ -76,17 +76,10 @@ impl Compiler {
     pub fn new(config: DiagnosticsConfig) -> Self {
         let codemap = Arc::new(CodeMap::new());
         let emitter = Arc::new(SplitEmitter::new());
-        let diagnostics = Arc::new(DiagnosticsHandler::new(
-            config,
-            codemap.clone(),
-            emitter.clone(),
-        ));
+        let diagnostics =
+            Arc::new(DiagnosticsHandler::new(config, codemap.clone(), emitter.clone()));
 
-        Self {
-            codemap,
-            emitter,
-            diagnostics,
-        }
+        Self { codemap, emitter, diagnostics }
     }
 
     pub fn compile(&self, source: &str, pipeline: Pipeline) -> Result<crate::Air, CompileError> {
@@ -113,7 +106,7 @@ impl Compiler {
                                 .chain(crate::passes::AstToAir::new(&self.diagnostics));
                         pipeline.run(ast)
                     })
-            }
+            },
         }
     }
 }
@@ -138,8 +131,9 @@ impl SplitEmitter {
     }
 
     pub fn print_captured_to_stderr(&self) {
-        use miden_diagnostics::Emitter;
         use std::io::Write;
+
+        use miden_diagnostics::Emitter;
 
         let mut copy = self.default.buffer();
         let captured = self.capture.captured();

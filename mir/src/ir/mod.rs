@@ -101,7 +101,8 @@ where
 }
 
 /// A trait implemented by all nodes.
-/// Will be derivable later. The implementation and type-safe builder is currently manual while we tweak the design
+/// Will be derivable later. The implementation and type-safe builder is currently manual while we
+/// tweak the design
 pub trait Builder {
     type Empty;
     type Full;

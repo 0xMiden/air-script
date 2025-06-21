@@ -1,10 +1,14 @@
-use crate::circuit::{ArithmeticOp, Circuit, Node, OperationNode};
-use crate::layout::{Layout, StarkVar};
+use std::collections::BTreeMap;
+
 use air_ir::{
     Air, NodeIndex, Operation as AirOperation, PeriodicColumnAccess, QualifiedIdentifier, Value,
 };
 use miden_core::Felt;
-use std::collections::BTreeMap;
+
+use crate::{
+    circuit::{ArithmeticOp, Circuit, Node, OperationNode},
+    layout::{Layout, StarkVar},
+};
 
 /// [`CircuitBuilder`] is the only way to build a [`Circuit`]. It guarantees the following
 /// properties:
@@ -80,13 +84,13 @@ impl CircuitBuilder {
                     ArithmeticOp::Add => c_l + c_r,
                 };
                 self.constant(c.as_int())
-            }
+            },
             // Store new `Operation` node
             _ => {
                 let index = self.operations.len();
                 self.operations.push(operation);
                 Node::Operation(index)
-            }
+            },
         };
 
         // Cache the operation node for future use.
@@ -125,37 +129,34 @@ impl CircuitBuilder {
         let node = match air_op {
             AirOperation::Value(v) => match v {
                 Value::Constant(c) => self.constant(*c),
-                Value::TraceAccess(access) => self
-                    .layout
-                    .trace_access_node(access)
-                    .expect("invalid trace access"),
-                Value::PeriodicColumn(access) => self
-                    .periodic_column(air, access)
-                    .expect("invalid periodic column access"),
+                Value::TraceAccess(access) => {
+                    self.layout.trace_access_node(access).expect("invalid trace access")
+                },
+                Value::PeriodicColumn(access) => {
+                    self.periodic_column(air, access).expect("invalid periodic column access")
+                },
                 Value::PublicInput(pi) => self.layout.public_inputs[&pi.name]
                     .as_node(pi.index)
                     .expect("invalid public input access"),
-                Value::RandomValue(idx) => self
-                    .layout
-                    .random_values
-                    .as_node(*idx)
-                    .expect("invalid random value index"),
+                Value::RandomValue(idx) => {
+                    self.layout.random_values.as_node(*idx).expect("invalid random value index")
+                },
             },
             AirOperation::Add(l_idx, r_idx) => {
                 let node_l = self.node_from_index(air, l_idx);
                 let node_r = self.node_from_index(air, r_idx);
                 self.add(node_l, node_r)
-            }
+            },
             AirOperation::Sub(l_idx, r_idx) => {
                 let node_l = self.node_from_index(air, l_idx);
                 let node_r = self.node_from_index(air, r_idx);
                 self.sub(node_l, node_r)
-            }
+            },
             AirOperation::Mul(l_idx, r_idx) => {
                 let node_l = self.node_from_index(air, l_idx);
                 let node_r = self.node_from_index(air, r_idx);
                 self.mul(node_l, node_r)
-            }
+            },
         };
         self.air_node_cache.insert(*air_op, node);
         node
@@ -252,8 +253,8 @@ impl CircuitBuilder {
             .unwrap_or_else(|| self.constant(0))
     }
 
-    /// Returns a [`Node`] corresponding to the evaluation of the `periodic_column` at the appropriate
-    /// power of `z`. The evaluation is cached to avoid unnecessary computation.
+    /// Returns a [`Node`] corresponding to the evaluation of the `periodic_column` at the
+    /// appropriate power of `z`. The evaluation is cached to avoid unnecessary computation.
     fn periodic_column(
         &mut self,
         air: &Air,
@@ -269,12 +270,7 @@ impl CircuitBuilder {
         let periodic_column = &air.periodic_columns.get(&ident)?;
 
         // Maximum length of all periodic columns in the air.
-        let max_col_len = air
-            .periodic_columns
-            .values()
-            .map(|col| col.values.len())
-            .max()
-            .unwrap();
+        let max_col_len = air.periodic_columns.values().map(|col| col.values.len()).max().unwrap();
 
         // The power of `z` for the longest column. Let `k` such that `z_max_col = z^k`,
         // where `k = trace_len / max_cycle_len`
@@ -293,17 +289,11 @@ impl CircuitBuilder {
         // Interpolate the values of the column, converting the resulting coefficients
         // to constant nodes
         let poly_nodes: Vec<_> = {
-            let mut column: Vec<_> = periodic_column
-                .values
-                .iter()
-                .map(|val| Felt::new(*val))
-                .collect();
+            let mut column: Vec<_> =
+                periodic_column.values.iter().map(|val| Felt::new(*val)).collect();
             let inv_twiddles = winter_math::fft::get_inv_twiddles::<Felt>(column.len());
             winter_math::fft::interpolate_poly(&mut column, &inv_twiddles);
-            column
-                .into_iter()
-                .map(|coeff| self.constant(coeff.as_int()))
-                .collect()
+            column.into_iter().map(|coeff| self.constant(coeff.as_int())).collect()
         };
 
         // Evaluate the polynomial at z_col
@@ -326,10 +316,7 @@ pub struct LinearCombination {
 
 impl LinearCombination {
     pub fn new(alpha: Node) -> Self {
-        Self {
-            alpha,
-            prev_alpha: None,
-        }
+        Self { alpha, prev_alpha: None }
     }
 
     /// Returns the linear combination of the [`Node`]s returned by the `els` [`Iterator`] with the
@@ -434,16 +421,10 @@ mod tests {
         let res = cb.add(res_1, res_2);
 
         let alpha = QuadFelt::from(Felt::new(5u64));
-        let coeffs: Vec<_> = (0..6)
-            .map(|i| QuadFelt::from(Felt::new(1 + i as u64)))
-            .collect();
+        let coeffs: Vec<_> = (0..6).map(|i| QuadFelt::from(Felt::new(1 + i as u64))).collect();
 
-        let result_expected = coeffs
-            .iter()
-            .rev()
-            .copied()
-            .reduce(|acc, coeff| acc * alpha + coeff)
-            .unwrap();
+        let result_expected =
+            coeffs.iter().rev().copied().reduce(|acc, coeff| acc * alpha + coeff).unwrap();
 
         let circuit = cb.into_ace_circuit();
         let inputs: Vec<_> = [alpha].into_iter().chain(coeffs).collect();

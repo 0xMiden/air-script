@@ -1,6 +1,9 @@
-use crate::circuit::{ArithmeticOp, Circuit, Node, OperationNode};
-use crate::layout::StarkVar;
 use std::fmt::{Display, Write};
+
+use crate::{
+    circuit::{ArithmeticOp, Circuit, Node, OperationNode},
+    layout::StarkVar,
+};
 
 impl Circuit {
     /// Serialization to Graphviz Dot format for debugging purposes. Display on
@@ -61,10 +64,7 @@ impl Circuit {
         for (op_idx, op_node) in self.operations.iter().enumerate() {
             let OperationNode { op, node_l, node_r } = op_node;
             let op_node = Node::Operation(op_idx);
-            writeln!(
-                f,
-                "{op_node} [label=\"{op_node}\\n{node_l} {op} {node_r}\"]"
-            )?;
+            writeln!(f, "{op_node} [label=\"{op_node}\\n{node_l} {op} {node_r}\"]")?;
             writeln!(f, "{node_l} -> {op_node}")?;
             writeln!(f, "{node_r} -> {op_node}")?;
         }
@@ -93,13 +93,13 @@ impl Display for Node {
         match self {
             Node::Input(idx) => {
                 write!(f, "input{idx}")
-            }
+            },
             Node::Constant(idx) => {
                 write!(f, "const{idx}")
-            }
+            },
             Node::Operation(idx) => {
                 write!(f, "op{idx}")
-            }
+            },
         }
     }
 }

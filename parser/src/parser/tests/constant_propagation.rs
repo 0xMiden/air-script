@@ -1,11 +1,9 @@
 use air_pass::Pass;
 use miden_diagnostics::SourceSpan;
-
 use pretty_assertions::assert_eq;
 
-use crate::{ast::*, transforms::ConstantPropagation};
-
 use super::ParseTest;
+use crate::{ast::*, transforms::ConstantPropagation};
 
 #[test]
 fn test_constant_propagation() {
@@ -57,7 +55,7 @@ fn test_constant_propagation() {
         Err(err) => {
             test.diagnostics.emit(err);
             panic!("expected parsing to succeed, see diagnostics for details");
-        }
+        },
         Ok(ast) => ast,
     };
 
@@ -65,39 +63,26 @@ fn test_constant_propagation() {
     let program = pass.run(program).unwrap();
 
     let mut expected = Program::new(ident!(root));
-    expected.trace_columns.push(trace_segment!(
-        0,
-        "$main",
-        [(clk, 1), (a, 1), (b, 2), (c, 1)]
-    ));
-    expected.public_inputs.insert(
-        ident!(inputs),
-        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
-    );
     expected
-        .constants
-        .insert(ident!(root, A), constant!(A = [2, 4, 6, 8]));
+        .trace_columns
+        .push(trace_segment!(0, "$main", [(clk, 1), (a, 1), (b, 2), (c, 1)]));
     expected
-        .constants
-        .insert(ident!(root, B), constant!(B = [[1, 1], [2, 2]]));
-    expected
-        .constants
-        .insert(ident!(lib, EXP), constant!(EXP = 2));
+        .public_inputs
+        .insert(ident!(inputs), PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0));
+    expected.constants.insert(ident!(root, A), constant!(A = [2, 4, 6, 8]));
+    expected.constants.insert(ident!(root, B), constant!(B = [[1, 1], [2, 2]]));
+    expected.constants.insert(ident!(lib, EXP), constant!(EXP = 2));
     // When constant propagation is done, the boundary constraints should look like:
     //     enf a.first = 1
-    expected.boundary_constraints.push(enforce!(eq!(
-        bounded_access!(a, Boundary::First, Type::Felt),
-        int!(1)
-    )));
+    expected
+        .boundary_constraints
+        .push(enforce!(eq!(bounded_access!(a, Boundary::First, Type::Felt), int!(1))));
     // When constant propagation is done, the integrity constraints should look like:
     //     enf test_constraint(b)
     //     enf a + 4 = c + 5
     expected
         .integrity_constraints
-        .push(enforce!(call!(lib::test_constraint(expr!(access!(
-            b,
-            Type::Vector(2)
-        ))))));
+        .push(enforce!(call!(lib::test_constraint(expr!(access!(b, Type::Vector(2)))))));
     expected.integrity_constraints.push(enforce!(eq!(
         add!(access!(a, Type::Felt), int!(4)),
         add!(access!(c, Type::Felt), int!(5))

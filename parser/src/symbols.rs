@@ -1,10 +1,5 @@
-use core::fmt;
-use core::mem;
-use core::ops::Deref;
-use core::str;
-
-use std::collections::BTreeMap;
-use std::sync::RwLock;
+use core::{fmt, mem, ops::Deref, str};
+use std::{collections::BTreeMap, sync::RwLock};
 
 lazy_static::lazy_static! {
     static ref SYMBOL_TABLE: SymbolTable = SymbolTable::new();
@@ -23,12 +18,8 @@ pub mod predefined {
     /// The symbol `prod`
     pub const Prod: Symbol = Symbol::new(3);
 
-    pub(super) const __SYMBOLS: &[(Symbol, &str)] = &[
-        (Main, "$main"),
-        (Builtin, "$builtin"),
-        (Sum, "sum"),
-        (Prod, "prod"),
-    ];
+    pub(super) const __SYMBOLS: &[(Symbol, &str)] =
+        &[(Main, "$main"), (Builtin, "$builtin"), (Sum, "sum"), (Prod, "prod")];
 }
 
 pub use self::predefined::*;
@@ -38,9 +29,7 @@ struct SymbolTable {
 }
 impl SymbolTable {
     pub fn new() -> Self {
-        Self {
-            interner: RwLock::new(Interner::new()),
-        }
+        Self { interner: RwLock::new(Interner::new()) }
     }
 }
 unsafe impl Sync for SymbolTable {}
