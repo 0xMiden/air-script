@@ -1,6 +1,6 @@
 [package]
 name = "air-mir"
-version = "0.4.0"
+version = "0.5.0"
 description = "Intermediate representation for the AirScript language"
 authors.workspace = true
 readme = "README.md"
@@ -12,10 +12,10 @@ rust-version.workspace = true
 edition.workspace = true
 
 [dependencies]
-air-parser = { package = "air-parser", path = "../parser", version = "0.4" }
-air-pass = { package = "air-pass", path = "../pass", version = "0.4" }
+air-parser = { package = "air-parser", path = "../parser", version = "0.5" }
+air-pass = { package = "air-pass", path = "../pass", version = "0.5" }
 anyhow = { workspace = true }
-derive-ir = { package = "air-derive-ir", path = "./derive-ir", version = "0.4" }
+derive-ir = { package = "air-derive-ir", path = "./derive-ir", version = "0.5" }
 miden-diagnostics = { workspace = true }
 pretty_assertions = "1.4"
 thiserror = { workspace = true }
