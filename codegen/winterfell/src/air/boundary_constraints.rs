@@ -125,6 +125,9 @@ fn add_aux_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
 
                     func_body.line(assertion);
                 },
+                // Empty bus constraints have already been expanded in the algebraic graph,
+                // and unconstrained buses yield no constraints, so we do nothing here in these
+                // cases.
                 air_ir::BusBoundary::Null | air_ir::BusBoundary::Unconstrained => {},
             }
         }
