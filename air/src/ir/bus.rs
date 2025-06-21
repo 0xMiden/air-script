@@ -30,7 +30,7 @@ pub enum BusBoundary {
     Unconstrained,
 }
 
-/// Represents an access of a public input table, similar in nature to [TraceAccess].
+/// Represents an access of a public input table.
 ///
 /// It can only be bound to a [Bus]'s .first or .last boundary constraints.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

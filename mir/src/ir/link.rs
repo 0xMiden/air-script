@@ -191,7 +191,7 @@ where
     }
 }
 
-/// A wrapper around a [Link<T>] to block recursive implementations of [PartialEq] and [Hash].
+/// A wrapper around a [`Link<T>`] to block recursive implementations of [PartialEq] and [Hash].
 /// A [Singleton] is used when the following properties are desired:
 /// - The reference count of the field needs to be kept at >1 once instantiated.
 /// - The field should be ignored in comparisons and hashing.

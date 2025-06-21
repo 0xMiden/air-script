@@ -41,12 +41,12 @@ type QuadFelt = QuadExtension<Felt>;
 ///   - `n` is the length of the trace.
 ///
 /// This is equivalent to the check
-/// ```ignore
+/// ```text
 ///     num₀/[(zⁿ - 1)/[(z - g⁻¹)(z - g⁻²)]] + num₁/(z - 1) + num₂/(z - g⁻²) = Q(z)
 /// ```
 ///
 /// The ACE chiplet expects the inputs of the original AirScript, with the order defined by
-/// [`AceLayout`]:
+/// `AceLayout`:
 /// - the public inputs of the AirScript e.g. `public_inputs { stack_inputs[16] }`,
 /// - auxiliary randomness of the AirScript e.g. `random_values { rand: [2] }`,
 /// - the main segment of trace inputs of the AirScript e.g. `trace_columns { main: [a b] }`,
@@ -57,7 +57,7 @@ type QuadFelt = QuadExtension<Felt>;
 /// - a dummy section of 8 quotient evaluation for the next row, unused by the ACE circuit.
 ///
 /// Additionally, the ACE chiplet expects the following 5 auxiliary "STARK" inputs, whose order
-/// is defined by [`StarkVar`], given by `[g⁻¹, g⁻¹, α, z, zⁿ, zᵐᵃˣ`].
+/// is defined by `StarkVar`, given by `[g⁻¹, g⁻¹, α, z, zⁿ, zᵐᵃˣ`].
 pub fn build_ace_circuit(air: &Air) -> anyhow::Result<(AceNode, AceCircuit)> {
     // A circuit builder is instantiated with the inputs of the circuits plus the 13 needed by the
     // ACE chiplet

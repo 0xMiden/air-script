@@ -1,10 +1,10 @@
 //! The [IntegrityConstraintDegree] struct and documentation contained in this file is a duplicate
 //! of the [TransitionConstraintDegree] struct defined in the Winterfell STARK prover library
-//! (https://github.com/novifinancial/winterfell), which is licensed under the MIT license. The
+//! (<https://github.com/novifinancial/winterfell>), which is licensed under the MIT license. The
 //! implementation in this file is a subset of the Winterfell code.
 //!
 //! The original code is available in the Winterfell library in the `air` crate:
-//! https://github.com/novifinancial/winterfell/blob/main/air/src/air/transition/degree.rs
+//! <https://github.com/novifinancial/winterfell/blob/main/air/src/air/transition/degree.rs>
 
 use super::MIN_CYCLE_LENGTH;
 

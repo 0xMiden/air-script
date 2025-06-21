@@ -13,7 +13,7 @@ const NUM_QUOTIENT_PARTS: usize = 8;
 
 /// Describes the layout of inputs given to an ACE circuit.
 /// Each set of variables is aligned to the next multiple of 4, ensuring they can be efficiently
-/// unhashed from the transcript and that each input region is aligned to [`HASH_ALIGNMENT`].
+/// unhashed from the transcript and that each input region is aligned to `HASH_ALIGNMENT`.
 ///
 /// We assume the following about the underlying `Air` from which the layout is constructed
 /// - The proof always contains a `main` and `aux` segment, even when the latter is unused,
@@ -54,7 +54,7 @@ pub struct Layout {
 
 impl Layout {
     /// Returns a new [`Layout`] from a description of an [`Air`]. All regions are padded according
-    /// to [`HASH_ALIGNMENT`], ensuring that each section starts at a word-aligned memory pointer.
+    /// to `HASH_ALIGNMENT`, ensuring that each section starts at a word-aligned memory pointer.
     pub fn new(air: &Air) -> Self {
         let mut inputs_offset = 0;
 

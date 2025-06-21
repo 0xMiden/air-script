@@ -4,7 +4,8 @@ use miden_diagnostics::{SourceSpan, Spanned};
 use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner, Singleton};
 
 /// A MIR operation to represent a known value, [Value].
-/// Wraps a [SpannedMirValue] to represent a known value in the [MIR].
+///
+/// Wraps a [SpannedMirValue] to represent a known value in the MIR.
 #[derive(Default, Clone, PartialEq, Eq, Debug, Hash, Builder, Spanned)]
 #[enum_wrapper(Op)]
 pub struct Value {
@@ -45,7 +46,7 @@ impl Child for Value {
     }
 }
 
-/// Represents a known value in the [MIR].
+/// Represents a known value in the MIR.
 ///
 /// Values are either constant, or evaluated at runtime using the context
 /// provided to an AirScript program (i.e. public inputs, etc.).
@@ -78,7 +79,7 @@ pub enum MirValue {
     Unconstrained,
 }
 
-/// [BusAccess] is like [SymbolAccess], but is used to describe an access to a specific bus.
+/// [BusAccess] is like SymbolAccess, but is used to describe an access to a specific bus.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BusAccess {
     /// The trace segment being accessed
@@ -106,7 +107,7 @@ pub enum ConstantValue {
     Matrix(Vec<Vec<u64>>),
 }
 
-/// [TraceAccess] is like [SymbolAccess], but is used to describe an access to a specific trace
+/// [TraceAccess] is like SymbolAccess, but is used to describe an access to a specific trace
 /// column or columns.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TraceAccess {
@@ -138,7 +139,7 @@ pub struct TraceAccessBinding {
     pub size: usize,
 }
 
-/// Represents a typed value in the [MIR]
+/// Represents a typed value in the MIR.
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Spanned)]
 pub struct SpannedMirValue {
     #[span]
@@ -164,7 +165,7 @@ impl From<ast::Type> for MirType {
     }
 }
 
-/// Represents an access of a [PeriodicColumn], similar in nature to [TraceAccess].
+/// Represents an access of a PeriodicColumn, similar in nature to [TraceAccess].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct PeriodicColumnAccess {
     pub name: QualifiedIdentifier,
@@ -176,7 +177,7 @@ impl PeriodicColumnAccess {
     }
 }
 
-/// Represents an access of a [PublicInput], similar in nature to [TraceAccess].
+/// Represents an access of a PublicInput, similar in nature to [TraceAccess].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct PublicInputAccess {
     /// The name of the public input to access

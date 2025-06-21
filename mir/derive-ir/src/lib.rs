@@ -5,16 +5,15 @@ use builder::impl_builder;
 use proc_macro::TokenStream;
 use syn::{DeriveInput, parse_macro_input};
 
-///
 /// Derive the [Builder] trait for a struct.
+///
 /// Generates a type-level state machine for transitioning between states.
 ///
-/// States correspond to which fields have been set or not.
-/// It takes into account the type of the fields.
-/// The following types are treated as optional fields:
-/// - [BackLink<T>]
-/// - [Vec<T>]
-/// - [Link<Vec<T>>]
+/// States correspond to which fields have been set or not. It takes into account the type of the
+/// fields. The following types are treated as optional fields:
+/// - `BackLink<T>`
+/// - `Vec<T>`
+/// - `Link<Vec<T>>`
 ///
 /// For example, given the following struct:
 /// ```ignore
@@ -58,10 +57,10 @@ use syn::{DeriveInput, parse_macro_input};
 /// ];
 /// ```
 ///
-/// We generate a transition table for each state,
-/// which maps from the current state to the next state.
-/// rows are indexed by the current state,
-/// columns by the method thst transitions to the next state.
+/// We generate a transition table for each state, which maps from the current state to the next
+/// state. rows are indexed by the current state, columns by the method that transitions to the next
+/// state.
+///
 /// ```ignore
 /// let transitions = [
 ///     /* 0: */ [0, 0, 1, 2, 0, 0],
@@ -71,14 +70,14 @@ use syn::{DeriveInput, parse_macro_input};
 /// ];
 /// ```
 ///
-/// We then generate an implementation for each state,
-/// with a method for each field., which transitions to the next state.
-/// The [enum_wrapper] attribute is used to automatically wrap the struct in a Link<enum_wrapper>
-/// to reduce boilerplate.
-/// The only supported [enum_wrapper]s are `Op` and `Root`.
+/// We then generate an implementation for each state, with a method for each field., which
+/// transitions to the next state. The `enum_wrapper`` attribute is used to automatically wrap the
+/// struct in a `Link<enum_wrapper>`` to reduce boilerplate. The only supported `enum_wrapper`s are
+/// `Op` and `Root`.
 ///
 /// The following API is generated:
-/// ```ignore
+///
+/// ```text
 /// let a: Link<Owner> = todo!();
 /// let b0: Link<Owner> = todo!();
 /// let b1: Link<Owner> = todo!();
@@ -109,7 +108,8 @@ use syn::{DeriveInput, parse_macro_input};
 ///             e: vec![e0, e1],
 ///             f: Link::new(vec![f0, f1]),
 ///         }
-///     );
+///     )
+/// );
 /// ```
 #[proc_macro_derive(Builder, attributes(enum_wrapper))]
 pub fn derive_builder(input: TokenStream) -> TokenStream {

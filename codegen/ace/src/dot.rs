@@ -7,7 +7,7 @@ use crate::{
 
 impl Circuit {
     /// Serialization to Graphviz Dot format for debugging purposes. Display on
-    /// https://dreampuf.github.io/GraphvizOnline or using `dot -Tsvg tests/regressions/0.dot > 0.svg`
+    /// <https://dreampuf.github.io/GraphvizOnline> or using `dot -Tsvg tests/regressions/0.dot > 0.svg`
     pub fn to_dot(&self) -> Result<String, std::fmt::Error> {
         let mut f = String::new();
         writeln!(f, "digraph G {{")?;

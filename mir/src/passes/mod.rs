@@ -7,8 +7,7 @@ mod visitor;
 //mod value_numbering;
 //pub use constant_propagation::ConstantPropagation;
 //pub use value_numbering::ValueNumbering;
-use std::collections::HashMap;
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 pub use inlining::Inlining;
 use miden_diagnostics::Spanned;

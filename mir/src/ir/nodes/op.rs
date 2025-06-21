@@ -11,8 +11,9 @@ use crate::ir::{
     Value, Vector, get_inner, get_inner_mut,
 };
 
-/// The combined [Op]s and leaves of the MIR Graph
-/// These represent the operations that can be present in [Root] bodies
+/// The combined [Op]s and leaves of the MIR Graph.
+///
+/// These represent the operations that can be present in Root bodies
 /// The [Op] enum owns it's inner struct to allow conversion between variants
 #[derive(Clone, PartialEq, Eq, Debug, Hash, Spanned)]
 pub enum Op {

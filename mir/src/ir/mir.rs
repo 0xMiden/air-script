@@ -67,13 +67,13 @@ impl Mir {
         self.name.as_str()
     }
 
-    /// Return a reference to the raw [AlgebraicGraph] corresponding to the constraints
+    /// Return a reference to the raw AlgebraicGraph corresponding to the constraints
     #[inline]
     pub fn constraint_graph(&self) -> &Graph {
         &self.graph
     }
 
-    /// Return a mutable reference to the raw [AlgebraicGraph] corresponding to the constraints
+    /// Return a mutable reference to the raw AlgebraicGraph corresponding to the constraints
     #[inline]
     pub fn constraint_graph_mut(&mut self) -> &mut Graph {
         &mut self.graph

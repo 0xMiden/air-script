@@ -6,7 +6,7 @@ use crate::{CompileError, graph::NodeIndex, ir::*};
 
 /// This pass creates the [Air] from the [ast::Program].
 ///  
-/// It should be deprecated once the compilation pipeline uses the [Mir] construct.
+/// It should be deprecated once the compilation pipeline uses the Mir construct.
 pub struct AstToAir<'a> {
     diagnostics: &'a DiagnosticsHandler,
 }

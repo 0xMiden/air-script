@@ -32,3 +32,14 @@ format-check: ## Run Format using nightly toolchain but only in check mode
 
 .PHONY: lint
 lint: format fix clippy ## Run all linting tasks at once (Clippy, fixing, formatting)
+
+# --- docs ----------------------------------------------------------------------------------------
+
+.PHONY: doc
+doc: ## Generates & checks documentation
+	cargo doc --keep-going --release
+
+
+.PHONY: book
+book: ## Builds the book & serves documentation site
+	mdbook serve --open docs

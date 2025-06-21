@@ -9,19 +9,17 @@ pub enum ConstraintError {
     IncompatibleConstraintDomains(ConstraintDomain, ConstraintDomain),
 }
 
-/// [Constraints] is the algebraic graph representation of all the constraints
-/// in an [AirScript]. The graph contains all of the constraints, each of which
-/// is a subgraph consisting of all the expressions involved in evaluating the constraint,
-/// including constants, references to the trace, public inputs, random values, and
-/// periodic columns.
+/// [Constraints] is the algebraic graph representation of all the constraints in an AirScript. The
+/// graph contains all of the constraints, each of which is a subgraph consisting of all the
+/// expressions involved in evaluating the constraint, including constants, references to the trace,
+/// public inputs, random values, and periodic columns.
 ///
-/// Internally, this struct also holds a matrix for each constraint type (boundary,
-/// integrity), where each row corresponds to a trace segment (in the same order)
-/// and contains a vector of [ConstraintRoot] for all of the constraints of that type
-/// to be applied to that trace segment.
+/// Internally, this struct also holds a matrix for each constraint type (boundary, integrity),
+/// where each row corresponds to a trace segment (in the same order) and contains a vector of
+/// [ConstraintRoot] for all of the constraints of that type to be applied to that trace segment.
 ///
-/// For example, integrity constraints for the main execution trace, which has a trace segment
-/// id of 0, will be specified by the vector of constraint roots found at index 0 of the
+/// For example, integrity constraints for the main execution trace, which has a trace segment id of
+/// 0, will be specified by the vector of constraint roots found at index 0 of the
 /// `integrity_constraints` matrix.
 #[derive(Default, Debug)]
 pub struct Constraints {
