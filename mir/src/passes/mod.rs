@@ -386,7 +386,24 @@ pub fn duplicate_node_or_replace(
             let bus = bus_op.bus.clone();
             let kind = bus_op.kind;
             let args = bus_op.args.clone();
-            let new_node = BusOp::create(bus, kind, args, bus_op.span());
+            let latch = bus_op.latch.clone();
+
+            let new_args = args
+                .iter()
+                .cloned()
+                .map(|arg| current_replace_map.get(&arg.get_ptr()).unwrap().1.clone())
+                .collect();
+            let new_latch = current_replace_map.get(&latch.get_ptr()).unwrap().1.clone();
+            let new_node = BusOp::create(bus.clone(), kind, new_args, bus_op.span());
+
+            // Update latch of cloned bus_op
+            new_node
+                .as_bus_op_mut()
+                .unwrap()
+                .latch
+                .borrow_mut()
+                .clone_from(&new_latch.borrow());
+
             current_replace_map.insert(node.get_ptr(), (node.clone(), new_node));
         },
         Op::Parameter(parameter) => {

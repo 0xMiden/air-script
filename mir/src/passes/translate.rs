@@ -559,13 +559,8 @@ impl<'a> MirBuilder<'a> {
         };
         // Note: safe to unwrap because we checked that bus_op is a BusOp above
         bus_op.as_bus_op_mut().unwrap().latch.borrow_mut().clone_from(&sel.borrow());
-        let bus_op_clone = bus_op.clone();
-        let bus_op_ref = bus_op_clone.as_bus_op_mut().unwrap();
-        let bus_link = bus_op_ref.bus.to_link().unwrap();
-        let mut bus = bus_link.borrow_mut();
-        bus.latches.push(sel.clone());
-        bus.columns.push(bus_op.clone());
-        Ok(bus_op)
+        let enf_node = self.insert_enforce(bus_op.clone())?;
+        Ok(enf_node)
     }
 
     fn insert_enforce(&mut self, node: Link<Op>) -> Result<Link<Op>, CompileError> {

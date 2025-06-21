@@ -24,6 +24,15 @@ fn buses_simple() {
     let expected = expect_file!["../buses/buses_simple.rs"];
     expected.assert_eq(&generated_air);
 }
+#[test]
+fn buses_simple_with_evaluators() {
+    let generated_air = Test::new("tests/buses/buses_simple_with_evaluators.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../buses/buses_simple.rs"];
+    expected.assert_eq(&generated_air);
+}
 
 #[test]
 fn buses_complex() {

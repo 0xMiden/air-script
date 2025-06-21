@@ -143,6 +143,9 @@ impl Program {
             let root_module = library.get_mut(&root).unwrap();
             mem::swap(&mut program.public_inputs, &mut root_module.public_inputs);
             mem::swap(&mut program.trace_columns, &mut root_module.trace_columns);
+            program.buses = BTreeMap::from_iter(root_module.buses.iter().map(|(k, v)| {
+                (QualifiedIdentifier::new(root, NamespacedIdentifier::Binding(*k)), v.clone())
+            }));
         }
 
         // Build the module graph starting from the root module
@@ -224,12 +227,6 @@ impl Program {
             // Make sure we move the integrity_constraints into the program
             if let Some(ic) = root_module.integrity_constraints.as_ref() {
                 program.integrity_constraints = ic.to_vec();
-            }
-            // Make sure we move the buses into the program
-            if !root_module.buses.is_empty() {
-                program.buses = BTreeMap::from_iter(root_module.buses.iter().map(|(k, v)| {
-                    (QualifiedIdentifier::new(root, NamespacedIdentifier::Binding(*k)), v.clone())
-                }));
             }
             for evaluator in root_module.evaluators.values() {
                 root_nodes.push_back(QualifiedIdentifier::new(

@@ -25,8 +25,11 @@ integrity_constraints {
     enf s1^2 = s1;
     enf s2^2 = s2;
 
-    p.insert(1, a) when s1;
-    p.remove(1, b) when s2;
+    let vec = [x for x in 0..3];
+    let x = sum(vec) + b;
+
+    p.insert(1, x, a) when s1;
+    p.remove(1, x, b) when s2;
 
     p.insert(2, b) when 1 - s1;
     p.remove(2, a) when 1 - s2;

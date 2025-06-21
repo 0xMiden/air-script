@@ -12,7 +12,7 @@ All modules must start with a module name declaration followed by a set of sourc
 | [trace columns](./declarations.md#execution-trace-trace_columns)                      | required    | not allowed       |
 | [public inputs](./declarations.md#public-inputs-public_inputs)                        | required    | not allowed       |
 | [periodic columns](./declarations.md#periodic-columns-periodic_columns)               | optional    | optional          |
-| [buses](./declarations.md#buses-buses)                                                | optional    | optional          |
+| [buses](./declarations.md#buses-buses)                                                | optional    | not allowed       |
 | [boundary constraints](./constraints.md#boundary-constraints-boundary_constraints)    | required    | not allowed       |
 | [integrity constraints](./constraints.md#integrity-constraints-integrity_constraints) | required    | not allowed       |
 | [evaluators](./evaluators.md)                                                         | optional    | optional          |
@@ -49,7 +49,9 @@ where the name of the module must:
 - Start with a letter.
 - End with a newline.
 
-Besides the name declaration, library modules may contain definitions of constants, evaluators, and periodic columns. Constants and evaluators defined in a library module may be imported by a root or other library modules.
+Besides the name declaration, library modules my contain definitions of constants, evaluators, and periodic columns. Constants and evaluators defined in a library module may be imported by a root or other library modules.
+
+Library modules inherit buses declarations of the root module. That is, evaluators defined in a library module can reference buses declared in the root module.
 
 ## Importing evaluators
 A module can import constants and evaluators from library modules via a `use` statement. For example:
