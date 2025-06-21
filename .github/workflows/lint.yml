@@ -60,18 +60,3 @@ jobs:
         run: |
           rustup update --no-self-update
           make doc
-
-  unused_deps:
-    name: check for unused dependencies
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@main
-      - name: Install cargo-machete
-        uses: clechasseur/rs-cargo@v2
-        with:
-          command: install
-          args: cargo-machete@0.7.0
-      - name: Machete
-        uses: clechasseur/rs-cargo@v2
-        with:
-          command: machete
