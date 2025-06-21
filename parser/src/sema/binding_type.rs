@@ -1,4 +1,4 @@
-use crate::ast::{AccessType, FunctionType, InvalidAccessError, RandBinding, TraceBinding, Type};
+use crate::ast::{AccessType, BusType, FunctionType, InvalidAccessError, TraceBinding, Type};
 use std::fmt;
 
 /// This type provides type and contextual information about a binding,
@@ -19,14 +19,14 @@ pub enum BindingType {
     ///
     /// The result type is None if the function is an evaluator
     Function(FunctionType),
+    /// A binding to a bus definition
+    Bus(BusType),
     /// A function parameter corresponding to trace columns
     TraceParam(TraceBinding),
     /// A direct reference to one or more contiguous trace columns
     TraceColumn(TraceBinding),
     /// A potentially non-contiguous set of trace columns
     Vector(Vec<BindingType>),
-    /// A direct reference to a random value binding
-    RandomValue(RandBinding),
     /// A direct reference to a public input
     PublicInput(Type),
     /// A direct reference to a periodic column
@@ -38,11 +38,11 @@ impl BindingType {
         match self {
             Self::TraceColumn(tb) | Self::TraceParam(tb) => Some(tb.ty()),
             Self::Vector(elems) => Some(Type::Vector(elems.len())),
-            Self::RandomValue(rb) => Some(rb.ty()),
             Self::Alias(aliased) => aliased.ty(),
             Self::Local(ty) | Self::Constant(ty) | Self::PublicInput(ty) => Some(*ty),
             Self::PeriodicColumn(_) => Some(Type::Felt),
             Self::Function(ty) => ty.result(),
+            Self::Bus(_) => Some(Type::Felt),
         }
     }
 
@@ -50,7 +50,7 @@ impl BindingType {
     pub fn is_trace_binding(&self) -> bool {
         match self {
             Self::TraceColumn(_) | Self::TraceParam(_) => true,
-            Self::Vector(ref elems) => elems.iter().all(|e| e.is_trace_binding()),
+            Self::Vector(elems) => elems.iter().all(|e| e.is_trace_binding()),
             _ => false,
         }
     }
@@ -75,7 +75,7 @@ impl BindingType {
         }
 
         match self {
-            Self::TraceColumn(ref tb) => match n.cmp(&tb.size) {
+            Self::TraceColumn(tb) => match n.cmp(&tb.size) {
                 Ordering::Equal => Ok((self.clone(), None)),
                 Ordering::Less => {
                     let remaining = tb.size - n;
@@ -89,8 +89,8 @@ impl BindingType {
                 }
                 Ordering::Greater => Err(self.clone()),
             },
-            Self::Vector(ref elems) if elems.len() == 1 => elems[0].split_columns(n),
-            Self::Vector(ref elems) => {
+            Self::Vector(elems) if elems.len() == 1 => elems[0].split_columns(n),
+            Self::Vector(elems) => {
                 let mut index = 0;
                 let mut remaining = n;
                 let mut set = Vec::with_capacity(elems.len());
@@ -121,7 +121,7 @@ impl BindingType {
                     }
                 }
             }
-            invalid => panic!("invalid trace column(s) binding type: {:#?}", invalid),
+            invalid => panic!("invalid trace column(s) binding type: {invalid:#?}"),
         }
     }
 
@@ -134,8 +134,8 @@ impl BindingType {
             // a binding containing the first column of that binding, and the
             // second half as a binding representing whatever was left, or `None`
             // if it is empty.
-            Self::TraceColumn(ref tb) if tb.is_scalar() => (Self::TraceColumn(*tb), None),
-            Self::TraceColumn(ref tb) => {
+            Self::TraceColumn(tb) if tb.is_scalar() => (Self::TraceColumn(*tb), None),
+            Self::TraceColumn(tb) => {
                 let first = Self::TraceColumn(TraceBinding {
                     size: 1,
                     ty: Type::Felt,
@@ -156,10 +156,10 @@ impl BindingType {
             }
             // If the vector has only one element, remove the vector and
             // return the result of popping a column on the first element.
-            Self::Vector(ref elems) if elems.len() == 1 => elems[0].pop_column(),
+            Self::Vector(elems) if elems.len() == 1 => elems[0].pop_column(),
             // If the vector has multiple elements, then we're going to return
             // a vector for the remainder of the split.
-            Self::Vector(ref elems) => {
+            Self::Vector(elems) => {
                 // Take the first element out of the vector
                 let (popped, rest) = elems.split_first().unwrap();
                 // Pop a single trace column from that element
@@ -176,7 +176,7 @@ impl BindingType {
                     }
                 }
             }
-            invalid => panic!("invalid trace column(s) binding type: {:#?}", invalid),
+            invalid => panic!("invalid trace column(s) binding type: {invalid:#?}"),
         }
     }
 
@@ -196,41 +196,41 @@ impl BindingType {
                     Err(InvalidAccessError::IndexOutOfBounds)
                 }
                 AccessType::Index(idx) => Ok(elems[idx].clone()),
-                AccessType::Slice(range) if range.end > elems.len() => {
-                    Err(InvalidAccessError::IndexOutOfBounds)
-                }
                 AccessType::Slice(range) => {
-                    Ok(Self::Vector(elems[range.start..range.end].to_vec()))
+                    let slice_range = range.to_slice_range();
+                    if slice_range.end > elems.len() {
+                        Err(InvalidAccessError::IndexOutOfBounds)
+                    } else {
+                        Ok(Self::Vector(elems[slice_range].to_vec()))
+                    }
                 }
                 AccessType::Matrix(row, _) if row >= elems.len() => {
                     Err(InvalidAccessError::IndexOutOfBounds)
                 }
                 AccessType::Matrix(row, col) => elems[row].access(AccessType::Index(col)),
             },
-            Self::RandomValue(tb) => tb
-                .access(access_type)
-                .map(|tb| Self::Alias(Box::new(Self::RandomValue(tb)))),
             Self::PublicInput(ty) => ty.access(access_type).map(Self::PublicInput),
             Self::PeriodicColumn(period) => match access_type {
                 AccessType::Default => Ok(Self::PeriodicColumn(*period)),
                 _ => Err(InvalidAccessError::IndexIntoScalar),
             },
             Self::Function(_) => Err(InvalidAccessError::InvalidBinding),
+            Self::Bus(bus) => Ok(Self::Bus(*bus)),
         }
     }
 }
 impl fmt::Display for BindingType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Alias(aliased) => write!(f, "{}", aliased),
+            Self::Alias(aliased) => write!(f, "{aliased}"),
             Self::Local(_) => f.write_str("local"),
             Self::Constant(_) => f.write_str("constant"),
             Self::Vector(_) => f.write_str("vector"),
             Self::Function(_) => f.write_str("function"),
             Self::TraceColumn(_) | Self::TraceParam(_) => f.write_str("trace column(s)"),
-            Self::RandomValue(_) => f.write_str("random value(s)"),
             Self::PublicInput(_) => f.write_str("public input(s)"),
             Self::PeriodicColumn(_) => f.write_str("periodic column(s)"),
+            Self::Bus(_) => f.write_str("bus"),
         }
     }
 }

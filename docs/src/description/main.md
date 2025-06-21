@@ -6,7 +6,7 @@
 - [Constraint descriptions](./constraints.md)
 - [Variables](./variables.md)
 - [Evaluators](./evaluators.md)
+- [Buses](./buses.md)
 - [Convenience syntax](./convenience.md)
 - [AirScript Example](./example.md)
 - [Keywords](./keywords.md)
-- [Appendix](./appendix.md)

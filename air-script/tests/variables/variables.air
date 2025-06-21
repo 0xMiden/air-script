@@ -2,41 +2,40 @@
 
 def VariablesAir
 
-trace_columns:
-    main: [s, a, b, c]
-    aux: [p]
+trace_columns {
+    main: [s, a, b, c],
+}
 
-public_inputs:
-    stack_inputs: [16]
-    stack_outputs: [16]
+public_inputs {
+    stack_inputs: [16],
+    stack_outputs: [16],
+}
 
-periodic_columns:
-    k0: [1, 1, 1, 1, 1, 1, 1, 0]
+periodic_columns {
+    k0: [1, 1, 1, 1, 1, 1, 1, 0],
+}
 
-random_values:
-    rand: [1]
+boundary_constraints {
+    enf a.first = 0;
+    enf a.last = 1;
+}
 
-boundary_constraints:
-    enf a.first = 0
-    enf a.last = 1
-    
-integrity_constraints:
-    let m = 0
+integrity_constraints {
+    let m = 0;
 
     # the selector must be binary.
-    enf s^2 = s
+    enf s^2 = s;
 
-    let n = [2 * 3, s]
-    let o = [[s', 3], [4 - 2, 8 + 8]]
+    let n = [2 * 3, 2*3 + 1 - s];
+    let o = [[4, 3], [s', 8 + 8]];
 
     # selector should stay the same for all rows of an 8-row cycle.
-    enf k0 * (s' - s) = m
+    enf k0 * (s' - s) = m;
 
     # c = a + b when s = 0.
-    enf (1 - s) * (c - a - b) = n[0] - n[1]
+    enf (1 - s) * (c - a - b) = n[0] - n[1];
 
     # c = a * b when s = 1.
-    enf s * (c - a * b) = o[0][0] - o[0][1] - o[1][0]
+    enf s * (c - a * b) = o[0][0] - o[0][1] - o[1][0];
 
-    # the auxiliary column contains the product of values of c offset by a random value.
-    enf p' = p * (c + $rand[0])
+}

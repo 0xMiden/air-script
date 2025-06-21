@@ -1,0 +1,14 @@
+[package]
+name = "derive-ir"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+syn = { version = "2.0", features = ["extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+pretty_assertions = "1.4"
+prettyplease = "0.2"
+
+[lib]
+proc-macro = true

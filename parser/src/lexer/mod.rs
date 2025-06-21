@@ -6,7 +6,7 @@ use core::{fmt, mem, num::IntErrorKind};
 use miden_diagnostics::{Diagnostic, SourceIndex, SourceSpan, ToDiagnostic};
 use miden_parsing::{Scanner, Source};
 
-use crate::{parser::ParseError, Symbol};
+use crate::{Symbol, parser::ParseError};
 
 /// The value produced by the Lexer when iterated
 pub type Lexed = Result<(SourceIndex, Token, SourceIndex), ParseError>;
@@ -43,8 +43,10 @@ impl ToDiagnostic for LexicalError {
         match self {
             Self::InvalidInt { span, ref reason } => Diagnostic::error()
                 .with_message("invalid integer literal")
-                .with_labels(vec![Label::primary(span.source_id(), span)
-                    .with_message(format!("{}", DisplayIntErrorKind(reason)))]),
+                .with_labels(vec![
+                    Label::primary(span.source_id(), span)
+                        .with_message(format!("{}", DisplayIntErrorKind(reason))),
+                ]),
             Self::UnexpectedCharacter { start, .. } => Diagnostic::error()
                 .with_message("unexpected character")
                 .with_labels(vec![Label::primary(
@@ -56,7 +58,7 @@ impl ToDiagnostic for LexicalError {
 }
 
 struct DisplayIntErrorKind<'a>(&'a IntErrorKind);
-impl<'a> fmt::Display for DisplayIntErrorKind<'a> {
+impl fmt::Display for DisplayIntErrorKind<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0 {
             IntErrorKind::Empty => write!(f, "unable to parse empty string as integer"),
@@ -64,7 +66,7 @@ impl<'a> fmt::Display for DisplayIntErrorKind<'a> {
             IntErrorKind::PosOverflow => write!(f, "value is too big"),
             IntErrorKind::NegOverflow => write!(f, "value is too big"),
             IntErrorKind::Zero => write!(f, "zero is not a valid value here"),
-            other => write!(f, "unable to parse integer value: {:?}", other),
+            other => write!(f, "unable to parse integer value: {other:?}"),
         }
     }
 }
@@ -79,8 +81,7 @@ pub enum Token {
     /// Identifiers should start with alphabet followed by one or more alpha numeric characters
     /// or an underscore.
     Ident(Symbol),
-    /// A reference to an identifier used for a section declaration, such as the random values
-    /// array or a trace segment like "main" or "aux".
+    /// A reference to an identifier used for a section declaration, such as "main".
     DeclIdentRef(Symbol),
     /// A function identifier
     FunctionIdent(Symbol),
@@ -103,16 +104,31 @@ pub enum Token {
     TraceColumns,
     /// Used to declare main trace columns.
     Main,
-    /// Used to declare aux trace columns.
-    Aux,
     /// Keyword to declare the public inputs declaration section for the AIR.
     PublicInputs,
     /// Keyword to declare the periodic columns declaration section for the AIR.
     PeriodicColumns,
-    /// Keyword to declare random values section in the AIR constraints module.
-    RandomValues,
     /// Keyword to declare the evaluator function section in the AIR constraints module.
     Ev,
+    /// Keyword to declare the function section in the AIR constraints module.
+    Fn,
+
+    // BUSES KEYWORDS
+    // --------------------------------------------------------------------------------------------
+    /// Marks the beginning of buses section in the constraints file.
+    Buses,
+    /// Used to represent a multiset bus declaration.
+    Multiset,
+    /// Used to represent a logup bus declaration.
+    Logup,
+    /// Used to represent an empty bus
+    Null,
+    /// Used to represent an unconstrained bus
+    Unconstrained,
+    /// Used to represent the insertion of a given tuple into a bus
+    Insert,
+    /// Used to represent the removal of a given tuple from a bus
+    Remove,
 
     // BOUNDARY CONSTRAINT KEYWORDS
     // --------------------------------------------------------------------------------------------
@@ -137,9 +153,12 @@ pub enum Token {
     // --------------------------------------------------------------------------------------------
     /// Keyword to signify that a constraint needs to be enforced
     Enf,
+    Return,
     Match,
     Case,
     When,
+    Felt,
+    With,
 
     // PUNCTUATION
     // --------------------------------------------------------------------------------------------
@@ -153,6 +172,8 @@ pub enum Token {
     RParen,
     LBracket,
     RBracket,
+    LBrace,
+    RBrace,
     Equal,
     Plus,
     Minus,
@@ -161,6 +182,8 @@ pub enum Token {
     Ampersand,
     Bar,
     Bang,
+    Arrow,
+    SemiColon,
 }
 impl Token {
     pub fn from_keyword_or_ident(s: &str) -> Self {
@@ -172,11 +195,18 @@ impl Token {
             "const" => Self::Const,
             "trace_columns" => Self::TraceColumns,
             "main" => Self::Main,
-            "aux" => Self::Aux,
             "public_inputs" => Self::PublicInputs,
             "periodic_columns" => Self::PeriodicColumns,
-            "random_values" => Self::RandomValues,
             "ev" => Self::Ev,
+            "fn" => Self::Fn,
+            "felt" => Self::Felt,
+            "buses" => Self::Buses,
+            "multiset" => Self::Multiset,
+            "logup" => Self::Logup,
+            "null" => Self::Null,
+            "unconstrained" => Self::Unconstrained,
+            "insert" => Self::Insert,
+            "remove" => Self::Remove,
             "boundary_constraints" => Self::BoundaryConstraints,
             "integrity_constraints" => Self::IntegrityConstraints,
             "first" => Self::First,
@@ -184,9 +214,11 @@ impl Token {
             "for" => Self::For,
             "in" => Self::In,
             "enf" => Self::Enf,
+            "return" => Self::Return,
             "match" => Self::Match,
             "case" => Self::Case,
             "when" => Self::When,
+            "with" => Self::With,
             other => Self::Ident(Symbol::intern(other)),
         }
     }
@@ -231,10 +263,10 @@ impl fmt::Display for Token {
             Self::Eof => write!(f, "EOF"),
             Self::Error(_) => write!(f, "ERROR"),
             Self::Comment => write!(f, "COMMENT"),
-            Self::Ident(ref id) => write!(f, "{}", id),
-            Self::DeclIdentRef(ref id) => write!(f, "{}", id),
-            Self::FunctionIdent(ref id) => write!(f, "{}", id),
-            Self::Num(ref i) => write!(f, "{}", i),
+            Self::Ident(id) => write!(f, "{id}"),
+            Self::DeclIdentRef(id) => write!(f, "{id}"),
+            Self::FunctionIdent(id) => write!(f, "{id}"),
+            Self::Num(i) => write!(f, "{i}"),
             Self::Def => write!(f, "def"),
             Self::Mod => write!(f, "mod"),
             Self::Use => write!(f, "use"),
@@ -242,11 +274,18 @@ impl fmt::Display for Token {
             Self::Const => write!(f, "const"),
             Self::TraceColumns => write!(f, "trace_columns"),
             Self::Main => write!(f, "main"),
-            Self::Aux => write!(f, "aux"),
             Self::PublicInputs => write!(f, "public_inputs"),
             Self::PeriodicColumns => write!(f, "periodic_columns"),
-            Self::RandomValues => write!(f, "random_values"),
             Self::Ev => write!(f, "ev"),
+            Self::Fn => write!(f, "fn"),
+            Self::Felt => write!(f, "felt"),
+            Self::Buses => write!(f, "buses"),
+            Self::Multiset => write!(f, "multiset"),
+            Self::Logup => write!(f, "logup"),
+            Self::Null => write!(f, "null"),
+            Self::Unconstrained => write!(f, "unconstrained"),
+            Self::Insert => write!(f, "insert"),
+            Self::Remove => write!(f, "remove"),
             Self::BoundaryConstraints => write!(f, "boundary_constraints"),
             Self::First => write!(f, "first"),
             Self::Last => write!(f, "last"),
@@ -254,9 +293,11 @@ impl fmt::Display for Token {
             Self::For => write!(f, "for"),
             Self::In => write!(f, "in"),
             Self::Enf => write!(f, "enf"),
+            Self::Return => write!(f, "return"),
             Self::Match => write!(f, "match"),
             Self::Case => write!(f, "case"),
             Self::When => write!(f, "when"),
+            Self::With => write!(f, "with"),
             Self::Quote => write!(f, "'"),
             Self::Colon => write!(f, ":"),
             Self::ColonColon => write!(f, "::"),
@@ -267,6 +308,8 @@ impl fmt::Display for Token {
             Self::RParen => write!(f, ")"),
             Self::LBracket => write!(f, "["),
             Self::RBracket => write!(f, "]"),
+            Self::LBrace => write!(f, "{{"),
+            Self::RBrace => write!(f, "}}"),
             Self::Equal => write!(f, "="),
             Self::Plus => write!(f, "+"),
             Self::Minus => write!(f, "-"),
@@ -275,6 +318,8 @@ impl fmt::Display for Token {
             Self::Ampersand => write!(f, "&"),
             Self::Bar => write!(f, "|"),
             Self::Bang => write!(f, "!"),
+            Self::Arrow => write!(f, "->"),
+            Self::SemiColon => write!(f, ";"),
         }
     }
 }
@@ -484,14 +529,20 @@ where
             ')' => pop!(self, Token::RParen),
             '[' => pop!(self, Token::LBracket),
             ']' => pop!(self, Token::RBracket),
+            '{' => pop!(self, Token::LBrace),
+            '}' => pop!(self, Token::RBrace),
             '=' => pop!(self, Token::Equal),
             '+' => pop!(self, Token::Plus),
-            '-' => pop!(self, Token::Minus),
+            '-' => match self.peek() {
+                '>' => pop2!(self, Token::Arrow),
+                _ => pop!(self, Token::Minus),
+            },
             '*' => pop!(self, Token::Star),
             '^' => pop!(self, Token::Caret),
             '&' => pop!(self, Token::Ampersand),
             '|' => pop!(self, Token::Bar),
             '!' => pop!(self, Token::Bang),
+            ';' => pop!(self, Token::SemiColon),
             '$' => self.lex_special_identifier(),
             '0'..='9' => self.lex_number(),
             'a'..='z' => self.lex_keyword_or_ident(),
@@ -535,7 +586,7 @@ where
                 return Token::Error(LexicalError::UnexpectedCharacter {
                     start: self.span().start(),
                     found: c,
-                })
+                });
             }
         }
 

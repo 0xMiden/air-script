@@ -1,0 +1,20 @@
+[package]
+name = "air-ir"
+version = "0.4.0"
+description = "Intermediate representation for the AirScript language"
+authors.workspace = true
+readme = "README.md"
+license.workspace = true
+repository.workspace = true
+categories = ["compilers", "cryptography"]
+keywords = ["air", "stark", "zero-knowledge", "zkp"]
+rust-version.workspace = true
+edition.workspace = true
+
+[dependencies]
+air-parser = { package = "air-parser", path = "../parser", version = "0.4" }
+air-pass = { package = "air-pass", path = "../pass", version = "0.4" }
+anyhow = { workspace = true }
+miden-diagnostics = { workspace = true }
+mir = { package = "air-mir", path = "../mir", version = "0.4" }
+thiserror = { workspace = true }

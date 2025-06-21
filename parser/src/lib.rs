@@ -56,7 +56,7 @@ pub fn parse_file<P: AsRef<Path>>(
 /// This is primarily provided for use in tests, you should generally prefer [parse]
 pub fn parse_str(source: &str) -> Result<ast::Program, ParseError> {
     use miden_diagnostics::{
-        term::termcolor::ColorChoice, DefaultEmitter, DiagnosticsConfig, Verbosity,
+        DefaultEmitter, DiagnosticsConfig, Verbosity, term::termcolor::ColorChoice,
     };
 
     let codemap = Arc::new(CodeMap::new());

@@ -1,0 +1,47 @@
+# This file is added as a sanity check to make sure the constraints generated with inlined
+# functions is the same as those with functions
+def FunctionsAir
+
+trace_columns {
+    main: [t, s0, s1, v, b[4], b_range],
+}
+
+public_inputs {
+    stack_inputs: [16],
+}
+
+boundary_constraints {
+    enf v.first = 0;
+}
+
+integrity_constraints {
+    # -------- function call is assigned to a variable and used in a binary expression ------------
+
+    # binary expression invloving scalar expressions
+    let simple_expression = t * v;
+    enf simple_expression = 1;
+
+    # binary expression involving one function call
+
+    # fold_vec function body where o is the return value of the function
+    let m = b[0] * b[1];
+    let n = m * b[2];
+    let o = n * b[3];
+
+    let folded_vec = o * v;
+    enf folded_vec = 1;
+
+    # binary expression involving two function calls
+    let complex_fold = (b[0] + b[1] + b[2] + b[3]) * o;
+    enf complex_fold = 1;
+
+    # function calls used in constraints
+    enf o = 1;
+    enf t * o = 1;
+    enf s0 + (b[0] + b[1] + b[2] + b[3]) * o = 1;
+
+    # -------- functions with function calls as return statements ------------
+    enf b[0] + b[1] + b[2] + b[3] = 1;
+    enf (b[0] + b[1] + b[2] + b[3]) * o = 1;
+    enf (b[0] + b[1] + b[2] + b[3]) * 4 = 1;
+}

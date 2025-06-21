@@ -12,25 +12,28 @@ fn single_selector() {
     let source = r#"
     def test
 
-    trace_columns:
-        main: [clk, n1]
+    trace_columns {
+        main: [clk, n1],
+    }
 
-    public_inputs:
-        inputs: [2]
+    public_inputs {
+        inputs: [2],
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
+    boundary_constraints {
+        enf clk.first = 0;
+    }
 
-    integrity_constraints:
-        enf clk' = clk when n1
-    "#;
+    integrity_constraints {
+        enf clk' = clk when n1;
+    }"#;
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
     expected
         .trace_columns
         .push(trace_segment!(0, "$main", [(clk, 1), (n1, 1)]));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,
@@ -53,18 +56,21 @@ fn chained_selectors() {
     let source = r#"
     def test
 
-    trace_columns:
-        main: [clk, n1, n2, n3]
+    trace_columns {
+        main: [clk, n1, n2, n3],
+    }
 
-    public_inputs:
-        inputs: [2]
+    public_inputs {
+        inputs: [2],
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
+    boundary_constraints {
+        enf clk.first = 0;
+    }
 
-    integrity_constraints:
-        enf clk' = clk when (n1 & !n2) | !n3
-    "#;
+    integrity_constraints {
+        enf clk' = clk when (n1 & !n2) | !n3;
+    }"#;
     let mut expected = Module::new(ModuleType::Root, SourceSpan::UNKNOWN, ident!(test));
     expected.trace_columns.push(trace_segment!(
         0,
@@ -73,7 +79,7 @@ fn chained_selectors() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
     expected.boundary_constraints = Some(Span::new(
         SourceSpan::UNKNOWN,

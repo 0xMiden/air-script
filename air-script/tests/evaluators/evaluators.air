@@ -1,26 +1,33 @@
 def EvaluatorsAir
 
-ev are_unchanged([x, y, z]):
-    enf x' = x
-    enf y' = y
-    enf z' = z
+ev are_unchanged([x, y, z]) {
+    enf x' = x;
+    enf y' = y;
+    enf z' = z;
+}
 
-ev is_binary([x]):
-    enf x^2 = x
+ev is_binary([x]) {
+    enf x^2 = x;
+}
 
-ev are_all_binary([c[3]]):
-    enf is_binary([c]) for c in c
+ev are_all_binary([c[3]]) {
+    enf is_binary([c]) for c in c;
+}
 
-trace_columns:
-    main: [b, c[3], d[3]]
+trace_columns {
+    main: [b, c[3], d[3]],
+}
 
-public_inputs:
-    stack_inputs: [16]
+public_inputs {
+    stack_inputs: [16],
+}
 
-boundary_constraints:
-    enf b.first = 0
+boundary_constraints {
+    enf b.first = 0;
+}
 
-integrity_constraints:
-    enf are_unchanged([b, c[1], d[2]])
-    enf is_binary([b])
-    enf are_all_binary([c])
+integrity_constraints {
+    enf are_unchanged([b, c[1], d[2]]);
+    enf is_binary([b]);
+    enf are_all_binary([c]);
+}

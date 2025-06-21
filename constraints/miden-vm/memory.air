@@ -16,23 +16,26 @@ fn get_n1(addr: scalar, addr_next: scalar, t_next: scalar) -> scalar:
 
 # Enforces that column must be binary.
 # Constraint degree: 2
-ev is_binary([a]):
+ev is_binary([a]) {
     enf a^2 = a
+}
 
 
 # Enforces that value in column is copied over to the next row.
 # Constraint degree: 1
-ev is_unchanged([column]):
+ev is_unchanged([column]) {
     enf column' = column
+}
 
 
 # Enforces that the provided columns must be zero.
-ev is_zero([column]):
+ev is_zero([column]) {
     enf column = 0 
+}
 
 
 # Enforces that created flags have valid values during the program execution.
-ev flags_validity([ctx, addr, t]):
+ev flags_validity([ctx, addr, t]) {
     # n0 = 1 when context changes and 0 otherwise.
     let n0 = get_n0(ctx, ctx', t')
 
@@ -51,10 +54,10 @@ ev flags_validity([ctx, addr, t]):
 
     # Enforce that if context remains the same, n1 = 1 when address changes and 0 otherwise.
     enf addr' = addr when !n0 & !n1
-
+}
 
 # Enforces that selectors take the correct values under certain conditions.
-ev enforce_selectors([s[2], ctx, addr, t]):
+ev enforce_selectors([s[2], ctx, addr, t]) {
     # Enforce that values in the selectior columns must be binary.
     # s[0] is set to 0 for write operations and to 1 for read operations.
     enf is_binary([selector]) for selector in s
@@ -72,11 +75,11 @@ ev enforce_selectors([s[2], ctx, addr, t]):
     # Enforce that s[1]' = 0 when either the context changed, the address changed, or the operation
     # is a write.
     enf s[1]' = 0 when n0 | n1 | !s[0]'
-
+}
 
 # Enforces that the delta between two consecutive contexts, addresses, or clock cycles is updated 
 # and decomposed into the `d1` and `d0` columns correctly.
-ev enforce_delta([ctx, addr, clk, d[2], t]):
+ev enforce_delta([ctx, addr, clk, d[2], t]) {
     # n0 = 1 when context changes and 0 otherwise.
     let n0 = get_n0(ctx, ctx', t')
 
@@ -91,26 +94,27 @@ ev enforce_delta([ctx, addr, clk, d[2], t]):
         d_next_agg = ctx' - ctx when n0
         d_next_agg = addr' - addr when !n0 & n1
         d_next_agg = clk' - clk - 1 when !n0 & !n1
-
+}
 
 # Enforces that memory is initialized to zero when it is read before being written and that when 
 # existing memory values are read they remain unchanged.
-ev enforce_values([s[2], v[4]]):
+ev enforce_values([s[2], v[4]]) {
     # Enforce that values at a given memory address are always initialized to 0.
     enf is_zero([v_i]) for v_i in v when s[0] & !s[1]
 
     # Enforce that for the same context/address combination, the v columns of the current row are
     # equal to the corresponding v columns of the next row
     enf is_unchanged([v_i]) for v_i in v when s[1]
-
+}
 
 ### Memory Chiplet Air Constraints ################################################################
 
 # Enforces the constraints on the memory chiplet, given the columns of the memory execution trace.
-ev memory_chiplet([s[2], ctx, addr, clk, v[4], d[2], t]):
+ev memory_chiplet([s[2], ctx, addr, clk, v[4], d[2], t]) {
     enf flags_validity([ctx, addr, t])
     enf enforce_selectors([s, ctx, addr, t])
     enf enforce_delta([ctx, addr, clk, d, t])
     # TODO: perform range checks for values in columns d[0] and d[1]
     enf enforce_values([s, v])
     # Bus constraint is implemented in a separate file
+}

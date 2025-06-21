@@ -60,6 +60,8 @@ pub enum Statement {
     /// Just like `Enforce`, except the constraint is contained in the body of a list comprehension,
     /// and must be enforced on every value produced by that comprehension.
     EnforceAll(ListComprehension),
+    /// Declares a bus related constraint
+    BusEnforce(ListComprehension),
 }
 impl Statement {
     /// Checks this statement to see if it contains any constraints
@@ -69,7 +71,10 @@ impl Statement {
     /// one or more constraints in its body.
     pub fn has_constraints(&self) -> bool {
         match self {
-            Self::Enforce(_) | Self::EnforceIf(_, _) | Self::EnforceAll(_) => true,
+            Self::Enforce(_)
+            | Self::EnforceIf(_, _)
+            | Self::EnforceAll(_)
+            | Self::BusEnforce(_) => true,
             Self::Let(Let { body, .. }) => body.iter().any(|s| s.has_constraints()),
             Self::Expr(_) => false,
         }
@@ -79,6 +84,24 @@ impl Statement {
         DisplayStatement {
             statement: self,
             indent,
+        }
+    }
+}
+impl From<Expr> for Statement {
+    fn from(expr: Expr) -> Self {
+        match expr {
+            Expr::Let(let_expr) => Self::Let(*let_expr),
+            expr => Self::Expr(expr),
+        }
+    }
+}
+impl TryFrom<ScalarExpr> for Statement {
+    type Error = ();
+
+    fn try_from(expr: ScalarExpr) -> Result<Self, Self::Error> {
+        match expr {
+            ScalarExpr::Let(let_expr) => Ok(Self::Let(*let_expr)),
+            expr => Expr::try_from(expr).map_err(|_| ()).map(Self::Expr),
         }
     }
 }
@@ -97,11 +120,12 @@ pub struct Let {
     /// For example, given the following:
     ///
     /// ```airscript
-    /// integrity_constraints:
+    /// integrity_constraints {
     ///     let x = 2
     ///     let y = x^2
     ///     enf clk = x
     ///     enf clk' = clk + y
+    /// }
     /// ```
     ///
     /// When parsed, the syntax tree for the `integrity_constraints` block
@@ -126,12 +150,30 @@ impl Let {
         }
     }
 
+    /// Return the type of the overall `let` expression.
+    ///
+    /// A `let` with an empty body, or with a body that terminates with a non-expression statement
+    /// has no type (or rather, one could consider the type it returns to be of "void" or "unit" type).
+    ///
+    /// For `let` statements with a non-empty body that terminates with an expression, the `let` can
+    /// be used in expression position, producing the value of the terminating expression in its body,
+    /// and having the same type as that value.
     pub fn ty(&self) -> Option<Type> {
-        self.body.last().and_then(|stmt| match stmt {
-            Statement::Let(ref nested) => nested.ty(),
-            Statement::Expr(ref expr) => expr.ty(),
-            _ => None,
-        })
+        let mut last = self.body.last();
+        while let Some(stmt) = last.take() {
+            match stmt {
+                Statement::Let(let_expr) => {
+                    last = let_expr.body.last();
+                }
+                Statement::Expr(expr) => return expr.ty(),
+                Statement::Enforce(_)
+                | Statement::EnforceIf(_, _)
+                | Statement::EnforceAll(_)
+                | Statement::BusEnforce(_) => break,
+            }
+        }
+
+        None
     }
 }
 impl Eq for Let {}

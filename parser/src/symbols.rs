@@ -16,18 +16,15 @@ pub mod predefined {
 
     /// The symbol `$main`
     pub const Main: Symbol = Symbol::new(0);
-    /// The symbol `$aux`
-    pub const Aux: Symbol = Symbol::new(1);
     /// The symbol `$builtin`
-    pub const Builtin: Symbol = Symbol::new(2);
+    pub const Builtin: Symbol = Symbol::new(1);
     /// The symbol `sum`
-    pub const Sum: Symbol = Symbol::new(3);
+    pub const Sum: Symbol = Symbol::new(2);
     /// The symbol `prod`
-    pub const Prod: Symbol = Symbol::new(4);
+    pub const Prod: Symbol = Symbol::new(3);
 
     pub(super) const __SYMBOLS: &[(Symbol, &str)] = &[
         (Main, "$main"),
-        (Aux, "$aux"),
         (Builtin, "$builtin"),
         (Sum, "sum"),
         (Prod, "prod"),

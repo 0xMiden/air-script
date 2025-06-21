@@ -1,0 +1,85 @@
+def FunctionsAir
+
+fn fold_sum(a: felt[4]) -> felt {
+    return a[0] + a[1] + a[2] + a[3];
+}
+
+fn fold_vec(a: felt[4]) -> felt {
+    let m = a[0] * a[1];
+    let n = m * a[2];
+    let o = n * a[3];
+    return o;
+}
+
+fn cube(base: felt) -> felt {
+    return base^3;
+}
+
+fn cube_vec(base: felt[4]) -> felt[4] {
+    let cubed_vec = [x^3 for x in base];
+    return cubed_vec;
+}
+
+fn func_return(a: felt[4]) -> felt {
+    return fold_sum(a);
+}
+
+fn func_func_return(a: felt[4]) -> felt {
+    return fold_sum(a) * fold_vec(a);
+}
+
+fn bin_return(a: felt[4]) -> felt {
+    return fold_sum(a) * 4;
+}
+
+trace_columns {
+    main: [t, s0, s1, v, b[4], b_range],
+}
+
+public_inputs {
+    stack_inputs: [16],
+}
+
+boundary_constraints {
+    enf v.first = 0;
+}
+
+integrity_constraints {
+    # -------- function call is assigned to a variable and used in a binary expression ------------
+
+    # binary expression invloving scalar expressions
+    let simple_expression = t * v;
+    enf simple_expression = 1;
+
+    # binary expression involving one function call
+    let folded_vec = fold_vec(b) * v;
+    enf folded_vec = 1;
+
+    # binary expression involving two function calls
+    let complex_fold = fold_sum(b) * fold_vec(b);
+    enf complex_fold = 1;
+
+
+    # -------- function calls used in constraint ------------
+    enf fold_vec(b) = 1;
+    enf t * fold_vec(b) = 1;
+    enf s0 + fold_sum(b) * fold_vec(b) = 1;
+
+    # -------- functions with function calls as return statements ------------
+    enf func_return(b) = 1;
+    enf func_func_return(b) = 1;
+    enf bin_return(b) = 1;
+
+    # -------- different types of arguments in a function call ------------
+
+    # function call with a function call as an argument
+    # enf fold_vec(cube_vec(b)) = 1;
+
+    # function call as value in list comprehension
+    # let folded_vec = sum([cube(x) for x in b]);
+    # enf t * folded_vec = 1;
+
+    # function call as iterable in list comprehension
+    # let folded_vec = sum([x + 1 for x in cube_vec(b)]);
+    # enf t * folded_vec = 1;
+}

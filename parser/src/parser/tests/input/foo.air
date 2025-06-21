@@ -1,11 +1,14 @@
 # A module imported by `import_example`
 mod foo
 
-periodic_columns:
-    k0: [1, 1, 0, 0]
+periodic_columns {
+    k0: [1, 1, 0, 0],
+}
 
-ev foo_constraint([clk]):
-    enf clk' = clk + 1 when k0
+ev foo_constraint([clk]) {
+    enf clk' = clk + 1 when k0;
+}
 
-ev other_constraint([clk]):
-    enf clk' = 0 when !k0
+ev other_constraint([clk]) {
+    enf clk' = 0 when !k0;
+}

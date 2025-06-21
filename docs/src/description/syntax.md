@@ -5,10 +5,11 @@ This page specifies the basic syntax and types.
 ## Delimiters and special characters
 
 - `:` is used as a delimiter when declaring [source sections](./organization.md#source-sections) and [types](./declarations.md)
-- `.` is used to access a boundary on a trace column, e.g. `a.first` or `a.last`
+- `.` is used to access a boundary on a trace column or a bus, e.g. `a.first` or `a.last`
 - `[` and `]` are used for defining arrays in [type declarations](./declarations.md) and for indexing in [constraint descriptions](./constraints.md)
-- `,` is used as a delimiter for defining arrays in [type declarations](./declarations.md)
-- `$` is used to access random values or built-in variables by their identifier. For example, the column at index `i` in the main execution trace can be accessed by `$main[i]`.
+- `,` is used as a delimiter for defining arrays in [type declarations](./declarations.md), as well as a separator in when declaring [source sections](./organization.md#source-sections)
+- `;` is used as a statement terminator in [constraint descriptions](./constraints.md) and [variable declarations](./variables.md)
+- `$` is used to access built-in variables by their identifier. For example, the column at index `i` in the main execution trace can be accessed by `$main[i]`.
 
 ## Identifiers
 
@@ -68,16 +69,19 @@ The following accessor may only be applied to public inputs declared in `public_
 Here is an example of usage of first and last boundaries and a public input within a boundary constraint:
 
 ```
-trace_columns:
-    main: [a]
+trace_columns {
+    main: [a],
+}
 
-public_inputs:
-    stack_inputs: [4]
-    stack_outputs: [4]
+public_inputs {
+    stack_inputs: [4],
+    stack_outputs: [4],
+}
 
-boundary_constraints:
-    enf a.first = stack_inputs[0]
-    enf a.last = stack_outputs[0]
+boundary_constraints {
+    enf a.first = stack_inputs[0];
+    enf a.last = stack_outputs[0];
+}
 ```
 
 ### [Integrity constraints](./constraints.md#integrity_constraints)
@@ -89,10 +93,11 @@ The following accessor may only be applied to trace columns when they are refere
 Here is an example of usage of the Next Row operator within an integrity constraint:
 
 ```
-trace_columns:
-  main: [a]
-  aux: [p]
+trace_columns {
+  main: [a, b],
+}
 
-integrity_constraints:
-  enf p' = p * a
+integrity_constraints {
+  enf b' = b * a;
+}
 ```

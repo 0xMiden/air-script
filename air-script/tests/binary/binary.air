@@ -1,14 +1,18 @@
 def BinaryAir
 
-trace_columns:
-    main: [a, b]
+trace_columns {
+    main: [a, b],
+}
 
-public_inputs:
-    stack_inputs: [16]
+public_inputs {
+    stack_inputs: [16],
+}
 
-boundary_constraints:
-    enf a.first = 0
+boundary_constraints {
+    enf a.first = 0;
+}
 
-integrity_constraints:
-    enf a^2 - a = 0
-    enf b^2 - b = 0
+integrity_constraints {
+    enf a^2 - a = 0;
+    enf b^2 - b = 0;
+}

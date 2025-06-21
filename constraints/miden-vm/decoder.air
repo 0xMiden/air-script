@@ -5,10 +5,10 @@ mod DecoderAir
 const HASHER_LINEAR_HASH = 3
 const HASHER_RETURN_HASH = 1
 
-periodic_columns:
+periodic_columns {
     cycle_row_0: [1, 0, 0, 0, 0, 0, 0, 0]
     cycle_row_7: [0, 0, 0, 0, 0, 0, 0, 1]
-
+}
 
 ### Helper functions ##############################################################################
 
@@ -141,20 +141,22 @@ fn get_f_g1(op_batch_flags: vector[3]) -> scalar:
 
 # Enforces that column must be binary.
 # Constraint degree: 2
-ev is_binary([a]):
+ev is_binary([a]) {
     enf a^2 = a
+}
 
 
 # Enforces that value in column is copied over to the next row.
 # Constraint degree: 1
-ev is_unchanged([column]):
+ev is_unchanged([column]) {
     enf column' = column
+}
 
 
 # Enforces decoder general constraints.
 #
 # Max constraint degree: 9
-ev general([addr, op_bits[7], hasher[8], in_span, s0, extra]):
+ev general([addr, op_bits[7], hasher[8], in_span, s0, extra]) {
     # Get flags required for the general constraints
     let f_repeat = get_f_repeat(op_bits, extra)
     let f_end = get_f_end(op_bits, extra)
@@ -214,12 +216,13 @@ ev general([addr, op_bits[7], hasher[8], in_span, s0, extra]):
     # on the VM.
     # Constraint degree: 4
     enf 1 - in_span - get_f_ctrl(op_bits, extra) = 0
+}
 
 
 # Enforces the constraint for computing block hashes.
 #
 # Max constraint degree: 8
-ev block_hash_computation([addr, op_bits[7], hasher[8], extra], [p[4]]):
+ev block_hash_computation([addr, op_bits[7], hasher[8], extra], [p[4]]) {
     # Get flags required for the block hash computation constraint
     let f_ctrli = get_f_ctrli(op_bits, extra)
     let f_span = get_f_span(op_bits)
@@ -284,12 +287,13 @@ ev block_hash_computation([addr, op_bits[7], hasher[8], extra], [p[4]]):
     # Constraint degree: 8
     enf p[0]' * (u_ctrli + u_span + u_respan + u_end + 1 - 
         (f_ctrli + f_span + f_respan + f_end)) = p[0]
+}
 
 
 # Enforces the constraint for updating the block stack table.
 #
 # Max constraint degree: 8
-ev block_stack_table([addr, op_bits[7], hasher[8], s0, extra], [p[4]]):
+ev block_stack_table([addr, op_bits[7], hasher[8], s0, extra], [p[4]]) {
     # Get flags required for the block stack table constraint
     let f_join = get_f_join(op_bits)
     let f_split = get_f_split(op_bits)
@@ -337,12 +341,13 @@ ev block_stack_table([addr, op_bits[7], hasher[8], s0, extra], [p[4]]):
     enf p[1]' * (u_end + u_respan + 1 - (f_end + f_respan)) = 
             p[1] * (v_join + v_split + v_loop + v_span + v_respan + 1 - 
             (f_join + f_split + f_loop + f_span + f_respan))
+}
 
 
 # Enforces the constraint for updating the block hash table.
 #
 # Max constraint degree: 9
-ev block_hash_table([addr, op_bits[7], hasher[8], s0, extra], [p[4]]):
+ev block_hash_table([addr, op_bits[7], hasher[8], s0, extra], [p[4]]) {
     # Get flags required for the block hash table constraint
     let f_join = get_f_join(op_bits)
     let f_split = get_f_split(op_bits)
@@ -406,14 +411,15 @@ ev block_hash_table([addr, op_bits[7], hasher[8], s0, extra], [p[4]]):
     #   1. The first value in the column represents a row for the entire program. Specifically, the 
     #      row tuple would be (0, program_hash, 0, 0). This row should be removed from the table 
     #      when the last END operation is executed.
-    #   2. The last value in the column is 1 - i.e., the block hash table is empty.        
+    #   2. The last value in the column is 1 - i.e., the block hash table is empty.   
+}     
 
 
 # Enforce that values in in_span column, which is used to identify rows which execute non-control 
 # flow operations, are set correctly.
 #
 # Constraint degree: 7
-ev in_span_column([op_bits[7], in_span, extra]):
+ev in_span_column([op_bits[7], in_span, extra]) {
     # Get flags required for the inspan column constraint
     let f_span = get_f_span(op_bits)
     let f_respan = get_f_respan(op_bits, extra)
@@ -436,21 +442,21 @@ ev in_span_column([op_bits[7], in_span, extra]):
     enf is_unchanged(in_span) when !f_span & !f_respan & !f_end_next & !f_respan_next
 
     # TODO: add boundary constraint for in_span column: in_span.first = 0
-
+}
 
 # Enforce that when we are inside a span block, values in the block address column (denoted as addr) 
 # must remain the same.
 #
 # Constraint degree: 2
-ev block_address([addr, in_span]):
+ev block_address([addr, in_span]) {
     enf is_unchanged(addr) when in_span
-
+}
 
 # Enforce that values in group_count column, which is used to keep track of the number of operation
 # groups which remains to be executed in a span block, are set correctly.
 #
 # Max constraint degree: 7
-ev group_count([op_bits[7], hasher[8], in_span, group_count, extra]):
+ev group_count([op_bits[7], hasher[8], in_span, group_count, extra]) {
     # Get value of the f_push flag
     let f_push = get_f_push(op_bits, extra)
 
@@ -476,13 +482,13 @@ ev group_count([op_bits[7], hasher[8], in_span, group_count, extra]):
     # Enforce that when an END operation is executed, group count must be 0.
     # Constraint degree: 5
     enf group_count = 0 when get_f_end(op_bits, extra)
-
+}
 
 # Enforce that register hasher[0], which is used to keep track of operations to be executed in the 
 # current operation group, is set correctly.
 #
 # Max constraint degree: 7
-ev op_group_decoding([op_bits[7], in_span, group_count, extra]):
+ev op_group_decoding([op_bits[7], in_span, group_count, extra]) {
     # opcode value for the next row.
     let op_next = sum([op_bits[i]' * 2^i for i in 0..7])
 
@@ -501,13 +507,13 @@ ev op_group_decoding([op_bits[7], in_span, group_count, extra]):
     # value in hasher[0] column must be 0.
     # Constraint degree: 6
     enf (get_f_end(op_bits', extra') + get_f_respan(op_bits', extra')) * hasher[0] = 0 when in_span
-
+}
 
 # Enforce that the values in op_index column, which tracks index of an operation within its 
 # operation group, are set correctly.
 #
 # Max constraint degree: 9
-ev op_index([op_bits[7], in_span, group_count, op_index, extra]):
+ev op_index([op_bits[7], in_span, group_count, op_index, extra]) {
     # ng is set to 1 when we are about to start executing a new operation group (i.e., group count 
     # is decremented but we did not execute a PUSH operation).
     let ng = group_count' - group_count - get_f_push(op_bits, extra)
@@ -530,13 +536,13 @@ ev op_index([op_bits[7], in_span, group_count, op_index, extra]):
     # Enforce that values of op_index must be in the range [0, 8].
     # Constraint degree: 9
     enf prod([op_index - i for i in 0..9]) = 0
-
+}
 
 # Enforce that values in operation batch flag columns (denoted op_batch_flags[]), which are used to
 # specify how many operation groups are present in an operation batch, are set correctly.
 #
 # Max constraint degree: 6
-ev op_batch_flags([op_bits[7], hasher[8], op_batch_flags[3], extra]):
+ev op_batch_flags([op_bits[7], hasher[8], op_batch_flags[3], extra]) {
     # Get flags required for the op batch flag constraints
     let f_g1 = get_f_g1(op_batch_flags)
     let f_g2 = get_f_g2(op_batch_flags)
@@ -565,14 +571,14 @@ ev op_batch_flags([op_bits[7], hasher[8], op_batch_flags[3], extra]):
     # Enforce that when we have at most 1 group in a batch, register h[1] should also be set to 0.
     # Constraint degree: 4
     enf hasher[1] = 0 when f_g1
-
+}
 
 # Enforce that all operation groups in a given batch are consumed before a new batch is started 
 # (i.e., via a RESPAN operation) or the execution of a span block is complete (i.e., via an END 
 # operation).
 #
 # Max constraint degree: 9
-ev op_group_table([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_batch_flags[3], s0, extra], [p[4]]):
+ev op_group_table([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_batch_flags[3], s0, extra], [p[4]]) {
     # Get value of the f_push flag
     let f_push = get_f_push(op_bits, extra)
 
@@ -613,12 +619,12 @@ ev op_group_table([addr, op_bits[7], hasher[8], in_span, group_count, op_index, 
                                                 get_f_g4(op_batch_flags) * prod_v_3 + 
                                                 get_f_g8(op_batch_flags) * prod_v_7 - 1 + 
                                                 (f_span(op_bits) + get_f_respan(op_bits, extra)))
-    
+}
 
 # Enforce proper decoding of span blocks.
 #
 # Max constraint degree: 9
-ev span_block([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_batch_flags[3], s0, extra], [p[4]]):
+ev span_block([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_batch_flags[3], s0, extra], [p[4]]) {
     enf in_span_column([op_bits, in_span, extra])
     enf block_address([addr, in_span])
     enf group_count([op_bits, hasher, in_span, group_count, extra])
@@ -626,7 +632,7 @@ ev span_block([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_b
     enf op_index([op_bits, in_span, group_count, op_index, extra])
     enf op_batch_flags([op_bits, hasher, op_batch_flags, extra])
     enf op_group_table([addr, op_bits, hasher, in_span, group_count, op_index, op_batch_flags, s0, extra], [p])
-
+}
 
 ### Decoder Air Constraints #######################################################################
 
@@ -635,7 +641,7 @@ ev span_block([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_b
 # columns denote multiset check columns.
 #
 # Max constraint degree: 9
-ev decoder_constraints([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_batch_flags[3], s0, extra], [p[4]]):
+ev decoder_constraints([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_batch_flags[3], s0, extra], [p[4]]) {
     enf general([addr, op_bits[7], hasher[8], in_span, s0, extra])
     
     enf block_hash_computation([addr, op_bits[7], hasher[8], extra], [p[4]])
@@ -645,3 +651,4 @@ ev decoder_constraints([addr, op_bits[7], hasher[8], in_span, group_count, op_in
     enf block_hash_table([addr, op_bits, hasher, s0, extra], [p[4]])
 
     enf span_block([addr, op_bits[7], hasher[8], in_span, group_count, op_index, op_batch_flags[3], s0, extra], [p[4]])
+}

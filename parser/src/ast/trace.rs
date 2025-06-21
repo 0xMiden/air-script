@@ -119,7 +119,7 @@ impl fmt::Display for TraceSegment {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if !self.name.is_generated() {
             if let Some(name) = self.name.as_str().strip_prefix('$') {
-                write!(f, "{}: ", name)?;
+                write!(f, "{name}: ")?;
             } else {
                 write!(f, "{}: ", self.name)?;
             }
@@ -193,7 +193,7 @@ impl std::ops::BitAnd<Boundary> for ColumnBoundaryFlags {
 
 /// Used to help format the boundary constraint flags
 struct FormatConstrainedFlags<'a>(&'a [Span<ColumnBoundaryFlags>]);
-impl<'a> fmt::Debug for FormatConstrainedFlags<'a> {
+impl fmt::Debug for FormatConstrainedFlags<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_list()
             .entries(self.0.iter().map(|c| c.item))
@@ -255,18 +255,20 @@ impl TraceBinding {
         match access_type {
             AccessType::Default => Ok(*self),
             AccessType::Slice(_) if self.is_scalar() => Err(InvalidAccessError::SliceOfScalar),
-            AccessType::Slice(range) if range.end > self.size => {
-                Err(InvalidAccessError::IndexOutOfBounds)
-            }
             AccessType::Slice(range) => {
-                let offset = self.offset + range.start;
-                let size = range.end - range.start;
-                Ok(Self {
-                    offset,
-                    size,
-                    ty: Type::Vector(size),
-                    ..*self
-                })
+                let slice_range = range.to_slice_range();
+                if slice_range.end > self.size {
+                    Err(InvalidAccessError::IndexOutOfBounds)
+                } else {
+                    let offset = self.offset + slice_range.start;
+                    let size = slice_range.len();
+                    Ok(Self {
+                        offset,
+                        size,
+                        ty: Type::Vector(size),
+                        ..*self
+                    })
+                }
             }
             AccessType::Index(_) if self.is_scalar() => Err(InvalidAccessError::IndexIntoScalar),
             AccessType::Index(idx) if idx >= self.size => Err(InvalidAccessError::IndexOutOfBounds),

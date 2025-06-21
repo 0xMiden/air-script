@@ -1,4 +1,4 @@
-use super::{expect_valid_tokenization, Symbol, Token};
+use super::{Symbol, Token, expect_valid_tokenization};
 
 // VARIABLES VALID TOKENIZATION
 // ================================================================================================
@@ -117,12 +117,13 @@ fn integrity_constraint_with_vector_variables() {
 #[test]
 fn variables_with_or_operators() {
     let source = "
-    integrity_constraints:
+    integrity_constraints {
         let flag = s[0] | !s[1]'
-        enf clk' = clk + 1 when flag";
+        enf clk' = clk + 1 when flag
+    }";
     let tokens = vec![
         Token::IntegrityConstraints,
-        Token::Colon,
+        Token::LBrace,
         Token::Let,
         Token::Ident(Symbol::intern("flag")),
         Token::Equal,
@@ -146,6 +147,7 @@ fn variables_with_or_operators() {
         Token::Num(1),
         Token::When,
         Token::Ident(Symbol::intern("flag")),
+        Token::RBrace,
     ];
     expect_valid_tokenization(source, tokens);
 }

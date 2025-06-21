@@ -13,8 +13,9 @@ fn single_addition() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' + clk = 0";
+    ev test([clk]) {
+        enf clk' + clk = 0;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -35,8 +36,9 @@ fn multi_addition() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' + clk + 2 = 0";
+    ev test([clk]) {
+        enf clk' + clk + 2 = 0;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -60,8 +62,9 @@ fn single_subtraction() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' - clk = 0";
+    ev test([clk]) {
+        enf clk' - clk = 0;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -82,8 +85,9 @@ fn multi_subtraction() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' - clk - 1 = 0";
+    ev test([clk]) {
+        enf clk' - clk - 1 = 0;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -107,8 +111,9 @@ fn single_multiplication() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' * clk = 0";
+    ev test([clk]) {
+        enf clk' * clk = 0;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -129,8 +134,9 @@ fn multi_multiplication() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' * clk * 2 = 0";
+    ev test([clk]) {
+        enf clk' * clk * 2 = 0;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -154,8 +160,9 @@ fn unit_with_parens() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf (2) + 1 = 3";
+    ev test([clk]) {
+        enf (2) + 1 = 3;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -176,8 +183,9 @@ fn ops_with_parens() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf (clk' + clk) * 2 = 4";
+    ev test([clk]) {
+        enf (clk' + clk) * 2 = 4;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -201,8 +209,9 @@ fn const_exponentiation() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk'^2 = 1";
+    ev test([clk]) {
+        enf clk'^2 = 1;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -223,8 +232,9 @@ fn non_const_exponentiation() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk'^(clk + 2) = 1";
+    ev test([clk]) {
+        enf clk'^(clk + 2) = 1;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -248,8 +258,9 @@ fn err_ops_without_matching_closing_parens() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf (clk' + clk * 2 = 4";
+    ev test([clk]) {
+        enf (clk' + clk * 2 = 4
+    }";
     ParseTest::new().expect_unrecognized_token(source)
 }
 
@@ -259,8 +270,9 @@ fn err_closing_paren_without_opening_paren() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' + clk) * 2 = 4";
+    ev test([clk]) {
+        enf clk' + clk) * 2 = 4
+    }";
     ParseTest::new().expect_unrecognized_token(source)
 }
 
@@ -270,8 +282,9 @@ fn multi_arithmetic_ops_same_precedence() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' - clk - 2 + 1 = 0";
+    ev test([clk]) {
+        enf clk' - clk - 2 + 1 = 0;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.evaluators.insert(
@@ -295,8 +308,9 @@ fn multi_arithmetic_ops_different_precedence() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk'^2 - clk * 2 - 1 = 0";
+    ev test([clk]) {
+        enf clk'^2 - clk * 2 - 1 = 0;
+    }";
 
     // The precedence order of operations here is:
     // 1. Exponentiation
@@ -329,8 +343,9 @@ fn multi_arithmetic_ops_different_precedence_w_parens() {
     let source = "
     mod test
 
-    ev test([clk]):
-        enf clk' - clk^2 * (2 - 1) = 0";
+    ev test([clk]) {
+        enf clk' - clk^2 * (2 - 1) = 0;
+    }";
 
     // The precedence order of operations here is:
     // 1. Parentheses

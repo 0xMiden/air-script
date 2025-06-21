@@ -2,9 +2,10 @@ mod BitwiseAir
 
 ### Constants and periodic columns ################################################################
 
-periodic_columns:
+periodic_columns {
     k0: [1, 0, 0, 0, 0, 0, 0, 0]
     k1: [1, 1, 1, 1, 1, 1, 1, 0]
+}
 
 
 ### Helper functions ##############################################################################
@@ -19,14 +20,15 @@ fn aggregate(limb: vector[4]) -> scalar:
 # Enforces that column must be binary.
 #
 # Constraint degree: 2
-ev is_binary([a]):
+ev is_binary([a]) {
     enf a^2 = a
+}
 
 
 # Enforces that the bitwise selector is valid.
 #
 # Max constraint degree: 2
-ev bitwise_selector([s]):
+ev bitwise_selector([s]) {
     # Enforce that selector must be binary.
     # Constraint degree: 2
     enf is_binary([s])
@@ -34,12 +36,13 @@ ev bitwise_selector([s]):
     # Enforce that selector should stay the same throughout the cycle.
     # Constraint degree: 2
     enf s' = s when k1
+}
 
 
 # Enforces that the input to the bitwise chiplet is decomposed into limbs correctly.
 #
 # Max constraint degree: 2
-ev input_decomposition([a, b, a_limb[4], b_limb[4]]):
+ev input_decomposition([a, b, a_limb[4], b_limb[4]]) {
     # Enforce that the input is decomposed into valid bits.
     # Constraints degree: 2
     enf is_binary([a]) for a in a_limb
@@ -63,13 +66,14 @@ ev input_decomposition([a, b, a_limb[4], b_limb[4]]):
     # Constraints degree: 2
     enf a' = a * 16 + a_aggr when k1
     enf b' = b * 16 + b_aggr when k1
+}
 
 
 # Enforces that the output of the bitwise operation is aggregated correctly from the decomposed
 # limbs.
 #
 # Max constraint degree: 3
-ev output_aggregation([s, a, b, a_limb[4], b_limb[4], zp, z]):
+ev output_aggregation([s, a, b, a_limb[4], b_limb[4], zp, z]) {
     # Enforce that in the first row, the aggregated output value of the previous row should be 0.
     # Constraint degree: 2
     enf zp = 0 when k0
@@ -93,6 +97,7 @@ ev output_aggregation([s, a, b, a_limb[4], b_limb[4], zp, z]):
     match enf:
         z = zp * 16 + a_xor_b when s
         z = zp * 16 + a_and_b when !s
+}
 
 
 ### Bitwise Chiplet Air Constraints ###############################################################
@@ -101,8 +106,9 @@ ev output_aggregation([s, a, b, a_limb[4], b_limb[4], zp, z]):
 # trace.
 #
 # Max constraint degree: 4
-ev bitwise_chiplet([s, a, b, a_limb[4], b_limb[4], zp, z]):
+ev bitwise_chiplet([s, a, b, a_limb[4], b_limb[4], zp, z]) {
     enf bitwise_selector([s])
     enf input_decomposition([a, b, a_limb, b_limb])
     enf output_aggregation([s, a, b, a_limb, b_limb, zp, z])
     # Bus constraint is implemented in a separate file
+}

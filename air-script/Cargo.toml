@@ -1,34 +1,37 @@
 [package]
 name = "air-script"
-version = "0.3.0"
+version = "0.4.0"
 description = "AirScript language compiler"
-authors = ["miden contributors"]
+authors.workspace = true
 readme = "README.md"
-license = "MIT"
-repository = "https://github.com/0xPolygonMiden/air-script"
+license.workspace = true
+repository.workspace = true
 documentation = "https://0xpolygonmiden.github.io/air-script/"
 categories = ["compilers", "cryptography"]
 keywords = ["air", "stark", "zero-knowledge", "zkp"]
-edition = "2021"
-rust-version = "1.67"
+edition.workspace = true
+rust-version.workspace = true
 
 [[bin]]
 name = "airc"
 path = "src/main.rs"
 
 [dependencies]
-air-ir = { package = "air-ir", path = "../ir", version = "0.3" }
-air-parser = { package = "air-parser", path = "../parser", version = "0.3" }
-air-pass = { package = "air-pass", path = "../pass", version = "0.1" }
-air-codegen-masm = { package = "air-codegen-masm", path = "../codegen/masm", version = "0.1" }
-air-codegen-winter = { package = "air-codegen-winter", path = "../codegen/winterfell", version = "0.3" }
-clap = {version = "4.2", features = ["derive"] }
-env_logger = "0.10"
+air-codegen-winter = { package = "air-codegen-winter", path = "../codegen/winterfell", version = "0.4" }
+air-ir = { package = "air-ir", path = "../air", version = "0.4" }
+air-parser = { package = "air-parser", path = "../parser", version = "0.4" }
+air-pass = { package = "air-pass", path = "../pass", version = "0.4" }
+clap = { version = "4.2", features = ["derive"] }
+env_logger = "0.11"
 log = { version = "0.4", default-features = false }
-miden-diagnostics = "0.1"
+miden-diagnostics = { workspace = true }
+mir = { package = "air-mir", path = "../mir", version = "0.4" }
 
 [dev-dependencies]
 expect-test = "1.4"
-winter-air = { package = "winter-air", version = "0.6", default-features = false }
-winter-math = { package = "winter-math", version = "0.6", default-features = false }
-winter-utils = { package = "winter-utils", version = "0.6", default-features = false }
+winter-air = { package = "winter-air", version = "0.12", default-features = false }
+winter-math = { package = "winter-math", version = "0.12", default-features = false }
+winter-utils = { package = "winter-utils", version = "0.12", default-features = false }
+winter-prover = { package = "winter-prover", version = "0.12", default-features = false }
+winter-verifier = { package = "winter-verifier", version = "0.12", default-features = false }
+winterfell = { package = "winterfell", version = "0.12", default-features = false }

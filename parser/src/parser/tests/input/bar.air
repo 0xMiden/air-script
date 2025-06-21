@@ -1,11 +1,13 @@
 # A module imported by `import_example`
 mod bar
 
-periodic_columns:
+periodic_columns {
     # This column has the same name as the one in `foo`,
     # but shouldn't conflict in `import_example` because it
     # is only referenced locally in this module
-    k0: [1, 0]
+    k0: [1, 0],
+}
 
-ev bar_constraint([clk]):
-    enf clk' = clk + k0 when k0
+ev bar_constraint([clk]) {
+    enf clk' = clk + k0 when k0;
+}

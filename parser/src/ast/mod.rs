@@ -29,9 +29,9 @@ use miden_diagnostics::{
 };
 
 use crate::{
+    Symbol,
     parser::ParseError,
     sema::{self, SemanticAnalysisError},
-    Symbol,
 };
 
 /// This structure is used to represent parsing arbitrary AirScript files which may
@@ -71,6 +71,10 @@ pub struct Program {
     pub constants: BTreeMap<QualifiedIdentifier, Constant>,
     /// The set of used evaluator functions referenced in this program.
     pub evaluators: BTreeMap<QualifiedIdentifier, EvaluatorFunction>,
+    /// The set of used pure functions referenced in this program.
+    pub functions: BTreeMap<QualifiedIdentifier, Function>,
+    /// The set of used buses referenced in this program.
+    pub buses: BTreeMap<QualifiedIdentifier, Bus>,
     /// The set of used periodic columns referenced in this program.
     pub periodic_columns: BTreeMap<QualifiedIdentifier, PeriodicColumn>,
     /// The set of public inputs defined in the root module
@@ -78,13 +82,7 @@ pub struct Program {
     /// NOTE: Public inputs are only visible in the root module, so we do
     /// not use [QualifiedIdentifier] as a key into this collection.
     pub public_inputs: BTreeMap<Identifier, PublicInput>,
-    /// The set of random values defined in the root module, if present
-    pub random_values: Option<RandomValues>,
-    /// The set of trace columns defined in the root module
-    ///
-    /// NOTE: It is guaranteed that at least a `main` trace column set
-    /// will be present here. If `random_values` has a value, then it is
-    /// further guaranteed that an `aux` trace column set will be present.
+    /// The set of trace columns of the main trace defined in the root module
     pub trace_columns: Vec<TraceSegment>,
     /// The boundary_constraints block defined in the root module
     ///
@@ -115,9 +113,10 @@ impl Program {
             name,
             constants: Default::default(),
             evaluators: Default::default(),
+            functions: Default::default(),
+            buses: Default::default(),
             periodic_columns: Default::default(),
             public_inputs: Default::default(),
-            random_values: None,
             trace_columns: vec![],
             boundary_constraints: vec![],
             integrity_constraints: vec![],
@@ -147,7 +146,6 @@ impl Program {
         {
             let root_module = library.get_mut(&root).unwrap();
             mem::swap(&mut program.public_inputs, &mut root_module.public_inputs);
-            mem::swap(&mut program.random_values, &mut root_module.random_values);
             mem::swap(&mut program.trace_columns, &mut root_module.trace_columns);
         }
 
@@ -231,6 +229,15 @@ impl Program {
             if let Some(ic) = root_module.integrity_constraints.as_ref() {
                 program.integrity_constraints = ic.to_vec();
             }
+            // Make sure we move the buses into the program
+            if !root_module.buses.is_empty() {
+                program.buses = BTreeMap::from_iter(root_module.buses.iter().map(|(k, v)| {
+                    (
+                        QualifiedIdentifier::new(root, NamespacedIdentifier::Binding(*k)),
+                        v.clone(),
+                    )
+                }));
+            }
             for evaluator in root_module.evaluators.values() {
                 root_nodes.push_back(QualifiedIdentifier::new(
                     root,
@@ -265,7 +272,12 @@ impl Program {
                             .entry(referenced)
                             .or_insert_with(|| referenced_module.evaluators[&id].clone());
                     }
-                    DependencyType::Function => unimplemented!(),
+                    DependencyType::Function => {
+                        program
+                            .functions
+                            .entry(referenced)
+                            .or_insert_with(|| referenced_module.functions[&id].clone());
+                    }
                     DependencyType::PeriodicColumn => {
                         program
                             .periodic_columns
@@ -288,9 +300,9 @@ impl PartialEq for Program {
         self.name == other.name
             && self.constants == other.constants
             && self.evaluators == other.evaluators
+            && self.functions == other.functions
             && self.periodic_columns == other.periodic_columns
             && self.public_inputs == other.public_inputs
-            && self.random_values == other.random_values
             && self.trace_columns == other.trace_columns
             && self.boundary_constraints == other.boundary_constraints
             && self.integrity_constraints == other.integrity_constraints
@@ -300,26 +312,22 @@ impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "def {}\n", self.name)?;
 
-        writeln!(f, "trace_columns:")?;
+        writeln!(f, "trace_columns {{")?;
         for segment in self.trace_columns.iter() {
-            writeln!(f, "    {}", segment)?;
+            writeln!(f, "    {segment}")?;
         }
+        f.write_str("}}")?;
         f.write_str("\n")?;
 
-        writeln!(f, "public_inputs:")?;
+        writeln!(f, "public_inputs {{")?;
         for public_input in self.public_inputs.values() {
-            writeln!(f, "    {}: [{}]", public_input.name, public_input.size)?;
+            writeln!(f, "    {}: [{}]", public_input.name(), public_input.size())?;
         }
+        f.write_str("}}")?;
         f.write_str("\n")?;
-
-        if let Some(rv) = self.random_values.as_ref() {
-            writeln!(f, "random_values:")?;
-            writeln!(f, "    {}", rv)?;
-            f.write_str("\n")?;
-        }
 
         if !self.periodic_columns.is_empty() {
-            writeln!(f, "periodic_columns:")?;
+            writeln!(f, "periodic_columns {{")?;
             for (qid, column) in self.periodic_columns.iter() {
                 if qid.module == self.name {
                     writeln!(
@@ -332,6 +340,7 @@ impl fmt::Display for Program {
                     writeln!(f, "    {}: {}", qid, DisplayList(column.values.as_slice()))?;
                 }
             }
+            f.write_str("}}")?;
             f.write_str("\n")?;
         }
 
@@ -346,16 +355,18 @@ impl fmt::Display for Program {
             f.write_str("\n")?;
         }
 
-        writeln!(f, "boundary_constraints:")?;
+        writeln!(f, "boundary_constraints {{")?;
         for statement in self.boundary_constraints.iter() {
             writeln!(f, "{}", statement.display(1))?;
         }
+        f.write_str("}}")?;
         f.write_str("\n")?;
 
-        writeln!(f, "integrity_constraints:")?;
+        writeln!(f, "integrity_constraints {{")?;
         for statement in self.integrity_constraints.iter() {
             writeln!(f, "{}", statement.display(1))?;
         }
+        f.write_str("}}")?;
         f.write_str("\n")?;
 
         for (qid, evaluator) in self.evaluators.iter() {
@@ -370,11 +381,35 @@ impl fmt::Display for Program {
             } else {
                 writeln!(f, "{}{}", qid, DisplayTuple(evaluator.params.as_slice()))?;
             }
-
+            f.write_str(" {{")?;
             for statement in evaluator.body.iter() {
                 writeln!(f, "{}", statement.display(1))?;
             }
+            f.write_str("}}")?;
             f.write_str("\n")?;
+        }
+
+        for (qid, function) in self.functions.iter() {
+            f.write_str("fn ")?;
+            if qid.module == self.name {
+                writeln!(
+                    f,
+                    "{}{}",
+                    &qid.item,
+                    DisplayTypedTuple(function.params.as_slice())
+                )?;
+            } else {
+                writeln!(
+                    f,
+                    "{}{}",
+                    qid,
+                    DisplayTypedTuple(function.params.as_slice())
+                )?;
+            }
+
+            for statement in function.body.iter() {
+                writeln!(f, "{}", statement.display(1))?;
+            }
         }
 
         Ok(())

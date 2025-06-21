@@ -9,10 +9,11 @@ fn call_fold_identifier() {
     let source = "
     mod test
 
-    ev test([a, c[2]]):
-        let x = sum(c)
-        let y = prod(c)
-        enf a = x + y";
+    ev test([a, c[2]]) {
+        let x = sum(c);
+        let y = prod(c);
+        enf a = x + y;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     let body = vec![let_!(x = expr!(call!(sum(expr!(access!(c))))) =>
@@ -36,10 +37,11 @@ fn call_fold_vector_literal() {
     let source = "
     mod test
 
-    ev test([a, b, c[4]]):
-        let x = sum([a, b, c[0]])
-        let y = prod([a, b, c[0]])
-        enf a = x + y";
+    ev test([a, b, c[4]]) {
+        let x = sum([a, b, c[0]]);
+        let y = prod([a, b, c[0]]);
+        enf a = x + y;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     let body = vec![
@@ -65,10 +67,11 @@ fn call_fold_list_comprehension() {
     let source = "
     mod test
 
-    ev test([a, b, c[4]]):
-        let x = sum([col^7 for col in c])
-        let y = prod([col^7 for col in c])
-        enf a = x + y";
+    ev test([a, b, c[4]]) {
+        let x = sum([col^7 for col in c]);
+        let y = prod([col^7 for col in c]);
+        enf a = x + y;
+    }";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     let body = vec![

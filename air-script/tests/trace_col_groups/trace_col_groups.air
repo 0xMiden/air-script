@@ -1,15 +1,18 @@
 def TraceColGroupAir
 
-trace_columns:
-    main: [clk, fmp[2], ctx]
-    aux: [a, b, c[3]]
+trace_columns {
+    main: [clk, fmp[2], ctx, a, b, c[3]],
+}
 
-public_inputs:
-    stack_inputs: [16]
+public_inputs {
+    stack_inputs: [16],
+}
 
-integrity_constraints:
-    enf fmp[1]' = fmp[1] + 1
-    enf fmp[0]' = fmp[0] - 1
-  
-boundary_constraints:
-    enf c[2].first = 0
+integrity_constraints {
+    enf fmp[1]' = fmp[1] + 1;
+    enf fmp[0]' = fmp[0] - 1;
+}
+
+boundary_constraints {
+    enf c[2].first = 0;
+}

@@ -1,7 +1,7 @@
 use super::*;
 
 /// The types of values which can be represented in an AirScript program
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Hash, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Type {
     /// A field element
     Felt,
@@ -44,20 +44,28 @@ impl Type {
             ty if access_type == AccessType::Default => Ok(ty),
             Self::Felt => Err(InvalidAccessError::IndexIntoScalar),
             Self::Vector(len) => match access_type {
-                AccessType::Slice(range) if range.end > len => {
-                    Err(InvalidAccessError::IndexOutOfBounds)
+                AccessType::Slice(range) => {
+                    let slice_range = range.to_slice_range();
+                    if slice_range.end > len {
+                        Err(InvalidAccessError::IndexOutOfBounds)
+                    } else {
+                        Ok(Self::Vector(slice_range.len()))
+                    }
                 }
-                AccessType::Slice(range) => Ok(Self::Vector(range.end - range.start)),
                 AccessType::Index(idx) if idx >= len => Err(InvalidAccessError::IndexOutOfBounds),
                 AccessType::Index(_) => Ok(Self::Felt),
                 AccessType::Matrix(_, _) => Err(InvalidAccessError::IndexIntoScalar),
                 _ => unreachable!(),
             },
             Self::Matrix(rows, cols) => match access_type {
-                AccessType::Slice(range) if range.end > rows => {
-                    Err(InvalidAccessError::IndexOutOfBounds)
+                AccessType::Slice(range) => {
+                    let slice_range = range.to_slice_range();
+                    if slice_range.end > rows {
+                        Err(InvalidAccessError::IndexOutOfBounds)
+                    } else {
+                        Ok(Self::Matrix(slice_range.len(), cols))
+                    }
                 }
-                AccessType::Slice(range) => Ok(Self::Matrix(range.end - range.start, cols)),
                 AccessType::Index(idx) if idx >= rows => Err(InvalidAccessError::IndexOutOfBounds),
                 AccessType::Index(_) => Ok(Self::Vector(cols)),
                 AccessType::Matrix(row, col) if row >= rows || col >= cols => {
@@ -72,9 +80,9 @@ impl Type {
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Felt => f.write_str("field element"),
-            Self::Vector(n) => write!(f, "vector of length {}", n),
-            Self::Matrix(rows, cols) => write!(f, "matrix of {} rows and {} columns", rows, cols),
+            Self::Felt => f.write_str("felt"),
+            Self::Vector(n) => write!(f, "felt[{n}]"),
+            Self::Matrix(rows, cols) => write!(f, "felt[{rows}, {cols}]"),
         }
     }
 }
@@ -86,7 +94,6 @@ pub enum FunctionType {
     /// a complex type signature due to the nature of trace bindings
     Evaluator(Vec<TraceSegment>),
     /// A standard function with one or more inputs, and a result
-    #[allow(dead_code)]
     Function(Vec<Type>, Type),
 }
 impl FunctionType {

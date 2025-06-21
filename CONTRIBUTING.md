@@ -2,14 +2,14 @@
 
 #### First off, thanks for taking the time to contribute!
 
-You can find a detailed explanation of main project concepts in [docs](https://0xPolygonMiden.github.io/air-script/).
+You can find a detailed explanation of main project concepts in [docs](https://0xMiden.github.io/air-script/).
 
 We want to make contributing to this project as easy and transparent as possible, whether it's:
 
-- Reporting a [bug](https://github.com/0xPolygonMiden/air-script/issues/new)
-- Taking part in [discussions](https://github.com/0xPolygonMiden/air-script/discussions)
-- Submitting a [fix](https://github.com/0xPolygonMiden/air-script/pulls)
-- Proposing new [features](https://github.com/0xPolygonMiden/air-script/issues/new)
+- Reporting a [bug](https://github.com/0xMiden/air-script/issues/new)
+- Taking part in [discussions](https://github.com/0xMiden/air-script/discussions)
+- Submitting a [fix](https://github.com/0xMiden/air-script/pulls)
+- Proposing new [features](https://github.com/0xMiden/air-script/issues/new)
 
 &nbsp;
 
@@ -74,7 +74,7 @@ For example, a new change to the PARSER crate might have the following message: 
     // ================================================================================
     ```
 
-- [Rustfmt](https://github.com/rust-lang/rustfmt) and [Clippy](https://github.com/rust-lang/rust-clippy) linting is included in CI pipeline. Anyways it's prefferable to run linting locally before push:
+- [Rustfmt](https://github.com/rust-lang/rustfmt) and [Clippy](https://github.com/rust-lang/rust-clippy) linting is included in CI pipeline. Anyways it's preferable to run linting locally before push:
     ```
     cargo fix --allow-staged --allow-dirty --all-targets --all-features; cargo fmt; cargo clippy --workspace --all-targets --all-features -- -D warnings
     ```

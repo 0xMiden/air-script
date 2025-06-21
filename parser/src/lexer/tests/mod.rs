@@ -1,17 +1,17 @@
+use crate::Symbol;
 use crate::lexer::{Lexer, LexicalError, Token};
 use crate::parser::ParseError;
-use crate::Symbol;
 
 mod arithmetic_ops;
 mod boundary_constraints;
 mod constants;
 mod evaluator_functions;
+mod functions;
 mod identifiers;
 mod list_comprehension;
 mod modules;
 mod periodic_columns;
 mod pub_inputs;
-mod random_values;
 mod variables;
 
 // TEST HELPERS

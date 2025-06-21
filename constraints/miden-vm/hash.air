@@ -2,11 +2,11 @@ mod HashChipletAir
 
 ### Constants and periodic columns ################################################################
 
-periodic_columns:
+periodic_columns {
     cycle_row_0: [1, 0, 0, 0, 0, 0, 0, 0]
     cycle_row_6: [0, 0, 0, 0, 0, 0, 1, 0]
     cycle_row_7: [0, 0, 0, 0, 0, 0, 0, 1]
-
+}
 
 ### Helper functions ##############################################################################
 
@@ -87,17 +87,19 @@ fn get_f_out_next(s: vector[3]) -> scalar:
 ### Helper evaluators #############################################################################
 
 # Enforces that column must be binary.
-ev is_binary(main: [a]):
+ev is_binary(main: [a]) {
     enf a^2 = a
+}
 
 
 # Enforces that value in column is copied over to the next row.
-ev is_unchanged(main: [column]):
+ev is_unchanged(main: [column]) {
     ev column' = column
+}
 
 
 # Enforce selector columns constraints
-ev selector_columns(main: [s[3]]):
+ev selector_columns(main: [s[3]]) {
     let f_out = get_f_out(s)
     let f_out_next = get_f_out_next(s)
     let f_abp = get_f_abp(s)
@@ -123,10 +125,10 @@ ev selector_columns(main: [s[3]]):
 
     # Enforce that no invalid combinations of flags are allowed.
     enf cycle_row_7 * binary_not(s[0]) * s[1] = 0
-
+}
 
 # Enforce node index constraints
-ev node_index(main: [s[3], i]):
+ev node_index(main: [s[3], i]) {
     let f_out = get_f_out(s)
     let f_mp = get_f_mp(s)
     let f_mv = get_f_mv(s)
@@ -153,10 +155,10 @@ ev node_index(main: [s[3], i]):
     # or the computation is finished.
     let absorbing_or_comp_finished = 1 - f_an - f_out
     enf is_unchanged([i]) when absorbing_or_comp_finished
-
+}
 
 # Enforce hasher state constraints
-ev hasher_state(main: [s[3], h[12], i]):
+ev hasher_state(main: [s[3], h[12], i]) {
     let f_mp = get_f_mp(s)
     let f_mv = get_f_mv(s)
     let f_mu = get_f_mu(s)
@@ -180,12 +182,12 @@ ev hasher_state(main: [s[3], h[12], i]):
     match enf:
         is_unchanged(h[j + 4]) for j in 0..4 when !b & f_absorb_node
         h[j + 8]' = h[j + 4] for j in 0..4 when b & f_absorb_node
-
+}
 
 ### Hash Chiplet Air Constraints ##################################################################
 
 # Enforces the constraints on the hash chiplet, given the columns of the hash execution trace.
-ev hash_chiplet(main: [s[3], r, h[12], i]):
+ev hash_chiplet(main: [s[3], r, h[12], i]) {
     ## Row address constraint ##
     # TODO: Apply row address constraints:
     # 1. Boundary constraint `enf r.first = 1`
@@ -203,3 +205,4 @@ ev hash_chiplet(main: [s[3], r, h[12], i]):
 
     # Multiset check constraints
     # TODO: Apply multiset check constraints
+}

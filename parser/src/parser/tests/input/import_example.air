@@ -1,20 +1,24 @@
 def import_example
 
 # Import all exported symbols from foo
-use foo::*
+use foo::*;
 
 # Import just `bar_constraint` from bar
-use bar::bar_constraint
+use bar::bar_constraint;
 
-trace_columns:
-    main: [clk, fmp, ctx]
+trace_columns {
+    main: [clk, fmp, ctx],
+}
 
-public_inputs:
-    inputs: [2]
+public_inputs {
+    inputs: [2],
+}
 
-integrity_constraints:
-    enf foo_constraint([clk])
-    enf bar_constraint([clk])
+integrity_constraints {
+    enf foo_constraint([clk]);
+    enf bar_constraint([clk]);
+}
 
-boundary_constraints:
-    enf clk.first = 0
+boundary_constraints {
+    enf clk.first = 0;
+}

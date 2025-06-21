@@ -1,4 +1,4 @@
-use super::{expect_valid_tokenization, Symbol, Token};
+use super::{Symbol, Token, expect_valid_tokenization};
 
 #[test]
 fn constants_scalar() {
@@ -102,14 +102,14 @@ fn constants_access_inside_boundary_expr() {
     // This is invalid since the constants are not declared but this error will be thrown at the
     // IR level.
     let source = "
-    boundary_constraints:
+    boundary_constraints {
         enf clk.first = A + B[0]
         enf clk.last = C[0][1]
-    ";
+    }";
 
     let tokens = vec![
         Token::BoundaryConstraints,
-        Token::Colon,
+        Token::LBrace,
         Token::Enf,
         Token::Ident(Symbol::intern("clk")),
         Token::Dot,
@@ -133,6 +133,7 @@ fn constants_access_inside_boundary_expr() {
         Token::LBracket,
         Token::Num(1),
         Token::RBracket,
+        Token::RBrace,
     ];
     expect_valid_tokenization(source, tokens);
 }
@@ -143,8 +144,9 @@ fn constants_access_inside_integrity_expr() {
         const A = 1
         const B = [1, 0]
         const C = [[1, 0], [0, 1]]
-        integrity_constraints:
+        integrity_constraints {
             enf clk * 2^A = B[0] + C[0][1]
+        }
     ";
     let tokens = vec![
         Token::Const,
@@ -176,7 +178,7 @@ fn constants_access_inside_integrity_expr() {
         Token::RBracket,
         Token::RBracket,
         Token::IntegrityConstraints,
-        Token::Colon,
+        Token::LBrace,
         Token::Enf,
         Token::Ident(Symbol::intern("clk")),
         Token::Star,
@@ -196,6 +198,7 @@ fn constants_access_inside_integrity_expr() {
         Token::LBracket,
         Token::Num(1),
         Token::RBracket,
+        Token::RBrace,
     ];
     expect_valid_tokenization(source, tokens);
 }
@@ -205,12 +208,13 @@ fn constants_access_inside_integrity_expr_invalid() {
     // This is invalid since the constants are not declared and the constant names should be
     // capitalized but these errors will be thrown at the IR level and parsing level respectively.
     let source = "
-        integrity_constraints:
+        integrity_constraints {
             enf clk * 2^a = b[0] + c[0][1]
+        }
     ";
     let tokens = vec![
         Token::IntegrityConstraints,
-        Token::Colon,
+        Token::LBrace,
         Token::Enf,
         Token::Ident(Symbol::intern("clk")),
         Token::Star,
@@ -230,6 +234,7 @@ fn constants_access_inside_integrity_expr_invalid() {
         Token::LBracket,
         Token::Num(1),
         Token::RBracket,
+        Token::RBrace,
     ];
     expect_valid_tokenization(source, tokens);
 }

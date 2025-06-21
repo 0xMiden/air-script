@@ -73,8 +73,9 @@ Declaration: Declaration = {
     Import => Declaration::Import(<>),
     Constant => Declaration::Constant(<>),
     PeriodicColumns => Declaration::PeriodicColumns(<>),
-    RandomValues => Declaration::RandomValues(<>),
     EvaluatorFunction => Declaration::EvaluatorFunction(<>),
+    Function => Declaration::Function(<>),
+    Buses => Declaration::Buses(<>),
     <l:@L> <trace:Trace> <r:@R> => Declaration::Trace(Span::new(span!(l, r), trace)),
     <PublicInputs> => Declaration::PublicInputs(<>),
     <BoundaryConstraints> => Declaration::BoundaryConstraints(<>),
@@ -82,8 +83,8 @@ Declaration: Declaration = {
 }
 
 Import: Span<Import> = {
-    <l:@L> "use" <module:Identifier> "::" "*" <r:@R> => Span::new(span!(l, r), Import::All { module: Identifier::new(span!(l, r), module.name()) }),
-    <l:@L> "use" <module:Identifier> "::" <item:Identifier> <r:@R> => {
+    <l:@L> "use" <module:Identifier> "::" "*" ";" <r:@R> => Span::new(span!(l, r), Import::All { module: Identifier::new(span!(l, r), module.name()) }),
+    <l:@L> "use" <module:Identifier> "::" <item:Identifier> ";" <r:@R> => {
         let mut items: HashSet<Identifier> = HashSet::default();
         items.insert(item);
         Span::new(span!(l, r), Import::Partial { module, items })
@@ -94,20 +95,12 @@ Import: Span<Import> = {
 // ================================================================================================
 
 Trace: Vec<TraceSegment> = {
-    <l:@L> "trace_columns" ":" <main: MainTraceBindings?> <aux: AuxTraceBindings?> <r:@R> =>?
-        match (main, aux) {
-            (Some(main), Some(aux)) => Ok(vec![main, aux]),
-            (Some(main), None) => Ok(vec![main]),
-            (None, Some(_)) => {
+    <l:@L> "trace_columns" "{" <main: MainTraceBindings?> "}" <r:@R> =>?
+        match main {
+            Some(main) => Ok(vec![main]),
+            None => {
                 diagnostics.diagnostic(Severity::Error)
                     .with_message("declaration of main trace columns is required")
-                    .with_primary_label(span!(l, r), "missing 'main' declaration in this section")
-                    .emit();
-                Err(ParseError::Failed.into())
-            }
-            (None, None) => {
-                diagnostics.diagnostic(Severity::Error)
-                    .with_message("trace_columns section cannot be empty")
                     .with_primary_label(span!(l, r), "missing 'main' declaration in this section")
                     .emit();
                 Err(ParseError::Failed.into())
@@ -119,18 +112,9 @@ MainSegmentId: Identifier = {
     <l:@L> "main" <r:@R> => Identifier::new(span!(l, r), symbols::Main),
 }
 
-AuxSegmentId: Identifier = {
-    <l:@L> "aux" <r:@R> => Identifier::new(span!(l, r), symbols::Aux),
-}
-
 MainTraceBindings: TraceSegment = {
-    <l:@L> <name:MainSegmentId> ":" <bindings: Vector<TraceBinding>> <r:@R> =>
+    <l:@L> <name:MainSegmentId> ":" <bindings: Vector<TraceBinding>> "," <r:@R> =>
         TraceSegment::new(span!(l, r), 0, name, bindings),
-}
-
-AuxTraceBindings: TraceSegment = {
-    <l:@L> <name:AuxSegmentId> ":" <bindings: Vector<TraceBinding>> <r:@R> =>
-        TraceSegment::new(span!(l, r), 1, name, bindings),
 }
 
 TraceBinding: Span<(Identifier, usize)> = {
@@ -142,7 +126,7 @@ TraceBinding: Span<(Identifier, usize)> = {
 // ================================================================================================
 
 Constant: Constant = {
-    <l:@L> "const" <name: Identifier> "=" <value: ConstExpr> <r:@R>
+    <l:@L> "const" <name: Identifier> "=" <value: ConstExpr> ";" <r:@R>
         => Constant::new(span!(l, r), name, value),
 }
 
@@ -157,12 +141,14 @@ ConstExpr: ConstantExpr = {
 
 // At least one public input is required.
 PublicInputs: Span<Vec<PublicInput>> = {
-    <l:@L> "public_inputs" ":" <inputs:PublicInput+> <r:@R> => Span::new(span!(l, r), inputs)
+    <l:@L> "public_inputs" "{" <inputs:PublicInput+> "}" <r:@R> => Span::new(span!(l, r), inputs)
 }
 
 PublicInput: PublicInput = {
-    <l:@L> <name: Identifier> ":" <size: Size> <r:@R>
-        => PublicInput::new(span!(l, r), name, size),
+    <l:@L> <name: Identifier> ":" <size: Size> "," <r:@R>
+        => PublicInput::new_vector(span!(l, r), name, size),
+    <l:@L> <name: Identifier> ":" <table: TableSize> "," <r:@R>
+        => PublicInput::new_table(span!(l, r), name, table),
 }
 
 // PERIODIC COLUMNS
@@ -170,58 +156,40 @@ PublicInput: PublicInput = {
 
 // Periodic columns are not required, and there is no limit to the number that can be provided.
 PeriodicColumns: Span<Vec<PeriodicColumn>> = {
-    <l:@L> "periodic_columns" ":" <columns:PeriodicColumn*> <r:@R>
+    <l:@L> "periodic_columns" "{" <columns:PeriodicColumn*> "}" <r:@R>
         => Span::new(span!(l, r), columns)
 }
 
 PeriodicColumn: PeriodicColumn = {
-    <l:@L> <name: Identifier> ":" <values: Vector<Num_u64>> <r:@R>
+    <l:@L> <name: Identifier> ":" <values: Vector<Num_u64>> "," <r:@R>
         => PeriodicColumn::new(span!(l, r), name, values),
 }
 
-// RANDOM VALUES
+
+// BUSES
 // ================================================================================================
 
-RandomValues: RandomValues = {
-    "random_values" ":" <random_values: RandValuesDef> <l:@L> <extra: RandValuesDef*> <r:@R> =>? {
-        if !extra.is_empty() {
-            diagnostics.diagnostic(Severity::Warning)
-                .with_message("only one declaration may appear in random_values")
-                .with_primary_label(span!(l, r), "these declarations will be ignored")
-                .emit();
-        }
-        Ok(random_values)
-    }
+// Buses are not required, but if the section is specified at least one Bus declaration is required.
+Buses: Span<Vec<Bus>> = {
+    <l:@L> "buses" "{" <bus:Bus+> "}" <r:@R>
+        => Span::new(span!(l, r), bus)
 }
 
-RandValuesDef: RandomValues = {
-    <l:@L> <name: Identifier> ":" <size: Size> <r:@R> => {
-        let name = Identifier::new(name.span(), Symbol::intern(format!("${}", &name)));
-        RandomValues::with_size(span!(l, r), name, size as usize)
-    },
-    <l:@L> <ignored: Identifier> ":" "[" "]" <r:@R> =>? {
-        diagnostics.diagnostic(Severity::Error)
-            .with_message("random values cannot be empty")
-            .with_primary_label(span!(l, r), "invalid declaration occurs here")
-            .emit();
-        Err(ParseError::Failed.into())
-    },
-    <l:@L> <name: Identifier> ":" <bindings: Vector<RandBinding>> <r:@R> => {
-        let name = Identifier::new(name.span(), Symbol::intern(format!("${}", &name)));
-        RandomValues::new(span!(l, r), name, bindings)
-    },
+Bus: Bus = {
+    <l:@L> <bus_type: BusType> <name: Identifier> "," <r:@R>
+        => Bus::new(span!(l, r), name, bus_type),
 }
 
-RandBinding: Span<(Identifier, usize)> = {
-    <name: Identifier> => Span::new(name.span(), (name, 1)),
-    <l:@L> <name: Identifier> <size: Size> <r:@R> => Span::new(span!(l, r), (name, size as usize)),
+BusType: BusType = {
+    "multiset" => BusType::Multiset,
+    "logup" => BusType::Logup,
 }
 
 // EVALUATOR FUNCTIONS
 // ================================================================================================
 
 EvaluatorFunction: EvaluatorFunction = {
-    <l:@L> "ev" <name: FunctionIdentifier> "(" <params: EvaluatorBindings> ")" ":" <body: StatementBlock> <r:@R>
+    <l:@L> "ev" <name: FunctionIdentifier> "(" <params: EvaluatorBindings> ")" "{" <body: StatementBlock> "}" <r:@R>
         => EvaluatorFunction::new(span!(l, r), name, params, body)
 }
 
@@ -231,7 +199,7 @@ EvaluatorBindings: Vec<TraceSegment> = {
 
         for (segment, (span, bindings)) in trace.into_iter().enumerate() {
             // We generate a name for these segments to distinguish them from direct references
-            // to the actual main/aux columns. This is useful during the inlining phase
+            // to the actual main columns. This is useful during the inlining phase
             let segment_name = Identifier::new(span, Symbol::intern(format!("%{}", *next_var)));
             *next_var += 1;
             segments.push(TraceSegment::new(span, segment, segment_name, bindings));
@@ -256,11 +224,46 @@ EvaluatorSegmentBindings: (SourceSpan, Vec<Span<(Identifier, usize)>>) = {
     <l:@L> "[" "]" <r:@R> => (span!(l, r), vec![]),
 }
 
+// FUNCTIONS
+// ================================================================================================
+
+Function: Function = {
+    <l:@L> "fn" <name: FunctionIdentifier> "(" <params: FunctionBindings> ")" "->" <ty: FunctionBindingType> "{" <body: FunctionBody> "}" <r:@R>
+        => Function::new(span!(l, r), name, params, ty, body)
+}
+
+FunctionBindings: Vec<(Identifier, Type)> = {
+    <l:@L> <params: Comma<FunctionBinding>> <r:@R> => params,
+}
+
+FunctionBinding: (Identifier, Type) = {
+    <name: Identifier> ":" <ty: FunctionBindingType> => (name, ty),
+}
+
+FunctionBindingType: Type = {
+    <l:@L> "felt" <r:@R> => Type::Felt,
+    <l:@L> "felt" <size: Size> <r:@R> => Type::Vector(size as usize),
+    <l:@L> "felt" "[" <row_size: Num_u64> "," <col_size: Num_u64> "]" <r:@R> => Type::Matrix(row_size as usize, col_size as usize),
+}
+
+FunctionBody: Vec<Statement> = {
+    <l:@L> <stmts: StatementBlock> <r:@R> =>? {
+        if stmts.len() > 1 {
+            diagnostics.diagnostic(Severity::Error)
+            .with_message("invalid function definition")
+            .with_primary_label(span!(l, r), "function should have 0 or more let statements followed by a return statement.")
+            .emit();
+            return Err(ParseError::Failed.into());
+        }
+        Ok(stmts)
+    },
+}
+
 // BOUNDARY CONSTRAINTS
 // ================================================================================================
 
 BoundaryConstraints: Span<Vec<Statement>> = {
-    <l:@L> "boundary_constraints" ":" <body: StatementBlock> <r:@R> => Span::new(span!(l, r), body),
+    <l:@L> "boundary_constraints" "{" <body: StatementBlock> "}" <r:@R> => Span::new(span!(l, r), body),
 }
 
 Boundary: Boundary = {
@@ -272,7 +275,7 @@ Boundary: Boundary = {
 // ================================================================================================
 
 IntegrityConstraints: Span<Vec<Statement>> = {
-    <l:@L> "integrity_constraints" ":" <body: StatementBlock> <r:@R>
+    <l:@L> "integrity_constraints" "{" <body: StatementBlock> "}" <r:@R>
         => Span::new(span!(l, r), body)
 }
 
@@ -287,10 +290,11 @@ StatementBlock: Vec<Statement> = {
         stmts
     },
     <ConstraintStatements>,
+    <ReturnStatement> => vec![Statement::Expr(<>)],
 }
 
 Let: Let = {
-    <l:@L> "let" <name: Identifier> "=" <value: Expr> <r:@R> <body: StatementBlock>
+    <l:@L> "let" <name: Identifier> "=" <value: Expr> ";" <r:@R> <body: StatementBlock>
         => Let::new(span!(l, r), name, value, body)
 }
 
@@ -301,16 +305,21 @@ ConstraintStatements: Vec<Statement> = {
 }
 
 ConstraintStatement: Vec<Statement> = {
-    "enf" "match" ":" <MatchArm+> => <>,
-    "enf" <ConstraintExpr> => vec![<>],
+    "enf" "match" "{" <MatchArm+> "}" ";" => <>,
+    "enf" <ConstraintExpr> ";" => vec![<>],
+    <BusConstraintExpr> ";" => vec![<>],
+}
+
+ReturnStatement: Expr = {
+    <l:@L> "return" <expr: Expr> ";" <r:@R> => expr,
 }
 
 MatchArm: Statement = {
-    <l:@L> "case" <selector:ScalarExpr> ":" <constraint:ScalarConstraintExpr> <r:@R> => {
+    <l:@L> "case" <selector:ScalarExpr> ":" <constraint:ScalarConstraintExpr> "," <r:@R> => {
         let generated_name = format!("%{}", *next_var);
         *next_var += 1;
         let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
-        let context = vec![(generated_binding, Expr::Range(Span::new(SourceSpan::UNKNOWN, 0..1)))];
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
         Statement::EnforceAll(ListComprehension::new(span!(l, r), constraint, context, Some(selector)))
     }
 }
@@ -355,12 +364,43 @@ ConstraintExpr: Statement = {
                 let generated_name = format!("%{}", *next_var);
                 *next_var += 1;
                 let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
-                let context = vec![(generated_binding, Expr::Range(Span::new(SourceSpan::UNKNOWN, 0..1)))];
+                let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
                 Statement::EnforceAll(ListComprehension::new(span!(l, r), expr, context, selector))
             } else {
                 Statement::Enforce(expr)
             }
         }
+    }
+}
+
+// 1. `p.insert(a, b) when s`
+// 2. `q.insert(a, b) with m`
+BusConstraintExpr: Statement = {
+    <l:@L> <expr: ScalarBusConstraintExpr> <selector: WithSelector> <r:@R> => {
+        let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, Some(selector)))
+    },
+    <l:@L> <expr: ScalarBusConstraintExpr> <multiplicity: WithMultiplicity> <r:@R> => {
+        let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, Some(multiplicity)))
+    }
+}
+
+// 1. `p.first = null`
+// 2. `q.first = ???` To define
+BoundaryBusConstraintExpr: Statement = {
+    <l:@L> <expr: ScalarBusConstraintExpr> <r:@R> => {
+        let generated_name = format!("%{}", *next_var);
+        *next_var += 1;
+        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
+        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
+        Statement::BusEnforce(ListComprehension::new(span!(l, r), expr, context, None))
     }
 }
 
@@ -370,8 +410,22 @@ ScalarConstraintExpr: ScalarExpr = {
         => ScalarExpr::Binary(BinaryExpr::new(span!(l, r), BinaryOp::Eq, lhs, rhs)),
 }
 
+ScalarBusConstraintExpr: ScalarExpr = {
+    <l:@L> <bus: Identifier> "." <bus_operator: BusOperator> "(" <args: Comma<Expr>> ")" <r:@R> => {
+        ScalarExpr::BusOperation(BusOperation::new(span!(l, r), bus, bus_operator, args))
+    }
+}
+
+BusOperator: BusOperator = {
+    "insert" => BusOperator::Insert,
+    "remove" => BusOperator::Remove
+}
+
 WithSelector: ScalarExpr = {
     "when" <ScalarExpr>,
+}
+WithMultiplicity: ScalarExpr = {
+    "with" <ScalarExpr>,
 }
 
 Expr: Expr = {
@@ -409,6 +463,8 @@ ScalarExprBase: ScalarExpr = {
     #[precedence(level="0")]
     SymbolAccess,
     <Int> => ScalarExpr::Const(<>),
+    <l:@L> "null" <r:@R> => ScalarExpr::Null(Span::new(span!(l, r), ())),
+    <l:@L> "unconstrained" <r:@R> => ScalarExpr::Unconstrained(Span::new(span!(l, r), ())),
     "(" <ScalarExpr> ")",
 
     #[precedence(level="1")]
@@ -466,8 +522,7 @@ SymbolAccessBase: (Identifier, AccessType) = {
     <ident: Identifier> "[" <range: Range> "]" => (ident, AccessType::Slice(range)),
     <ident: Identifier> <idx: Index> =>  (ident, AccessType::Index(idx)),
     <ident: Identifier> <row: Index> <col: Index> => (ident, AccessType::Matrix(row, col)),
-    // accessing an identifier used in a section declaration, like the full random values array or
-    // a named trace segment, e.g. $main, $aux, $rand
+    // accessing an identifier used in a section declaration, like a named trace segment, e.g. $main
     <ident: DeclIdentifier> => (ident, AccessType::Default),
     <ident: DeclIdentifier> <idx: Index> => (ident, AccessType::Index(idx))
 
@@ -514,12 +569,22 @@ Iterables: Vec<Expr> = {
 
 Iterable: Expr = {
     <ident: Identifier> => Expr::SymbolAccess(SymbolAccess::new(ident.span(), ident, AccessType::Default, 0)),
-    <l:@L> <range: Range> <r:@R> => Expr::Range(Span::new(span!(l, r), range)),
+    <range: Range> => Expr::Range(range),
     <l:@L> <ident: Identifier> "[" <range: Range> "]" <r:@R> => Expr::SymbolAccess(SymbolAccess::new(span!(l, r), ident, AccessType::Slice(range), 0)),
+    <l:@L> <function_call: FunctionCall> <r:@R> => if let ScalarExpr::Call(call) = function_call {
+        Expr::Call(call)
+    } else {
+        unreachable!()
+    }
 }
 
-Range: Range = {
-    <start: Num_u64> ".." <end: Num_u64> => Range { start: start as usize, end: end as usize }
+Range: RangeExpr = {
+    <l:@L> <start: RangeBound> ".." <end: RangeBound> <r:@R> => RangeExpr { span: span!(l, r), start, end }
+}
+
+RangeBound: RangeBound = {
+    <l:@L> <value:Num_u64> <r:@R> => RangeBound::Const(Span::new(span!(l, r), value as usize)),
+    <l:@L> <name:Identifier> <r:@R> => RangeBound::SymbolAccess(ConstSymbolAccess::new(span!(l, r), name)),
 }
 
 // ATOMS
@@ -533,12 +598,25 @@ Matrix<T>: Vec<Vec<T>> = {
     Vector<Vector<T>>,
 }
 
+Tuple<T>: Vec<T> = {
+    "(" <v1:T> "," <v2:T> <v:("," <T>)*> ")" => {
+        let mut v = v;
+        v.insert(0, v2);
+        v.insert(0, v1);
+        v
+    }
+};
+
 Size: u64 = {
     "[" <Num_u64> "]" => <>
 }
 
 Index: usize = {
     "[" <idx: Num_u64> "]" => idx as usize
+}
+
+TableSize: u64 = {
+    "[" "[" <cols: Num_u64> "]" "]" => <>
 }
 
 DeclIdentifier: Identifier = {
@@ -582,19 +660,28 @@ extern {
         "const" => Token::Const,
         "trace_columns" => Token::TraceColumns,
         "main" => Token::Main,
-        "aux" => Token::Aux,
         "public_inputs" => Token::PublicInputs,
         "periodic_columns" => Token::PeriodicColumns,
-        "random_values" => Token::RandomValues,
+        "buses" => Token::Buses,
+        "multiset" => Token::Multiset,
+        "logup" => Token::Logup,
+        "null" => Token::Null,
+        "unconstrained" => Token::Unconstrained,
+        "insert" => Token::Insert,
+        "remove" => Token::Remove,
         "boundary_constraints" => Token::BoundaryConstraints,
         "first" => Token::First,
         "last" => Token::Last,
         "integrity_constraints" => Token::IntegrityConstraints,
         "ev" => Token::Ev,
+        "fn" => Token::Fn,
         "enf" => Token::Enf,
+        "return" => Token::Return,
         "match" => Token::Match,
         "case" => Token::Case,
         "when" => Token::When,
+        "with" => Token::With,
+        "felt" => Token::Felt,
         "'" => Token::Quote,
         "=" => Token::Equal,
         "+" => Token::Plus,
@@ -611,7 +698,11 @@ extern {
         "]" => Token::RBracket,
         "(" => Token::LParen,
         ")" => Token::RParen,
+        "{" => Token::LBrace,
+        "}" => Token::RBrace,
         "." => Token::Dot,
         ".." => Token::DotDot,
+        "->" => Token::Arrow,
+        ";" => Token::SemiColon,
     }
 }

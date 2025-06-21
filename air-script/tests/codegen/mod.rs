@@ -1,3 +1,3 @@
 mod helpers;
-mod masm;
-mod winterfell;
+mod winterfell_with_mir;
+mod winterfell_wo_mir;

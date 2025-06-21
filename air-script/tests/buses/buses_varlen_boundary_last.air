@@ -1,0 +1,29 @@
+def BusesAir
+
+trace_columns {
+    main: [a],
+}
+
+buses {
+    multiset p,
+    logup q,
+}
+
+public_inputs {
+    outputs: [[2]],
+}
+
+boundary_constraints {
+    enf p.first = null;
+    enf q.first = null;
+    enf p.last = outputs;
+    enf q.last = outputs;
+}
+
+integrity_constraints {
+    p.insert(1) when a;
+    p.remove(1) when (a - 1);
+    q.insert(1, 2) when a;
+    q.insert(1, 2) when a;
+    q.remove(1, 2) with 2;
+}

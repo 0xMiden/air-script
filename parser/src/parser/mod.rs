@@ -58,6 +58,7 @@ pub enum ParseError {
     #[error("parsing failed, see diagnostics for details")]
     Failed,
 }
+
 impl Eq for ParseError {}
 impl PartialEq for ParseError {
     fn eq(&self, other: &Self) -> bool {
@@ -66,23 +67,18 @@ impl PartialEq for ParseError {
             (Self::Analysis(l), Self::Analysis(r)) => l == r,
             (Self::FileError { .. }, Self::FileError { .. }) => true,
             (Self::InvalidToken(_), Self::InvalidToken(_)) => true,
-            (
-                Self::UnexpectedEof {
-                    expected: ref l, ..
-                },
-                Self::UnexpectedEof {
-                    expected: ref r, ..
-                },
-            ) => l == r,
+            (Self::UnexpectedEof { expected: l, .. }, Self::UnexpectedEof { expected: r, .. }) => {
+                l == r
+            }
             (
                 Self::UnrecognizedToken {
                     token: lt,
-                    expected: ref l,
+                    expected: l,
                     ..
                 },
                 Self::UnrecognizedToken {
                     token: rt,
-                    expected: ref r,
+                    expected: r,
                     ..
                 },
             ) => lt == rt && l == r,
@@ -135,19 +131,18 @@ impl ToDiagnostic for ParseError {
                 let mut message = "expected one of: ".to_string();
                 for (i, t) in expected.iter().enumerate() {
                     if i == 0 {
-                        message.push_str(&format!("'{}'", t));
+                        message.push_str(&format!("'{t}'"));
                     } else {
-                        message.push_str(&format!(", '{}'", t));
+                        message.push_str(&format!(", '{t}'"));
                     }
                 }
 
                 Diagnostic::error()
                     .with_message("unexpected eof")
-                    .with_labels(vec![Label::primary(
-                        at.source_id(),
-                        SourceSpan::new(at, at),
-                    )
-                    .with_message(message)])
+                    .with_labels(vec![
+                        Label::primary(at.source_id(), SourceSpan::new(at, at))
+                            .with_message(message),
+                    ])
             }
             Self::UnrecognizedToken {
                 span, ref expected, ..
@@ -155,16 +150,16 @@ impl ToDiagnostic for ParseError {
                 let mut message = "expected one of: ".to_string();
                 for (i, t) in expected.iter().enumerate() {
                     if i == 0 {
-                        message.push_str(&format!("'{}'", t));
+                        message.push_str(&format!("'{t}'"));
                     } else {
-                        message.push_str(&format!(", '{}'", t));
+                        message.push_str(&format!(", '{t}'"));
                     }
                 }
 
                 Diagnostic::error()
                     .with_message("unexpected token")
                     .with_labels(vec![
-                        Label::primary(span.source_id(), span).with_message(message)
+                        Label::primary(span.source_id(), span).with_message(message),
                     ])
             }
             Self::ExtraToken { span, .. } => Diagnostic::error()

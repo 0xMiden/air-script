@@ -14,11 +14,12 @@ fn get_multiplicity_flags(s0: scalar, s1: scalar) -> vector[4]:
 ### Helper evaluators #############################################################################
 
 # Enforces that column must be binary.
-ev is_binary([v]):
+ev is_binary([v]) {
     enf v^2 = v
+}
 
 # Enforces correct transition from 8-bit to 16-bit section of the table.
-ev transition_8_to_16_bit([t, v]):
+ev transition_8_to_16_bit([t, v]) {
     # Ensure that values in column t can flip from 0 to 1 only once
     enf t * !t' = 0
 
@@ -27,10 +28,11 @@ ev transition_8_to_16_bit([t, v]):
 
     # Ensure that when column t flips, v' must be reset to 0
     enf v' = 0 when t' & !t
+}
 
 # The virtual table enforces an 8-bit range check for each row transition in the 16-bit section of
 # the range checker, which enforces its internal correctness.
-ev virtual_table([t, s0, s1, v], [p0]):
+ev virtual_table([t, s0, s1, v], [p0]) {
     let val = $alpha[0] + v
     let f = get_multiplicity_flags(s0, s1)
 
@@ -39,11 +41,11 @@ ev virtual_table([t, s0, s1, v], [p0]):
     enf p0' * (($alpha[0] + v' - v) * t - t + 1) = p0 * (z - z * t + t)
 
     # TODO: add boundary constraints p0.first = 1 and p0.last = 1
-
+}
 
 ### Range checker Air Constraints #################################################################
 
-ev range_checker([t, s0, s1, v], [p0]):
+ev range_checker([t, s0, s1, v], [p0]) {
     # Check selector flags are binary.
     let selectors = [t, s0, s1]
     enf is_binary([s]) for s in selectors
@@ -57,3 +59,4 @@ ev range_checker([t, s0, s1, v], [p0]):
 
     # Constrain the row transitions in the 16-bit section of the table.
     enf virtual_table([t, s0, s1, v], [p0])
+}

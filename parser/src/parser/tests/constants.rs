@@ -12,8 +12,8 @@ fn constants_scalars() {
     let source = "
     mod test
 
-    const A = 1
-    const B = 2";
+    const A = 1;
+    const B = 2;";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.constants.insert(
@@ -32,8 +32,8 @@ fn constants_vectors() {
     let source = "
     mod test
 
-    const A = [1, 2, 3, 4]
-    const B = [5, 6, 7, 8]";
+    const A = [1, 2, 3, 4];
+    const B = [5, 6, 7, 8];";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.constants.insert(
@@ -60,8 +60,8 @@ fn constants_matrices() {
     let source = "
     mod test
 
-    const A = [[1, 2], [3, 4]]
-    const B = [[5, 6], [7, 8]]";
+    const A = [[1, 2], [3, 4]];
+    const B = [[5, 6], [7, 8]];";
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     expected.constants.insert(
@@ -90,7 +90,7 @@ fn err_const_matrix_unequal_number_of_cols() {
     let source = "
     mod test
 
-    const A = [[1, 2], [3, 4, 5]]";
+    const A = [[1, 2], [3, 4, 5]];";
 
     ParseTest::new()
         .expect_module_diagnostic(source, "invalid matrix literal: mismatched dimensions");
@@ -121,8 +121,8 @@ fn err_lowercase_constant_name() {
     let source = "
     mod test
 
-    const Ab = [[1, 2], [3, 4]]
-    const C = [[5, 6], [7, 8]]";
+    const Ab = [[1, 2], [3, 4]];
+    const C = [[5, 6], [7, 8]];";
     ParseTest::new().expect_module_diagnostic(source, "constant identifiers must be uppercase");
 }
 
@@ -131,8 +131,8 @@ fn err_consts_with_non_int_values() {
     let source = "
     def test
 
-    const A = a
-    const B = 2";
+    const A = a;
+    const B = 2;";
     ParseTest::new().expect_unrecognized_token(source);
 }
 
@@ -141,8 +141,8 @@ fn err_const_vectors_with_non_int_values() {
     let source = "
     def test
 
-    const A = [1, a]
-    const B = [2, 4]";
+    const A = [1, a];
+    const B = [2, 4];";
     ParseTest::new().expect_unrecognized_token(source);
 }
 
@@ -151,7 +151,7 @@ fn err_vector_with_trailing_comma() {
     let source = "
     def test
 
-    const A = [1, ]";
+    const A = [1, ];";
     ParseTest::new().expect_unrecognized_token(source);
 }
 
@@ -160,7 +160,7 @@ fn err_matrix_with_trailing_comma() {
     let source = "
     def test
 
-    const A = [[1, 2], ]";
+    const A = [[1, 2], ];";
     ParseTest::new().expect_unrecognized_token(source);
 }
 
@@ -169,7 +169,7 @@ fn err_matrix_mixed_element_types() {
     let source = "
     def test
 
-    const A = [1, [1, 2]]";
+    const A = [1, [1, 2]];";
     ParseTest::new().expect_unrecognized_token(source);
 }
 
@@ -178,6 +178,6 @@ fn err_invalid_matrix_element() {
     let source = "
     def test
 
-    const A = [[1, 2], [3, [4, 5]]]";
+    const A = [[1, 2], [3, [4, 5]]];";
     ParseTest::new().expect_unrecognized_token(source);
 }

@@ -1,15 +1,17 @@
 def TraceAccessAir
 
-trace_columns:
-    main: [a, b]
-    aux: [c, d]
+trace_columns {
+    main: [a, b, c, d],
+}
 
-public_inputs:
-    stack_inputs: [16]
+public_inputs {
+    stack_inputs: [16],
+}
 
-integrity_constraints:
-    enf $main[0]' = $main[1] + 1
-    enf $aux[0]' = $aux[1] + 1
+integrity_constraints {
+    enf $main[0]' = $main[1] + 1;
+}
 
-boundary_constraints:
-    enf a.first = 0
+boundary_constraints {
+    enf a.first = 0;
+}

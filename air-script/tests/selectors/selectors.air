@@ -1,16 +1,21 @@
 def SelectorsAir
 
-trace_columns:
-    main: [s[3], clk]
-    
-public_inputs:
-    stack_inputs: [16]
+trace_columns {
+    main: [s[3], clk],
+}
 
-boundary_constraints:
-    enf clk.first = 0
+public_inputs {
+    stack_inputs: [16],
+}
 
-integrity_constraints:
-    enf clk' = 0 when s[0] & !s[1]
-    enf match:
-        case s[0] & s[1] & s[2]: clk' = clk
-        case !s[1] & !s[2]: clk' = 1
+boundary_constraints {
+    enf clk.first = 0;
+}
+
+integrity_constraints {
+    enf clk' = 0 when s[0] & !s[1];
+    enf match {
+        case s[0] & s[1] & s[2]: clk' = clk,
+        case !s[1] & !s[2]: clk' = 1,
+    };
+}

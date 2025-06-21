@@ -1,24 +1,28 @@
 def PubInputsAir
 
-trace_columns:
-    main: [a, b, c, d]
+trace_columns {
+    main: [a, b, c, d],
+}
 
-public_inputs:
-    program_hash: [4]
-    stack_inputs: [4]
-    stack_outputs: [20]
-    overflow_addrs: [4]
+public_inputs {
+    program_hash: [4],
+    stack_inputs: [4],
+    stack_outputs: [20],
+    overflow_addrs: [4],
+}
 
-boundary_constraints:
-    enf a.first = stack_inputs[0]
-    enf b.first = stack_inputs[1]
-    enf c.first = stack_inputs[2]
-    enf d.first = stack_inputs[3]
+boundary_constraints {
+    enf a.first = stack_inputs[0];
+    enf b.first = stack_inputs[1];
+    enf c.first = stack_inputs[2];
+    enf d.first = stack_inputs[3];
 
-    enf a.last = stack_outputs[0]
-    enf b.last = stack_outputs[1]
-    enf c.last = stack_outputs[2]
-    enf d.last = stack_outputs[3]
+    enf a.last = stack_outputs[0];
+    enf b.last = stack_outputs[1];
+    enf c.last = stack_outputs[2];
+    enf d.last = stack_outputs[3];
+}
 
-integrity_constraints:
-    enf a' = b + c
+integrity_constraints {
+    enf a' = b + c;
+}

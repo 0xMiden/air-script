@@ -1,28 +1,31 @@
 def ListFoldingAir
 
-trace_columns:
-    main: [clk, fmp[2], ctx]
-    aux: [a, b[4], c[4], d[4]]
+trace_columns {
+    main: [clk, fmp[2], ctx, a, b[4], c[4], d[4]],
+}
 
-public_inputs:
-    stack_inputs: [16]
+public_inputs {
+    stack_inputs: [16],
+}
 
-boundary_constraints:
-    enf c[2].first = 0
+boundary_constraints {
+    enf c[2].first = 0;
+}
 
-integrity_constraints:   
-    let x0 = sum(c)
-    let y0 = prod(d)
-    enf b[0]' = x0 + y0
+integrity_constraints {   
+    let x0 = sum(c);
+    let y0 = prod(d);
+    enf b[0]' = x0 + y0;
 
-    let x1 = sum([c[0], c[1], c[2], c[3]])
-    let y1 = prod([d[0], d[1], d[2], d[3]])
-    enf b[1]' = x1 + y1
+    let x1 = sum([c[0], c[1], c[2], c[3]]);
+    let y1 = prod([d[0], d[1], d[2], d[3]]);
+    enf b[1]' = x1 + y1;
 
-    let x2 = sum([c * d for (c, d) in (c, d)])
-    let y2 = prod([c + d for (c, d) in (c, d)])
-    enf b[2]' = x2 + y2
+    let x2 = sum([c * d for (c, d) in (c, d)]);
+    let y2 = prod([c + d for (c, d) in (c, d)]);
+    enf b[2]' = x2 + y2;
     
-    let x3 = sum([c * d for (c, d) in (c, d)])
-    let y3 = [m + x3 for m in fmp]
-    enf b[3]' = y3[0] + x3
+    let x3 = sum([c * d for (c, d) in (c, d)]);
+    let y3 = [m + x3 for m in fmp];
+    enf b[3]' = y3[0] + x3;
+}

@@ -275,12 +275,24 @@ macro_rules! expr {
     };
 }
 
+macro_rules! scalar {
+    ($expr:expr) => {
+        ScalarExpr::try_from($expr).unwrap()
+    };
+}
+
+macro_rules! statement {
+    ($expr:expr) => {
+        Statement::try_from($expr).unwrap()
+    };
+}
+
 macro_rules! slice {
     ($name:ident, $range:expr) => {
         ScalarExpr::SymbolAccess(SymbolAccess {
             span: miden_diagnostics::SourceSpan::UNKNOWN,
             name: ResolvableIdentifier::Unresolved(NamespacedIdentifier::Binding(ident!($name))),
-            access_type: AccessType::Slice($range),
+            access_type: AccessType::Slice($range.into()),
             offset: 0,
             ty: None,
         })
@@ -290,7 +302,7 @@ macro_rules! slice {
         ScalarExpr::SymbolAccess(SymbolAccess {
             span: miden_diagnostics::SourceSpan::UNKNOWN,
             name: ResolvableIdentifier::Local(ident!($name)),
-            access_type: AccessType::Slice($range),
+            access_type: AccessType::Slice($range.into()),
             offset: 0,
             ty: Some($ty),
         })
@@ -360,6 +372,22 @@ macro_rules! int {
             $value,
         ))
     };
+
+    ($value:expr) => {
+        ScalarExpr::Const(miden_diagnostics::Span::new(
+            miden_diagnostics::SourceSpan::UNKNOWN,
+            $value,
+        ))
+    };
+}
+
+macro_rules! null {
+    () => {
+        ScalarExpr::Null(miden_diagnostics::Span::new(
+            miden_diagnostics::SourceSpan::UNKNOWN,
+            (),
+        ))
+    };
 }
 
 macro_rules! call {
@@ -380,18 +408,6 @@ macro_rules! call {
 macro_rules! trace_segment {
     ($idx:literal, $name:literal, [$(($binding_name:ident, $binding_size:literal)),*]) => {
         TraceSegment::new(miden_diagnostics::SourceSpan::UNKNOWN, $idx, ident!($name), vec![
-            $(miden_diagnostics::Span::new(miden_diagnostics::SourceSpan::UNKNOWN, (ident!($binding_name), $binding_size))),*
-        ])
-    }
-}
-
-macro_rules! random_values {
-    ($name:literal, $size:literal) => {
-        RandomValues::with_size(miden_diagnostics::SourceSpan::UNKNOWN, ident!($name), $size)
-    };
-
-    ($name:literal, [$(($binding_name:ident, $binding_size:literal)),*]) => {
-        RandomValues::new(miden_diagnostics::SourceSpan::UNKNOWN, ident!($name), vec![
             $(miden_diagnostics::Span::new(miden_diagnostics::SourceSpan::UNKNOWN, (ident!($binding_name), $binding_size))),*
         ])
     }
@@ -441,6 +457,12 @@ macro_rules! let_ {
     };
 }
 
+macro_rules! return_ {
+    ($value:expr) => {
+        Statement::Expr($value)
+    };
+}
+
 macro_rules! enforce {
     ($expr:expr) => {
         Statement::Enforce($expr)
@@ -454,6 +476,12 @@ macro_rules! enforce {
 macro_rules! enforce_all {
     ($expr:expr) => {
         Statement::EnforceAll($expr)
+    };
+}
+
+macro_rules! bus_enforce {
+    ($expr:expr) => {
+        Statement::BusEnforce($expr)
     };
 }
 
@@ -493,11 +521,37 @@ macro_rules! lc {
         ];
         ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($selector))
     }};
+
+
+    (($(($binding:ident, $iterable:expr)),*) => $body:expr, with $multiplicity:expr) => {{
+        let context = vec![
+            $(
+                (ident!($binding), $iterable)
+            ),+
+        ];
+        ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($multiplicity))
+    }};
+
+    (($(($binding:literal, $iterable:expr)),*) => $body:expr, with $multiplicity:expr) => {{
+        let context = vec![
+            $(
+                (ident!($binding), $iterable)
+            ),+
+        ];
+        ListComprehension::new(miden_diagnostics::SourceSpan::UNKNOWN, $body, context, Some($multiplicity))
+    }};
 }
 
 macro_rules! range {
     ($range:expr) => {
-        Expr::Range(Span::new(SourceSpan::UNKNOWN, $range))
+        Expr::Range($range.into())
+    };
+    ($start:expr, $end:expr) => {
+        Expr::Range(RangeExpr {
+            span: miden_diagnostics::SourceSpan::UNKNOWN,
+            start: $start.into(),
+            end: $end.into(),
+        })
     };
 }
 
@@ -508,9 +562,7 @@ macro_rules! and {
 }
 
 macro_rules! or {
-    ($lhs:expr, $rhs:expr) => {{
-        sub!(add!($lhs, $rhs), mul!($lhs, $rhs))
-    }};
+    ($lhs:expr, $rhs:expr) => {{ sub!(add!($lhs, $rhs), mul!($lhs, $rhs)) }};
 }
 
 macro_rules! not {
@@ -525,6 +577,28 @@ macro_rules! eq {
             miden_diagnostics::SourceSpan::UNKNOWN,
             BinaryOp::Eq,
             $lhs,
+            $rhs,
+        ))
+    };
+}
+
+macro_rules! bus_insert {
+    ($bus:ident, $expr:expr) => {
+        ScalarExpr::BusOperation(BusOperation::new(
+            miden_diagnostics::SourceSpan::UNKNOWN,
+            ident!($bus),
+            BusOperator::Insert,
+            $expr,
+        ))
+    };
+}
+
+macro_rules! bus_remove {
+    ($bus:ident, $rhs:expr) => {
+        ScalarExpr::BusOperation(BusOperation::new(
+            miden_diagnostics::SourceSpan::UNKNOWN,
+            ident!($bus),
+            BusOperator::Remove,
             $rhs,
         ))
     };
@@ -595,10 +669,12 @@ macro_rules! import {
 
 mod arithmetic_ops;
 mod boundary_constraints;
+mod buses;
 mod calls;
 mod constant_propagation;
 mod constants;
 mod evaluators;
+mod functions;
 mod identifiers;
 mod inlining;
 mod integrity_constraints;
@@ -606,7 +682,6 @@ mod list_comprehension;
 mod modules;
 mod periodic_columns;
 mod pub_inputs;
-mod random_values;
 mod sections;
 mod selectors;
 mod trace_columns;
@@ -619,25 +694,29 @@ mod variables;
 fn full_air_file() {
     // def SystemAir
     let mut expected = Program::new(ident!(SystemAir));
-    // public_inputs:
+    // public_inputs {
     //     inputs: [2]
+    // }
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(miden_diagnostics::SourceSpan::UNKNOWN, ident!(inputs), 2),
+        PublicInput::new_vector(miden_diagnostics::SourceSpan::UNKNOWN, ident!(inputs), 2),
     );
-    // trace_columns:
+    // trace_columns {
     //     main: [clk, fmp, ctx]
+    // }
     expected
         .trace_columns
         .push(trace_segment!(0, "$main", [(clk, 1), (fmp, 1), (ctx, 1)]));
-    // integrity_constraints:
+    // integrity_constraints {
     //     enf clk' = clk + 1
+    // }
     expected.integrity_constraints.push(enforce!(eq!(
         access!(clk, 1, Type::Felt),
         add!(access!(clk, Type::Felt), int!(1))
     )));
-    // boundary_constraints:
+    // boundary_constraints {
     //     enf clk.first = 0
+    // }
     expected.boundary_constraints.push(enforce!(eq!(
         bounded_access!(clk, Boundary::First, Type::Felt),
         int!(0)

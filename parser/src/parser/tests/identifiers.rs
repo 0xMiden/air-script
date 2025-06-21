@@ -6,18 +6,19 @@ use super::ParseTest;
 
 #[test]
 fn error_invalid_int() {
-    let num: u128 = u64::max_value() as u128 + 1;
+    let num: u128 = u64::MAX as u128 + 1;
     let source = format!(
         r#"
     def test
 
-    trace_columns:
-        main: [clk]
+    trace_columns {{
+        main: [clk],
+    }}
 
-    integrity_constraints:
-        enf clk' = clk + {}
+    integrity_constraints {{
+        enf clk' = clk + {num}
+    }}
     "#,
-        num
     );
 
     // Integers can only be of type u64.
@@ -48,11 +49,13 @@ fn error_identifier_starting_with_int() {
     let source = r#"
     def test
 
-    trace_columns:
+    trace_columns {
         main: [clk]
+    }
 
-    integrity_constraints:
+    integrity_constraints {
         enf 1clk' = clk + 1
+    }
     "#;
 
     ParseTest::new().expect_unrecognized_token(source);

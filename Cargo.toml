@@ -1,10 +1,23 @@
 [workspace]
 members = [
-  "air-script",
-  "parser",
-  "pass",
-  "ir",
-  "codegen/masm",
-  "codegen/winterfell",
+    "air-script",
+    "parser",
+    "pass",
+    "mir",
+    "air",
+    "codegen/winterfell",
+    "codegen/ace",
 ]
 resolver = "2"
+
+[workspace.package]
+authors = ["miden contributors"]
+license = "MIT"
+repository = "https://github.com/0xMiden/air-script"
+edition = "2024"
+rust-version = "1.87"
+
+[workspace.dependencies]
+anyhow = "1.0"
+miden-diagnostics = "0.1"
+thiserror = "2.0"

@@ -1,0 +1,131 @@
+digraph G {
+const0 [label="0"]
+const1 [label="1"]
+input0 [label="PI[stack_inputs][0]"]
+input4 [label="M[0]"]
+input5 [label="M[1]"]
+input6 [label="M[2]"]
+input7 [label="M[3]"]
+input8 [label="M[4]"]
+input9 [label="M[5]"]
+input10 [label="M[6]"]
+input11 [label="M[7]"]
+input12 [label="M[8]"]
+input24 [label="M'[0]"]
+input25 [label="M'[1]"]
+input26 [label="M'[2]"]
+input27 [label="M'[3]"]
+input28 [label="M'[4]"]
+input29 [label="M'[5]"]
+input30 [label="M'[6]"]
+input31 [label="M'[7]"]
+input32 [label="M'[8]"]
+input44 [label="g⁻²"]
+input45 [label="g⁻¹"]
+input46 [label="⍺"]
+input47 [label="z"]
+input48 [label="zⁿ"]
+input49 [label="zᵐᵃˣ"]
+op0 [label="op0\ninput4 × input5"]
+input4 -> op0
+input5 -> op0
+op1 [label="op1\ninput6 × op0"]
+input6 -> op1
+op0 -> op1
+op2 [label="op2\ninput7 + op1"]
+input7 -> op2
+op1 -> op2
+op3 [label="op3\nop2 - input8"]
+op2 -> op3
+input8 -> op3
+op4 [label="op4\ninput47 - const1"]
+input47 -> op4
+const1 -> op4
+op5 [label="op5\ninput47 - input44"]
+input47 -> op5
+input44 -> op5
+op6 [label="op6\ninput47 - input45"]
+input47 -> op6
+input45 -> op6
+op7 [label="op7\ninput48 - const1"]
+input48 -> op7
+const1 -> op7
+op8 [label="op8\nop4 × op5"]
+op4 -> op8
+op5 -> op8
+op9 [label="op9\nop6 × op8"]
+op6 -> op9
+op8 -> op9
+op10 [label="op10\nop5 × op9"]
+op5 -> op10
+op9 -> op10
+op11 [label="op11\nop3 × op10"]
+op3 -> op11
+op10 -> op11
+op12 [label="op12\ninput4 × input46"]
+input4 -> op12
+input46 -> op12
+op13 [label="op13\nop5 × op7"]
+op5 -> op13
+op7 -> op13
+op14 [label="op14\nop12 × op13"]
+op12 -> op14
+op13 -> op14
+op15 [label="op15\nop11 + op14"]
+op11 -> op15
+op14 -> op15
+op16 [label="op16\nop4 × op7"]
+op4 -> op16
+op7 -> op16
+op17 [label="op17\ninput23 × input48"]
+input23 -> op17
+input48 -> op17
+op18 [label="op18\ninput22 + op17"]
+input22 -> op18
+op17 -> op18
+op19 [label="op19\ninput48 × op18"]
+input48 -> op19
+op18 -> op19
+op20 [label="op20\ninput21 + op19"]
+input21 -> op20
+op19 -> op20
+op21 [label="op21\ninput48 × op20"]
+input48 -> op21
+op20 -> op21
+op22 [label="op22\ninput20 + op21"]
+input20 -> op22
+op21 -> op22
+op23 [label="op23\ninput48 × op22"]
+input48 -> op23
+op22 -> op23
+op24 [label="op24\ninput19 + op23"]
+input19 -> op24
+op23 -> op24
+op25 [label="op25\ninput48 × op24"]
+input48 -> op25
+op24 -> op25
+op26 [label="op26\ninput18 + op25"]
+input18 -> op26
+op25 -> op26
+op27 [label="op27\ninput48 × op26"]
+input48 -> op27
+op26 -> op27
+op28 [label="op28\ninput17 + op27"]
+input17 -> op28
+op27 -> op28
+op29 [label="op29\ninput48 × op28"]
+input48 -> op29
+op28 -> op29
+op30 [label="op30\ninput16 + op29"]
+input16 -> op30
+op29 -> op30
+op31 [label="op31\nop7 × op8"]
+op7 -> op31
+op8 -> op31
+op32 [label="op32\nop30 × op31"]
+op30 -> op32
+op31 -> op32
+op33 [label="op33\nop15 - op32"]
+op15 -> op33
+op32 -> op33
+}

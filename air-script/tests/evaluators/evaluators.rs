@@ -1,7 +1,6 @@
-use winter_air::{Air, AirContext, Assertion, AuxTraceRandElements, EvaluationFrame, ProofOptions as WinterProofOptions, TransitionConstraintDegree, TraceInfo};
+use winter_air::{Air, AirContext, Assertion, AuxRandElements, EvaluationFrame, ProofOptions as WinterProofOptions, TransitionConstraintDegree, TraceInfo};
 use winter_math::fields::f64::BaseElement as Felt;
-use winter_math::{ExtensionOf, FieldElement};
-use winter_utils::collections::Vec;
+use winter_math::{ExtensionOf, FieldElement, ToElements};
 use winter_utils::{ByteWriter, Serializable};
 
 pub struct PublicInputs {
@@ -16,7 +15,15 @@ impl PublicInputs {
 
 impl Serializable for PublicInputs {
     fn write_into<W: ByteWriter>(&self, target: &mut W) {
-        target.write(self.stack_inputs.as_slice());
+        self.stack_inputs.write_into(target);
+    }
+}
+
+impl ToElements<Felt> for PublicInputs {
+    fn to_elements(&self) -> Vec<Felt> {
+        let mut elements = Vec::new();
+        elements.extend_from_slice(&self.stack_inputs);
+        elements
     }
 }
 
@@ -67,7 +74,7 @@ impl Air for EvaluatorsAir {
         result
     }
 
-    fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> Vec<Assertion<E>> {
+    fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
         result
     }
@@ -78,13 +85,13 @@ impl Air for EvaluatorsAir {
         result[0] = main_next[0] - main_current[0];
         result[1] = main_next[2] - main_current[2];
         result[2] = main_next[6] - main_current[6];
-        result[3] = main_current[0].exp(E::PositiveInteger::from(2_u64)) - main_current[0];
-        result[4] = main_current[1].exp(E::PositiveInteger::from(2_u64)) - main_current[1];
-        result[5] = main_current[2].exp(E::PositiveInteger::from(2_u64)) - main_current[2];
-        result[6] = main_current[3].exp(E::PositiveInteger::from(2_u64)) - main_current[3];
+        result[3] = main_current[0] * main_current[0] - main_current[0];
+        result[4] = main_current[1] * main_current[1] - main_current[1];
+        result[5] = main_current[2] * main_current[2] - main_current[2];
+        result[6] = main_current[3] * main_current[3] - main_current[3];
     }
 
-    fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxTraceRandElements<E>, result: &mut [E])
+    fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxRandElements<E>, result: &mut [E])
     where F: FieldElement<BaseField = Felt>,
           E: FieldElement<BaseField = Felt> + ExtensionOf<F>,
     {

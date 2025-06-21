@@ -1,0 +1,3 @@
+mod constant_in_range_module
+
+const MIN = 0;

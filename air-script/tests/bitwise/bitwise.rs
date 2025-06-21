@@ -1,7 +1,6 @@
-use winter_air::{Air, AirContext, Assertion, AuxTraceRandElements, EvaluationFrame, ProofOptions as WinterProofOptions, TransitionConstraintDegree, TraceInfo};
+use winter_air::{Air, AirContext, Assertion, AuxRandElements, EvaluationFrame, ProofOptions as WinterProofOptions, TransitionConstraintDegree, TraceInfo};
 use winter_math::fields::f64::BaseElement as Felt;
-use winter_math::{ExtensionOf, FieldElement};
-use winter_utils::collections::Vec;
+use winter_math::{ExtensionOf, FieldElement, ToElements};
 use winter_utils::{ByteWriter, Serializable};
 
 pub struct PublicInputs {
@@ -16,7 +15,15 @@ impl PublicInputs {
 
 impl Serializable for PublicInputs {
     fn write_into<W: ByteWriter>(&self, target: &mut W) {
-        target.write(self.stack_inputs.as_slice());
+        self.stack_inputs.write_into(target);
+    }
+}
+
+impl ToElements<Felt> for PublicInputs {
+    fn to_elements(&self) -> Vec<Felt> {
+        let mut elements = Vec::new();
+        elements.extend_from_slice(&self.stack_inputs);
+        elements
     }
 }
 
@@ -67,7 +74,7 @@ impl Air for BitwiseAir {
         result
     }
 
-    fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxTraceRandElements<E>) -> Vec<Assertion<E>> {
+    fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
         result
     }
@@ -75,26 +82,26 @@ impl Air for BitwiseAir {
     fn evaluate_transition<E: FieldElement<BaseField = Felt>>(&self, frame: &EvaluationFrame<E>, periodic_values: &[E], result: &mut [E]) {
         let main_current = frame.current();
         let main_next = frame.next();
-        result[0] = main_current[0].exp(E::PositiveInteger::from(2_u64)) - main_current[0] - E::ZERO;
+        result[0] = main_current[0] * main_current[0] - main_current[0] - E::ZERO;
         result[1] = periodic_values[1] * (main_next[0] - main_current[0]) - E::ZERO;
-        result[2] = main_current[3].exp(E::PositiveInteger::from(2_u64)) - main_current[3] - E::ZERO;
-        result[3] = main_current[4].exp(E::PositiveInteger::from(2_u64)) - main_current[4] - E::ZERO;
-        result[4] = main_current[5].exp(E::PositiveInteger::from(2_u64)) - main_current[5] - E::ZERO;
-        result[5] = main_current[6].exp(E::PositiveInteger::from(2_u64)) - main_current[6] - E::ZERO;
-        result[6] = main_current[7].exp(E::PositiveInteger::from(2_u64)) - main_current[7] - E::ZERO;
-        result[7] = main_current[8].exp(E::PositiveInteger::from(2_u64)) - main_current[8] - E::ZERO;
-        result[8] = main_current[9].exp(E::PositiveInteger::from(2_u64)) - main_current[9] - E::ZERO;
-        result[9] = main_current[10].exp(E::PositiveInteger::from(2_u64)) - main_current[10] - E::ZERO;
-        result[10] = periodic_values[0] * (main_current[1] - (E::ONE * main_current[3] + E::from(2_u64) * main_current[4] + E::from(4_u64) * main_current[5] + E::from(8_u64) * main_current[6])) - E::ZERO;
-        result[11] = periodic_values[0] * (main_current[2] - (E::ONE * main_current[7] + E::from(2_u64) * main_current[8] + E::from(4_u64) * main_current[9] + E::from(8_u64) * main_current[10])) - E::ZERO;
-        result[12] = periodic_values[1] * (main_next[1] - (main_current[1] * E::from(16_u64) + E::ONE * main_current[3] + E::from(2_u64) * main_current[4] + E::from(4_u64) * main_current[5] + E::from(8_u64) * main_current[6])) - E::ZERO;
-        result[13] = periodic_values[1] * (main_next[2] - (main_current[2] * E::from(16_u64) + E::ONE * main_current[7] + E::from(2_u64) * main_current[8] + E::from(4_u64) * main_current[9] + E::from(8_u64) * main_current[10])) - E::ZERO;
+        result[2] = main_current[3] * main_current[3] - main_current[3] - E::ZERO;
+        result[3] = main_current[4] * main_current[4] - main_current[4] - E::ZERO;
+        result[4] = main_current[5] * main_current[5] - main_current[5] - E::ZERO;
+        result[5] = main_current[6] * main_current[6] - main_current[6] - E::ZERO;
+        result[6] = main_current[7] * main_current[7] - main_current[7] - E::ZERO;
+        result[7] = main_current[8] * main_current[8] - main_current[8] - E::ZERO;
+        result[8] = main_current[9] * main_current[9] - main_current[9] - E::ZERO;
+        result[9] = main_current[10] * main_current[10] - main_current[10] - E::ZERO;
+        result[10] = periodic_values[0] * (main_current[1] - (E::ONE * main_current[3] + E::from(Felt::new(2_u64)) * main_current[4] + E::from(Felt::new(4_u64)) * main_current[5] + E::from(Felt::new(8_u64)) * main_current[6])) - E::ZERO;
+        result[11] = periodic_values[0] * (main_current[2] - (E::ONE * main_current[7] + E::from(Felt::new(2_u64)) * main_current[8] + E::from(Felt::new(4_u64)) * main_current[9] + E::from(Felt::new(8_u64)) * main_current[10])) - E::ZERO;
+        result[12] = periodic_values[1] * (main_next[1] - (main_current[1] * E::from(Felt::new(16_u64)) + E::ONE * main_current[3] + E::from(Felt::new(2_u64)) * main_current[4] + E::from(Felt::new(4_u64)) * main_current[5] + E::from(Felt::new(8_u64)) * main_current[6])) - E::ZERO;
+        result[13] = periodic_values[1] * (main_next[2] - (main_current[2] * E::from(Felt::new(16_u64)) + E::ONE * main_current[7] + E::from(Felt::new(2_u64)) * main_current[8] + E::from(Felt::new(4_u64)) * main_current[9] + E::from(Felt::new(8_u64)) * main_current[10])) - E::ZERO;
         result[14] = periodic_values[0] * main_current[11] - E::ZERO;
         result[15] = periodic_values[1] * (main_current[12] - main_next[11]) - E::ZERO;
-        result[16] = (E::ONE - main_current[0]) * (main_current[12] - (main_current[11] * E::from(16_u64) + E::ONE * main_current[3] * main_current[7] + E::from(2_u64) * main_current[4] * main_current[8] + E::from(4_u64) * main_current[5] * main_current[9] + E::from(8_u64) * main_current[6] * main_current[10])) + main_current[0] * (main_current[12] - (main_current[11] * E::from(16_u64) + E::ONE * (main_current[3] + main_current[7] - E::from(2_u64) * main_current[3] * main_current[7]) + E::from(2_u64) * (main_current[4] + main_current[8] - E::from(2_u64) * main_current[4] * main_current[8]) + E::from(4_u64) * (main_current[5] + main_current[9] - E::from(2_u64) * main_current[5] * main_current[9]) + E::from(8_u64) * (main_current[6] + main_current[10] - E::from(2_u64) * main_current[6] * main_current[10]))) - E::ZERO;
+        result[16] = (E::ONE - main_current[0]) * (main_current[12] - (main_current[11] * E::from(Felt::new(16_u64)) + E::ONE * main_current[3] * main_current[7] + E::from(Felt::new(2_u64)) * main_current[4] * main_current[8] + E::from(Felt::new(4_u64)) * main_current[5] * main_current[9] + E::from(Felt::new(8_u64)) * main_current[6] * main_current[10])) + main_current[0] * (main_current[12] - (main_current[11] * E::from(Felt::new(16_u64)) + E::ONE * (main_current[3] + main_current[7] - E::from(Felt::new(2_u64)) * main_current[3] * main_current[7]) + E::from(Felt::new(2_u64)) * (main_current[4] + main_current[8] - E::from(Felt::new(2_u64)) * main_current[4] * main_current[8]) + E::from(Felt::new(4_u64)) * (main_current[5] + main_current[9] - E::from(Felt::new(2_u64)) * main_current[5] * main_current[9]) + E::from(Felt::new(8_u64)) * (main_current[6] + main_current[10] - E::from(Felt::new(2_u64)) * main_current[6] * main_current[10]))) - E::ZERO;
     }
 
-    fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxTraceRandElements<E>, result: &mut [E])
+    fn evaluate_aux_transition<F, E>(&self, main_frame: &EvaluationFrame<F>, aux_frame: &EvaluationFrame<E>, _periodic_values: &[F], aux_rand_elements: &AuxRandElements<E>, result: &mut [E])
     where F: FieldElement<BaseField = Felt>,
           E: FieldElement<BaseField = Felt> + ExtensionOf<F>,
     {

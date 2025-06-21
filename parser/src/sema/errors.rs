@@ -1,9 +1,9 @@
 use miden_diagnostics::{Diagnostic, Label, SourceSpan, Spanned, ToDiagnostic};
 
-use crate::ast::{Identifier, InvalidExprError, ModuleId};
+use crate::ast::{Identifier, InvalidExprError, InvalidTypeError, ModuleId};
 
 /// Represents the various module validation errors we might encounter during semantic analysis.
-#[derive(Debug, thiserror::Error)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum SemanticAnalysisError {
     #[error("root module is missing")]
     MissingRoot,
@@ -31,6 +31,8 @@ pub enum SemanticAnalysisError {
     ImportFailed(SourceSpan),
     #[error(transparent)]
     InvalidExpr(#[from] InvalidExprError),
+    #[error(transparent)]
+    InvalidType(#[from] InvalidTypeError),
     #[error("module is invalid, see diagnostics for details")]
     Invalid,
 }
@@ -73,7 +75,7 @@ impl ToDiagnostic for SemanticAnalysisError {
             Self::ImportUndefined(from) => Diagnostic::error()
                 .with_message("invalid import")
                 .with_labels(vec![Label::primary(from.span().source_id(), from.span())
-                    .with_message(format!("no such item in '{}'", from))]),
+                    .with_message(format!("no such item in '{from}'"))]),
             Self::ImportSelf(span) => Diagnostic::error()
                 .with_message("invalid import")
                 .with_labels(vec![Label::primary(span.source_id(), span)
@@ -81,7 +83,7 @@ impl ToDiagnostic for SemanticAnalysisError {
             Self::ImportConflict { item, prev } => Diagnostic::error()
                 .with_message("conflicting import")
                 .with_labels(vec![Label::primary(item.span().source_id(), item.span())
-                    .with_message(format!("the item '{}' is imported here", item)),
+                    .with_message(format!("the item '{item}' is imported here")),
                                   Label::secondary(prev.source_id(), prev)
                     .with_message("but it conflicts with an item of the same name here")]),
             Self::ImportFailed(span) => Diagnostic::error()
@@ -89,6 +91,7 @@ impl ToDiagnostic for SemanticAnalysisError {
                 .with_labels(vec![Label::primary(span.source_id(), span)
                     .with_message("failed import occurred here")]),
             Self::InvalidExpr(err) => err.to_diagnostic(),
+            Self::InvalidType(err) => err.to_diagnostic(),
             Self::Invalid => Diagnostic::error().with_message("module is invalid, see diagnostics for details"),
         }
     }

@@ -1,18 +1,23 @@
 def PeriodicColumnsAir
 
-trace_columns:
-    main: [a, b, c]
+trace_columns {
+    main: [a, b, c],
+}
 
-public_inputs:
-    stack_inputs: [16]
+public_inputs {
+    stack_inputs: [16],
+}
 
-periodic_columns:
-    k0: [1, 0, 0, 0]
-    k1: [1, 1, 1, 1, 1, 1, 1, 0]
+periodic_columns {
+    k0: [1, 0, 0, 0],
+    k1: [1, 1, 1, 1, 1, 1, 1, 0],
+}
 
-boundary_constraints:
-    enf a.first = 0
+boundary_constraints {
+    enf a.first = 0;
+}
 
-integrity_constraints:
-    enf k0 * (b + c) = 0
-    enf k1 * (a' - a) = 0
+integrity_constraints {
+    enf k0 * (b + c) = 0;
+    enf k1 * (a' - a) = 0;
+}

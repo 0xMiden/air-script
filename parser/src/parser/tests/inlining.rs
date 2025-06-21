@@ -25,38 +25,42 @@ fn test_inlining_with_evaluator_split_input_binding() {
     let root = r#"
     def root
 
-    use lib::*
+    use lib::*;
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    const A = [2, 4, 6, 8]
-    const B = [[1, 1], [2, 2]]
+    const A = [2, 4, 6, 8];
+    const B = [[1, 1], [2, 2]];
 
-    integrity_constraints:
-        enf test_constraint(b)
-        let x = 2^EXP
-        let y = A[0..2]
-        enf a + y[1] = c + (x + 1)
+    integrity_constraints {
+        enf test_constraint(b);
+        let x = 2^EXP;
+        let y = A[0..2];
+        enf a + y[1] = c + (x + 1);
+    }
 
-    boundary_constraints:
-        let x = B[0]
-        enf a.first = x[0]
+    boundary_constraints {
+        let x = B[0];
+        enf a.first = x[0];
+    }
 
     "#;
     let lib = r#"
     mod lib
 
-    const EXP = 2
+    const EXP = 2;
 
-    ev test_constraint([b0, b1]):
-        let x = EXP
-        let y = 2^x
-        enf b0 + x = b1 + y
-    "#;
+    ev test_constraint([b0, b1]) {
+        let x = EXP;
+        let y = 2^x;
+        enf b0 + x = b1 + y;
+    }"#;
 
     let test = ParseTest::new();
     let path = std::env::current_dir().unwrap().join("lib.air");
@@ -82,7 +86,7 @@ fn test_inlining_with_evaluator_split_input_binding() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     expected
         .constants
@@ -146,27 +150,31 @@ fn test_inlining_with_vector_literal_binding_regrouped() {
     let root = r#"
     def root
 
-    use lib::*
+    use lib::*;
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
-        enf test_constraint([clk, b])
+    integrity_constraints {
+        enf test_constraint([clk, b]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
+    boundary_constraints {
+        enf clk.first = 0;
+    }
 
     "#;
     let lib = r#"
     mod lib
 
-    ev test_constraint([pair[2], b1]):
-        enf pair[0] + pair[1] = b1
-    "#;
+    ev test_constraint([pair[2], b1]) {
+        enf pair[0] + pair[1] = b1;
+    }"#;
 
     let test = ParseTest::new();
     let path = std::env::current_dir().unwrap().join("lib.air");
@@ -192,7 +200,7 @@ fn test_inlining_with_vector_literal_binding_regrouped() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -232,27 +240,30 @@ fn test_inlining_with_vector_literal_binding_unordered() {
     let root = r#"
     def root
 
-    use lib::*
+    use lib::*;
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
-        enf test_constraint([b, clk])
+    integrity_constraints {
+        enf test_constraint([b, clk]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
-
+    boundary_constraints {
+        enf clk.first = 0;
+    }
     "#;
     let lib = r#"
     mod lib
 
-    ev test_constraint([b0, pair[2]]):
-        enf pair[1] + b0 = pair[0]
-    "#;
+    ev test_constraint([b0, pair[2]]) {
+        enf pair[1] + b0 = pair[0];
+    }"#;
 
     let test = ParseTest::new();
     let path = std::env::current_dir().unwrap().join("lib.air");
@@ -278,7 +289,7 @@ fn test_inlining_with_vector_literal_binding_unordered() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -318,27 +329,30 @@ fn test_inlining_with_vector_literal_binding_different_arity_many_to_few() {
     let root = r#"
     def root
 
-    use lib::*
+    use lib::*;
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
-        enf test_constraint([clk, b, a])
+    integrity_constraints {
+        enf test_constraint([clk, b, a]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
-
+    boundary_constraints {
+        enf clk.first = 0;
+    }
     "#;
     let lib = r#"
     mod lib
 
-    ev test_constraint([pair[3], foo]):
-        enf pair[0] + pair[1] = foo + pair[2]
-    "#;
+    ev test_constraint([pair[3], foo]) {
+        enf pair[0] + pair[1] = foo + pair[2];
+    }"#;
 
     let test = ParseTest::new();
     let path = std::env::current_dir().unwrap().join("lib.air");
@@ -364,7 +378,7 @@ fn test_inlining_with_vector_literal_binding_different_arity_many_to_few() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -404,27 +418,30 @@ fn test_inlining_with_vector_literal_binding_different_arity_few_to_many() {
     let root = r#"
     def root
 
-    use lib::*
+    use lib::*;
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
-        enf test_constraint([b, a])
+    integrity_constraints {
+        enf test_constraint([b, a]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
-
+    boundary_constraints {
+        enf clk.first = 0;
+    }
     "#;
     let lib = r#"
     mod lib
 
-    ev test_constraint([x, y, z]):
-        enf x + y = z
-    "#;
+    ev test_constraint([x, y, z]) {
+        enf x + y = z;
+    }"#;
 
     let test = ParseTest::new();
     let path = std::env::current_dir().unwrap().join("lib.air");
@@ -450,7 +467,7 @@ fn test_inlining_with_vector_literal_binding_different_arity_few_to_many() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -489,35 +506,38 @@ fn test_inlining_across_modules_with_nested_evaluators_variant1() {
     let root = r#"
     def root
 
-    use lib1::test_constraint
+    use lib1::test_constraint;
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
-        enf test_constraint([clk, b, a])
+    integrity_constraints {
+        enf test_constraint([clk, b, a]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
-
+    boundary_constraints {
+        enf clk.first = 0;
+    }
     "#;
     let lib1 = r#"
     mod lib1
 
-    use lib2::*
+    use lib2::*;
 
-    ev test_constraint([tuple[3], z]):
-        enf helper_constraint([z, tuple[1..3]])
-    "#;
+    ev test_constraint([tuple[3], z]) {
+        enf helper_constraint([z, tuple[1..3]]);
+    }"#;
     let lib2 = r#"
     mod lib2
 
-    ev helper_constraint([x[2], y]):
-        enf x[0] + x[1] = y
-    "#;
+    ev helper_constraint([x[2], y]) {
+        enf x[0] + x[1] = y;
+    }"#;
 
     let test = ParseTest::new();
     let path = std::env::current_dir().unwrap().join("lib1.air");
@@ -545,7 +565,7 @@ fn test_inlining_across_modules_with_nested_evaluators_variant1() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -598,35 +618,38 @@ fn test_inlining_across_modules_with_nested_evaluators_variant2() {
     let root = r#"
     def root
 
-    use lib1::test_constraint
+    use lib1::test_constraint;
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
-        enf test_constraint([clk, b[0..2], a])
+    integrity_constraints {
+        enf test_constraint([clk, b[0..2], a]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
-
+    boundary_constraints {
+        enf clk.first = 0;
+    }
     "#;
     let lib1 = r#"
     mod lib1
 
-    use lib2::*
+    use lib2::*;
 
-    ev test_constraint([tuple[3], z]):
-        enf helper_constraint([z, tuple[1], tuple[2..3]])
-    "#;
+    ev test_constraint([tuple[3], z]) {
+        enf helper_constraint([z, tuple[1], tuple[2..3]]);
+    }"#;
     let lib2 = r#"
     mod lib2
 
-    ev helper_constraint([x[2], y]):
-        enf x[0] + x[1] = y
-    "#;
+    ev helper_constraint([x[2], y]) {
+        enf x[0] + x[1] = y;
+    }"#;
 
     let test = ParseTest::new();
     let path = std::env::current_dir().unwrap().join("lib1.air");
@@ -654,7 +677,7 @@ fn test_inlining_across_modules_with_nested_evaluators_variant2() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -712,25 +735,28 @@ fn test_inlining_constraint_comprehensions_no_selector() {
     let root = r#"
     def root
 
-    const YS = [2, 4, 6, 8]
+    const YS = [2, 4, 6, 8];
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
+    integrity_constraints {
         # We're expecting this to expand to:
         #
         #    enf b[0]' = 2
         #    enf b[1]' = 4
         #
-        enf x' = y for (x, y) in (b, YS[0..2])
+        enf x' = y for (x, y) in (b, YS[0..2]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
-
+    boundary_constraints {
+        enf clk.first = 0;
+    }
     "#;
 
     let test = ParseTest::new();
@@ -757,7 +783,7 @@ fn test_inlining_constraint_comprehensions_no_selector() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -787,25 +813,28 @@ fn test_inlining_constraint_comprehensions_with_selector() {
     let root = r#"
     def root
 
-    const YS = [2, 4, 6, 8]
+    const YS = [2, 4, 6, 8];
 
-    trace_columns:
-        main: [clk, a, b[2], c]
+    trace_columns {
+        main: [clk, a, b[2], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
+    integrity_constraints {
         # We're expecting this to expand to:
         #
         #    enf b[0]' = 2 when c
         #    enf b[1]' = 4 when c
         #
-        enf x' = y for (x, y) in (b, YS[0..2]) when c
+        enf x' = y for (x, y) in (b, YS[0..2]) when c;
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
-
+    boundary_constraints {
+        enf clk.first = 0;
+    }
     "#;
 
     let test = ParseTest::new();
@@ -832,7 +861,7 @@ fn test_inlining_constraint_comprehensions_with_selector() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -864,25 +893,28 @@ fn test_inlining_constraint_comprehensions_with_constant_selector() {
     let root = r#"
     def root
 
-    const YS = [0, 4, 0, 8]
+    const YS = [0, 4, 0, 8];
 
-    trace_columns:
-        main: [clk, a, b[4], c]
+    trace_columns {
+        main: [clk, a, b[4], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
+    integrity_constraints {
         # We're expecting this to expand to:
         #
         #    enf b[1]' = 4
         #    enf b[3]' = 8
         #
-        enf x' = y for (x, y) in (b, YS) when y
+        enf x' = y for (x, y) in (b, YS) when y;
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
-
+    boundary_constraints {
+        enf clk.first = 0;
+    }
     "#;
 
     let test = ParseTest::new();
@@ -909,7 +941,7 @@ fn test_inlining_constraint_comprehensions_with_constant_selector() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -938,27 +970,31 @@ fn test_inlining_constraint_comprehensions_in_evaluator() {
     let root = r#"
     def root
 
-    const YS = [0, 4, 0, 8]
+    const YS = [0, 4, 0, 8];
 
-    trace_columns:
-        main: [clk, a, b[4], c]
+    trace_columns {
+        main: [clk, a, b[4], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
-        enf test_constraint(b[1..4])
+    integrity_constraints {
+        enf test_constraint(b[1..4]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
+    boundary_constraints {
+        enf clk.first = 0;
+    }
 
-    ev test_constraint([i, j[2]]):
-        let ys = [x^2 for x in YS]
-        let k = j[0]
-        let l = j[1]
-        let xs = [i, k, l]
-        enf x' = y for (x, y) in (xs, ys[1..4]) when y
-    "#;
+    ev test_constraint([i, j[2]]) {
+        let ys = [x^2 for x in YS];
+        let k = j[0];
+        let l = j[1];
+        let xs = [i, k, l];
+        enf x' = y for (x, y) in (xs, ys[1..4]) when y;
+    }"#;
 
     let test = ParseTest::new();
     let program = match test.parse_program(root) {
@@ -984,7 +1020,7 @@ fn test_inlining_constraint_comprehensions_in_evaluator() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
@@ -1002,11 +1038,12 @@ fn test_inlining_constraint_comprehensions_in_evaluator() {
         .push(enforce!(eq!(access!(b[3], 1, Type::Felt), int!(64))));
     // The evaluator definition is never modified by inlining, but is by constant propagation:
     //
-    // ev test_constraint([i, j[2]]):
+    // ev test_constraint([i, j[2]]) {
     //     let k = j[0]
     //     let l = j[1]
     //     let xs = [i, k, l]
     //     enf x' = y for (x, y) in (xs, [16, 0, 64]) when y
+    // }
     let body = vec![let_!(k = expr!(access!(j[0], Type::Felt))
         => let_!(l = expr!(access!(j[1], Type::Felt))
             => let_!(xs = vector!(access!(i, Type::Felt), access!(k, Type::Felt), access!(l, Type::Felt))
@@ -1032,22 +1069,134 @@ fn test_inlining_constraints_with_folded_comprehensions_in_evaluator() {
     let root = r#"
     def root
 
-    trace_columns:
-        main: [clk, a, b[4], c]
+    trace_columns {
+        main: [clk, a, b[4], c],
+    }
 
-    public_inputs:
-        inputs: [0]
+    public_inputs {
+        inputs: [0],
+    }
 
-    integrity_constraints:
-        enf test_constraint(b[1..4])
+    integrity_constraints {
+        enf test_constraint(b[1..4]);
+    }
 
-    boundary_constraints:
-        enf clk.first = 0
+    boundary_constraints {
+        enf clk.first = 0;
+    }
 
-    ev test_constraint([x, ys[2]]):
-        let y = sum([col^7 for col in ys])
-        let z = prod([col^7 for col in ys])
-        enf x = y + z
+    ev test_constraint([x, ys[2]]) {
+        let y = sum([col^7 for col in ys]);
+        let z = prod([col^7 for col in ys]);
+        enf x = y + z;
+    }"#;
+
+    let test = ParseTest::new();
+    let program = match test.parse_program(root) {
+        Err(err) => {
+            test.diagnostics.emit(err);
+            panic!("expected parsing to succeed, see diagnostics for details");
+        }
+        Ok(ast) => ast,
+    };
+
+    let mut pipeline =
+        ConstantPropagation::new(&test.diagnostics).chain(Inlining::new(&test.diagnostics));
+    let program = pipeline.run(program).unwrap();
+
+    let mut expected = Program::new(ident!(root));
+    expected.trace_columns.push(trace_segment!(
+        0,
+        "$main",
+        [(clk, 1), (a, 1), (b, 4), (c, 1)]
+    ));
+    expected.public_inputs.insert(
+        ident!(inputs),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
+    );
+    // The sole boundary constraint is already minimal
+    expected.boundary_constraints.push(enforce!(eq!(
+        bounded_access!(clk, Boundary::First, Type::Felt),
+        int!(0)
+    )));
+    // When constant propagation and inlining is done, integrity_constraints should look like:
+    //     let y =
+    //         let %lc0 = b[2]^7
+    //         let %lc1 = b[3]^7
+    //         %lc0 + %lc1
+    //     in
+    //     let z =
+    //         let %lc2 = b[2]^7
+    //         let %lc3 = b[3]^7
+    //         %lc2 * %lc3
+    //     in
+    //     enf b[1] = y + z
+    expected
+        .integrity_constraints
+        .push(let_!(y = expr!(
+            let_!("%lc0" = expr!(exp!(access!(b[2], Type::Felt), int!(7)))
+            => let_!("%lc1" = expr!(exp!(access!(b[3], Type::Felt), int!(7)))
+            => statement!(add!(access!("%lc0", Type::Felt), access!("%lc1", Type::Felt)))))
+        ) =>
+            let_!(z = expr!(
+                let_!("%lc2" = expr!(exp!(access!(b[2], Type::Felt), int!(7)))
+                => let_!("%lc3" = expr!(exp!(access!(b[3], Type::Felt), int!(7)))
+                => statement!(mul!(access!("%lc2", Type::Felt), access!("%lc3", Type::Felt)))))
+            ) =>
+              enforce!(eq!(access!(b[1], Type::Felt), add!(access!(y, Type::Felt), access!(z, Type::Felt))))
+            )
+        ));
+    // The evaluator definition is never modified by constant propagation or inlining
+    let body = vec![
+        let_!(y = expr!(call!(sum(expr!(lc!(((col, expr!(access!(ys, Type::Vector(2))))) => exp!(access!(col, Type::Felt), int!(7)))))))
+            => let_!(z = expr!(call!(prod(expr!(lc!(((col, expr!(access!(ys, Type::Vector(2))))) => exp!(access!(col, Type::Felt), int!(7)))))))
+                => enforce!(eq!(access!(x, Type::Felt), add!(access!(y, Type::Felt), access!(z, Type::Felt)))))),
+    ];
+    expected.evaluators.insert(
+        function_ident!(root, test_constraint),
+        EvaluatorFunction::new(
+            SourceSpan::UNKNOWN,
+            ident!(test_constraint),
+            vec![trace_segment!(0, "%0", [(x, 1), (ys, 2)])],
+            body,
+        ),
+    );
+
+    assert_eq!(program, expected);
+}
+
+#[test]
+fn test_inlining_with_function_call_as_binary_operand() {
+    let root = r#"
+    def root
+
+    trace_columns {
+        main: [clk, a, b[4], c],
+    }
+
+    public_inputs {
+        inputs: [0],
+    }
+
+    integrity_constraints {
+        let complex_fold = fold_sum(b) * fold_vec(b);
+        enf complex_fold = 1;
+    }
+
+    boundary_constraints {
+        enf clk.first = 0;
+    }
+
+    fn fold_sum(a: felt[4]) -> felt {
+        return a[0] + a[1] + a[2] + a[3];
+    }
+
+    fn fold_vec(a: felt[4]) -> felt {
+        let m = a[0] * a[1];
+        let n = m * a[2];
+        let o = n * a[3];
+        return o;
+    }
     "#;
 
     let test = ParseTest::new();
@@ -1071,44 +1220,60 @@ fn test_inlining_constraints_with_folded_comprehensions_in_evaluator() {
     ));
     expected.public_inputs.insert(
         ident!(inputs),
-        PublicInput::new(SourceSpan::UNKNOWN, ident!(inputs), 0),
+        PublicInput::new_vector(SourceSpan::UNKNOWN, ident!(inputs), 0),
+    );
+    expected.functions.insert(
+        function_ident!(root, fold_sum),
+        Function::new(
+            SourceSpan::UNKNOWN,
+            ident!(fold_sum),
+            vec![(ident!(a), Type::Vector(4))],
+            Type::Felt,
+            vec![return_!(expr!(add!(
+                add!(
+                    add!(access!(a[0], Type::Felt), access!(a[1], Type::Felt)),
+                    access!(a[2], Type::Felt)
+                ),
+                access!(a[3], Type::Felt)
+            )))],
+        ),
+    );
+    expected.functions.insert(
+        function_ident!(root, fold_vec),
+        Function::new(
+            SourceSpan::UNKNOWN,
+            ident!(fold_vec),
+            vec![(ident!(a), Type::Vector(4))],
+            Type::Felt,
+            vec![
+                let_!("m" = expr!(mul!(access!(a[0], Type::Felt), access!(a[1], Type::Felt)))
+                => let_!("n" = expr!(mul!(access!(m, Type::Felt), access!(a[2], Type::Felt)))
+                => let_!("o" = expr!(mul!(access!(n, Type::Felt), access!(a[3], Type::Felt)))
+                => return_!(expr!(access!(o, Type::Felt)))
+                ))),
+            ],
+        ),
     );
     // The sole boundary constraint is already minimal
     expected.boundary_constraints.push(enforce!(eq!(
         bounded_access!(clk, Boundary::First, Type::Felt),
         int!(0)
     )));
-    // When constant propagation and inlining is done, integrity_constraints should look like:
-    //     let lc%0 = b[2]^7
-    //     let lc%1 = b[3]^7
-    //     let y = lc%0 + lc%1
-    //     let lc%2 = b[2]^7
-    //     let lc%3 = b[3]^7
-    //     let z = lc%2 + lc%3
-    //     enf b[1] = y + z
-    expected
-        .integrity_constraints
-        .push(let_!("%lc0" = expr!(exp!(access!(b[2], Type::Felt), int!(7)))
-            => let_!("%lc1" = expr!(exp!(access!(b[3], Type::Felt), int!(7)))
-            => let_!(y = expr!(add!(access!("%lc0", Type::Felt), access!("%lc1", Type::Felt)))
-            => let_!("%lc2" = expr!(exp!(access!(b[2], Type::Felt), int!(7)))
-            => let_!("%lc3" = expr!(exp!(access!(b[3], Type::Felt), int!(7)))
-            => let_!(z = expr!(mul!(access!("%lc2", Type::Felt), access!("%lc3", Type::Felt)))
-            => enforce!(eq!(access!(b[1], Type::Felt), add!(access!(y, Type::Felt), access!(z, Type::Felt)))))))))));
-    // The evaluator definition is never modified by constant propagation or inlining
-    let body = vec![
-        let_!(y = expr!(call!(sum(expr!(lc!(((col, expr!(access!(ys, Type::Vector(2))))) => exp!(access!(col, Type::Felt), int!(7)))))))
-            => let_!(z = expr!(call!(prod(expr!(lc!(((col, expr!(access!(ys, Type::Vector(2))))) => exp!(access!(col, Type::Felt), int!(7)))))))
-                => enforce!(eq!(access!(x, Type::Felt), add!(access!(y, Type::Felt), access!(z, Type::Felt)))))),
-    ];
-    expected.evaluators.insert(
-        function_ident!(root, test_constraint),
-        EvaluatorFunction::new(
-            SourceSpan::UNKNOWN,
-            ident!(test_constraint),
-            vec![trace_segment!(0, "%0", [(x, 1), (ys, 2)])],
-            body,
-        ),
+    // With constant propagation and inlining done
+    //
+    // let complex_fold =
+    //   (b[0] + b[1] + b[2] + b[3]) *
+    //   (let m = b[0] * b[1]
+    //   let n = m * b[2]
+    //   let o = n * b[3] in o)
+    // enf complex_fold = 1
+    expected.integrity_constraints.push(
+        let_!(complex_fold = expr!(mul!(
+            add!(add!(add!(access!(b[0], Type::Felt), access!(b[1], Type::Felt)), access!(b[2], Type::Felt)), access!(b[3], Type::Felt)),
+            scalar!(let_!(m = expr!(mul!(access!(b[0], Type::Felt), access!(b[1], Type::Felt)))
+            => let_!(n = expr!(mul!(access!(m, Type::Felt), access!(b[2], Type::Felt)))
+            => let_!(o = expr!(mul!(access!(n, Type::Felt), access!(b[3], Type::Felt))) => return_!(expr!(access!(o, Type::Felt)))))))
+        )) => enforce!(eq!(access!(complex_fold, Type::Felt), int!(1))))
     );
 
     assert_eq!(program, expected);

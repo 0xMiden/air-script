@@ -1,0 +1,21 @@
+def ConstantInRangeAir
+
+use constant_in_range_module::MIN;
+const MAX = 3;
+
+trace_columns {
+    main: [a, b[3], c[4], d[4]],
+}
+
+public_inputs {
+    stack_inputs: [16],
+}
+
+boundary_constraints {
+    enf c[2].first = 0;
+}
+
+integrity_constraints {
+    let m = [w + x - y - z for (w, x, y, z) in (MIN..MAX, b, c[MIN..MAX], d[MIN..MAX])];
+    enf a = m[0] + m[1] + m[2];
+}

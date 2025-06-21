@@ -12,15 +12,13 @@ pub enum ModuleType {
     /// Only one root module may be defined in an AirScript program, using `def`.
     ///
     /// The root module has no restrictions on what sections it can contain, and in a
-    /// sense "provides" restricted sections to other modules in the program, e.g. random values
-    /// and the trace columns.
+    /// sense "provides" restricted sections to other modules in the program, e.g. the trace columns.
     Root,
     /// Any number of library modules are permitted in an AirScript program, using `module`.
     ///
     /// Library modules are restricted from declaring the following sections:
     ///
     /// * public_inputs
-    /// * random_values
     /// * trace_columns
     /// * boundary_constraints
     /// * integrity_constraints
@@ -35,8 +33,8 @@ pub enum ModuleType {
 ///
 /// * Fields which are only allowed in root modules are empty/unset in library modules
 /// * Fields which must be present in root modules are guaranteed to be present in a root module
-/// * It is guaranteed that at least one boundary constraint and one integrity constraint are present
-/// in a root module
+/// * It is guaranteed that at least one boundary constraint and one integrity constraint are
+///   present in a root module
 /// * No duplicate module-level declarations were present
 /// * All globally-visible declarations are unique
 ///
@@ -54,10 +52,11 @@ pub struct Module {
     pub imports: BTreeMap<ModuleId, Import>,
     pub constants: BTreeMap<Identifier, Constant>,
     pub evaluators: BTreeMap<Identifier, EvaluatorFunction>,
+    pub functions: BTreeMap<Identifier, Function>,
     pub periodic_columns: BTreeMap<Identifier, PeriodicColumn>,
     pub public_inputs: BTreeMap<Identifier, PublicInput>,
-    pub random_values: Option<RandomValues>,
     pub trace_columns: Vec<TraceSegment>,
+    pub buses: BTreeMap<Identifier, Bus>,
     pub boundary_constraints: Option<Span<Vec<Statement>>>,
     pub integrity_constraints: Option<Span<Vec<Statement>>>,
 }
@@ -79,9 +78,10 @@ impl Module {
             imports: Default::default(),
             constants: Default::default(),
             evaluators: Default::default(),
+            functions: Default::default(),
+            buses: Default::default(),
             periodic_columns: Default::default(),
             public_inputs: Default::default(),
-            random_values: None,
             trace_columns: vec![],
             boundary_constraints: None,
             integrity_constraints: None,
@@ -121,6 +121,9 @@ impl Module {
                 Declaration::EvaluatorFunction(evaluator) => {
                     module.declare_evaluator(diagnostics, &mut names, evaluator)?;
                 }
+                Declaration::Function(function) => {
+                    module.declare_function(diagnostics, &mut names, function)?;
+                }
                 Declaration::PeriodicColumns(mut columns) => {
                     for column in columns.drain(..) {
                         module.declare_periodic_column(diagnostics, &mut names, column)?;
@@ -135,9 +138,6 @@ impl Module {
                         module.declare_public_input(diagnostics, &mut names, input)?;
                     }
                 }
-                Declaration::RandomValues(rv) => {
-                    module.declare_random_values(diagnostics, &mut names, rv)?;
-                }
                 Declaration::Trace(segments) => {
                     module.declare_trace_segments(diagnostics, &mut names, segments)?;
                 }
@@ -146,6 +146,11 @@ impl Module {
                 }
                 Declaration::IntegrityConstraints(statements) => {
                     module.declare_integrity_constraints(diagnostics, statements)?;
+                }
+                Declaration::Buses(mut buses) => {
+                    for bus in buses.drain(..) {
+                        module.declare_bus(diagnostics, &mut names, bus)?;
+                    }
                 }
             }
         }
@@ -173,22 +178,6 @@ impl Module {
 
             if module.public_inputs.is_empty() {
                 return Err(SemanticAnalysisError::MissingPublicInputs);
-            }
-
-            if module.random_values.is_some()
-                && !module.trace_columns.iter().any(|ts| ts.name == "$aux")
-            {
-                diagnostics
-                    .diagnostic(Severity::Error)
-                    .with_message(
-                        "declaring random_values requires an aux trace_columns declaration",
-                    )
-                    .with_primary_label(
-                        module.random_values.as_ref().unwrap().span(),
-                        "this declaration is invalid",
-                    )
-                    .emit();
-                return Err(SemanticAnalysisError::Invalid);
             }
         }
 
@@ -265,8 +254,7 @@ impl Module {
                                 .emit();
                         }
                         Import::Partial {
-                            items: ref mut prev_items,
-                            ..
+                            items: prev_items, ..
                         } => {
                             for item in items.drain() {
                                 if let Some(prev) = prev_items.get(&item) {
@@ -352,7 +340,7 @@ impl Module {
         }
 
         // Validate constant expression
-        if let ConstantExpr::Matrix(ref matrix) = &constant.value {
+        if let ConstantExpr::Matrix(matrix) = &constant.value {
             let expected_len = matrix
                 .first()
                 .expect("expected matrix to have at least one row")
@@ -391,6 +379,38 @@ impl Module {
         }
 
         self.evaluators.insert(evaluator.name, evaluator);
+
+        Ok(())
+    }
+
+    fn declare_function(
+        &mut self,
+        diagnostics: &DiagnosticsHandler,
+        names: &mut HashSet<NamespacedIdentifier>,
+        function: Function,
+    ) -> Result<(), SemanticAnalysisError> {
+        if let Some(prev) = names.replace(NamespacedIdentifier::Function(function.name)) {
+            conflicting_declaration(diagnostics, "function", prev.span(), function.name.span());
+            return Err(SemanticAnalysisError::NameConflict(function.name.span()));
+        }
+
+        self.functions.insert(function.name, function);
+
+        Ok(())
+    }
+
+    fn declare_bus(
+        &mut self,
+        diagnostics: &DiagnosticsHandler,
+        names: &mut HashSet<NamespacedIdentifier>,
+        bus: Bus,
+    ) -> Result<(), SemanticAnalysisError> {
+        if let Some(prev) = names.replace(NamespacedIdentifier::Binding(bus.name)) {
+            conflicting_declaration(diagnostics, "bus", prev.span(), bus.name.span());
+            return Err(SemanticAnalysisError::NameConflict(bus.name.span()));
+        }
+
+        self.buses.insert(bus.name, bus);
 
         Ok(())
     }
@@ -437,50 +457,16 @@ impl Module {
             return Err(SemanticAnalysisError::RootSectionInLibrary(input.span()));
         }
 
-        if let Some(prev) = names.replace(NamespacedIdentifier::Binding(input.name)) {
-            conflicting_declaration(diagnostics, "public input", prev.span(), input.name.span());
-            Err(SemanticAnalysisError::NameConflict(input.name.span()))
+        if let Some(prev) = names.replace(NamespacedIdentifier::Binding(input.name())) {
+            conflicting_declaration(
+                diagnostics,
+                "public input",
+                prev.span(),
+                input.name().span(),
+            );
+            Err(SemanticAnalysisError::NameConflict(input.name().span()))
         } else {
-            assert_eq!(self.public_inputs.insert(input.name, input), None);
-            Ok(())
-        }
-    }
-
-    fn declare_random_values(
-        &mut self,
-        diagnostics: &DiagnosticsHandler,
-        names: &mut HashSet<NamespacedIdentifier>,
-        rv: RandomValues,
-    ) -> Result<(), SemanticAnalysisError> {
-        let span = rv.span();
-        if self.is_library() {
-            invalid_section_in_library(diagnostics, "random_values", span);
-            return Err(SemanticAnalysisError::RootSectionInLibrary(span));
-        }
-
-        for binding in rv.bindings.iter() {
-            if let Some(prev) = names.replace(NamespacedIdentifier::Binding(binding.name)) {
-                conflicting_declaration(
-                    diagnostics,
-                    "random values binding",
-                    prev.span(),
-                    binding.name.span(),
-                );
-                return Err(SemanticAnalysisError::NameConflict(binding.name.span()));
-            }
-        }
-
-        if let Some(prev) = self.random_values.replace(rv) {
-            diagnostics
-                .diagnostic(Severity::Error)
-                .with_message("multiple random_values declarations")
-                .with_primary_label(span, "this declaration is invalid")
-                .with_secondary_label(prev.span(), "because this declaration already exists")
-                .with_note("Only a single random_values declaration is allowed at a time")
-                .emit();
-            self.random_values.replace(prev);
-            Err(SemanticAnalysisError::NameConflict(span))
-        } else {
+            assert_eq!(self.public_inputs.insert(input.name(), input), None);
             Ok(())
         }
     }
@@ -621,9 +607,9 @@ impl PartialEq for Module {
             && self.imports == other.imports
             && self.constants == other.constants
             && self.evaluators == other.evaluators
+            && self.functions == other.functions
             && self.periodic_columns == other.periodic_columns
             && self.public_inputs == other.public_inputs
-            && self.random_values == other.random_values
             && self.trace_columns == other.trace_columns
             && self.boundary_constraints == other.boundary_constraints
             && self.integrity_constraints == other.integrity_constraints
@@ -633,7 +619,7 @@ impl PartialEq for Module {
 fn invalid_section_in_library(diagnostics: &DiagnosticsHandler, ty: &str, span: SourceSpan) {
     diagnostics
         .diagnostic(Severity::Error)
-        .with_message(format!("invalid {} declaration", ty))
+        .with_message(format!("invalid {ty} declaration"))
         .with_primary_label(span, "this section is not permitted in a library module")
         .emit();
 }
@@ -646,7 +632,7 @@ fn conflicting_declaration(
 ) {
     diagnostics
         .diagnostic(Severity::Error)
-        .with_message(format!("invalid {} declaration", ty))
+        .with_message(format!("invalid {ty} declaration"))
         .with_primary_label(current, "this conflicts with a previous declaration")
         .with_secondary_label(prev, "previously defined here")
         .emit();

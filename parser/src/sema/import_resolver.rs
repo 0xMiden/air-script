@@ -41,7 +41,7 @@ impl<'a> ImportResolver<'a> {
     }
 }
 
-impl<'a> VisitMut<SemanticAnalysisError> for ImportResolver<'a> {
+impl VisitMut<SemanticAnalysisError> for ImportResolver<'_> {
     fn visit_mut_module(&mut self, module: &mut Module) -> ControlFlow<SemanticAnalysisError> {
         // We have to steal the imports temporarily
         let mut imports = core::mem::take(&mut module.imports);
@@ -94,7 +94,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for ImportResolver<'a> {
     }
 }
 
-impl<'a> ImportResolver<'a> {
+impl ImportResolver<'_> {
     /// Imports a single item into the current module
     fn import(
         &mut self,

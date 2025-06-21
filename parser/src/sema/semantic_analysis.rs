@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     fmt, mem,
     ops::ControlFlow,
 };
@@ -63,11 +63,11 @@ pub struct SemanticAnalysis<'a> {
     deps: &'a mut DependencyGraph,
     imported: Imported,
     globals: HashMap<Identifier, BindingType>,
+    constants: BTreeMap<Identifier, ConstantExpr>,
     locals: LexicalScope<NamespacedIdentifier, BindingType>,
     referenced: HashMap<QualifiedIdentifier, DependencyType>,
     current_module: Option<ModuleId>,
     constraint_mode: ConstraintMode,
-    saw_random_values: bool,
     has_undefined_variables: bool,
     has_type_errors: bool,
     in_constraint_comprehension: bool,
@@ -88,11 +88,11 @@ impl<'a> SemanticAnalysis<'a> {
             deps,
             imported,
             globals: Default::default(),
+            constants: Default::default(),
             locals: Default::default(),
             referenced: Default::default(),
             current_module: None,
             constraint_mode: ConstraintMode::None,
-            saw_random_values: false,
             has_undefined_variables: false,
             has_type_errors: false,
             in_constraint_comprehension: false,
@@ -134,40 +134,17 @@ impl<'a> SemanticAnalysis<'a> {
     }
 }
 
-impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
+impl VisitMut<SemanticAnalysisError> for SemanticAnalysis<'_> {
     fn visit_mut_module(&mut self, module: &mut Module) -> ControlFlow<SemanticAnalysisError> {
         self.current_module = Some(module.name);
 
-        // Register all globals implicitly defined in the module before all locally bound names
-        //
-        // Currently this consists only of the `random_values` declarations.
-        //
-        // Because a module is guaranteed to have no top-level name conflicts when parsed successfully,
-        // we know that all of the globally visible declarations from the root module cannot conflict
-        // with each other, but we assert that this is so to catch any potentially invalid modules that
-        // bypassed that validation somehow.
-        if let Some(rv) = self.program.random_values.as_ref() {
-            assert_eq!(
-                self.globals.insert(
-                    rv.name,
-                    BindingType::RandomValue(RandBinding::new(
-                        rv.name.span(),
-                        rv.name,
-                        rv.size,
-                        0,
-                        Type::Vector(rv.size)
-                    ))
-                ),
-                None
-            );
-            for binding in rv.bindings.iter().copied() {
-                assert_eq!(
-                    self.globals
-                        .insert(binding.name, BindingType::RandomValue(binding)),
-                    None
-                );
-            }
-        }
+        // Collect the values of all named constants that can be referenced in range declarations
+        self.constants.extend(
+            module
+                .constants
+                .iter()
+                .map(|(id, c)| (*id, c.value.clone())),
+        );
 
         // Next, add all the top-level root module declarations as locals, if this is the root module
         //
@@ -208,8 +185,8 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
             for input in self.program.public_inputs.values() {
                 assert_eq!(
                     self.locals.insert(
-                        NamespacedIdentifier::Binding(input.name),
-                        BindingType::PublicInput(Type::Vector(input.size))
+                        NamespacedIdentifier::Binding(input.name()),
+                        BindingType::PublicInput(Type::Vector(input.size()))
                     ),
                     None
                 );
@@ -253,6 +230,37 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
             );
         }
 
+        for (function_name, function) in module.functions.iter() {
+            let namespaced_name = NamespacedIdentifier::Function(*function_name);
+            if let Some((prev, _)) = self.imported.get_key_value(&namespaced_name) {
+                self.declaration_import_conflict(namespaced_name.span(), prev.span())?;
+            }
+            assert_eq!(
+                self.locals.insert(
+                    namespaced_name,
+                    BindingType::Function(FunctionType::Function(
+                        function.param_types(),
+                        function.return_type
+                    ))
+                ),
+                None
+            );
+        }
+
+        // Next, we add all buses to the set of local bindings.
+        // Buses are in their own namespace, but may conflict with imported items
+        for (bus_name, bus) in module.buses.iter() {
+            let namespaced_name = NamespacedIdentifier::Binding(*bus_name);
+            if let Some((prev, _)) = self.imported.get_key_value(&namespaced_name) {
+                self.declaration_import_conflict(namespaced_name.span(), prev.span())?;
+            }
+            assert_eq!(
+                self.locals
+                    .insert(namespaced_name, BindingType::Bus(bus.bus_type)),
+                None
+            );
+        }
+
         // Next, we add any periodic columns to the set of local bindings.
         //
         // These _can_ conflict with globally defined names, but are guaranteed not to conflict
@@ -262,8 +270,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
                 self.diagnostics
                     .diagnostic(Severity::Error)
                     .with_message(format!(
-                        "periodic column conflicts with {} declared in root module",
-                        prev_binding
+                        "periodic column conflicts with {prev_binding} declared in root module"
                     ))
                     .with_primary_label(periodic.name.span(), "this name is already in use")
                     .with_secondary_label(prev.span(), "previously declared here")
@@ -285,6 +292,14 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
         // rewrite its name to be fully-qualified,
         for evaluator in module.evaluators.values_mut() {
             self.visit_mut_evaluator_function(evaluator)?;
+        }
+
+        for function in module.functions.values_mut() {
+            self.visit_mut_function(function)?;
+        }
+
+        for bus in module.buses.values_mut() {
+            self.visit_mut_bus(bus)?;
         }
 
         if let Some(boundary_constraints) = module.boundary_constraints.as_mut() {
@@ -363,13 +378,58 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
         ControlFlow::Continue(())
     }
 
+    fn visit_mut_function(
+        &mut self,
+        function: &mut Function,
+    ) -> ControlFlow<SemanticAnalysisError> {
+        // constraints are not allowed in pure functions
+        self.constraint_mode = ConstraintMode::None;
+
+        // Start a new lexical scope
+        self.locals.enter();
+
+        // Track referenced imports in a new context, as we want to update the dependency graph
+        // for this function using only those imports referenced from this function body
+        let referenced = mem::take(&mut self.referenced);
+
+        // Add the set of parameters to the current scope, check for conflicts
+        for (param, param_type) in function.params.iter_mut() {
+            let namespaced_name = NamespacedIdentifier::Binding(*param);
+            self.locals
+                .insert(namespaced_name, BindingType::Local(*param_type));
+        }
+
+        // Visit all of the statements in the body
+        self.visit_mut_statement_block(&mut function.body)?;
+
+        // Update the dependency graph for this function
+        let current_item = QualifiedIdentifier::new(
+            self.current_module.unwrap(),
+            NamespacedIdentifier::Function(function.name),
+        );
+        for (referenced_item, ref_type) in self.referenced.iter() {
+            let referenced_item = self.deps.add_node(*referenced_item);
+            self.deps.add_edge(current_item, referenced_item, *ref_type);
+        }
+
+        // Restore the original references metadata
+        self.referenced = referenced;
+        // Restore the original lexical scope
+        self.locals.exit();
+
+        ControlFlow::Continue(())
+    }
+
+    fn visit_mut_bus(&mut self, _bus: &mut Bus) -> ControlFlow<SemanticAnalysisError> {
+        ControlFlow::Continue(())
+    }
+
     fn visit_mut_boundary_constraints(
         &mut self,
         body: &mut Vec<Statement>,
     ) -> ControlFlow<SemanticAnalysisError> {
         // Only allow boundary constraints in this context
         self.constraint_mode = ConstraintMode::Boundary;
-        self.saw_random_values = false;
         // Save the current bindings set, as we're entering a new lexical scope
         self.locals.enter();
         // Visit all of the statements, check variable usage, and track referenced imports
@@ -378,7 +438,6 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
         self.locals.exit();
         // Disallow any constraints
         self.constraint_mode = ConstraintMode::None;
-        self.saw_random_values = false;
 
         ControlFlow::Continue(())
     }
@@ -423,6 +482,17 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
     /// must be checked using `visit_mut_enforce`, rather than `visit_mut_scalar_expr`. We do this by setting a flag in the
     /// state that is checked in `visit_mut_list_comprehension` to enable checks that are specific to constraints.
     fn visit_mut_enforce_all(
+        &mut self,
+        expr: &mut ListComprehension,
+    ) -> ControlFlow<SemanticAnalysisError> {
+        self.in_constraint_comprehension = true;
+        let result = self.visit_mut_list_comprehension(expr);
+        self.in_constraint_comprehension = false;
+
+        result
+    }
+
+    fn visit_mut_bus_enforce(
         &mut self,
         expr: &mut ListComprehension,
     ) -> ControlFlow<SemanticAnalysisError> {
@@ -498,7 +568,8 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
             if let Some(expected_ty) = result_ty.replace(iterable_ty) {
                 if expected_ty != iterable_ty {
                     self.has_type_errors = true;
-                    self.type_mismatch(
+                    // Note: We don't break here but at the end of the module's compilation, as we want to continue to gather as many errors as possible
+                    let _ = self.type_mismatch(
                         Some(&iterable_ty),
                         iterable.span(),
                         &expected_ty,
@@ -566,6 +637,11 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
         }
 
         // Store the result type of this comprehension
+        result_ty = match result_ty {
+            Some(Type::Vector(_)) => result_ty,
+            Some(Type::Matrix(rows, _)) => Some(Type::Vector(rows)),
+            _ => None,
+        };
         expr.ty = result_ty;
 
         // Restore the original lexical scope
@@ -598,6 +674,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
                         }
                         // TODO: When we have non-evaluator functions, we must fetch the type in its signature here,
                         // and store it as the type of the Call expression
+                        expr.ty = fty.result();
                     }
                 } else {
                     self.has_type_errors = true;
@@ -655,7 +732,9 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
         match (expr.lhs.ty(), expr.rhs.ty()) {
             (Ok(Some(lty)), Ok(Some(rty))) => {
                 if lty != rty {
-                    self.type_mismatch(
+                    self.has_type_errors = true;
+                    // Note: We don't break here but at the end of the module's compilation, as we want to continue to gather as many errors as possible
+                    let _ = self.type_mismatch(
                         Some(&lty),
                         expr.lhs.span(),
                         &rty,
@@ -666,6 +745,98 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
                 ControlFlow::Continue(())
             }
             _ => ControlFlow::Continue(()),
+        }
+    }
+
+    fn visit_mut_range_bound(
+        &mut self,
+        expr: &mut crate::ast::RangeBound,
+    ) -> ControlFlow<SemanticAnalysisError> {
+        match expr {
+            crate::ast::RangeBound::Const(_) => ControlFlow::Continue(()),
+            crate::ast::RangeBound::SymbolAccess(access) => {
+                self.visit_mut_const_symbol_access(access)?;
+                // The identifier must have been resolved to reach here
+                let qid = access.name.resolved().unwrap();
+                let value = if self.current_module.as_ref() == Some(&qid.module) {
+                    &self.constants[&qid.item.id()]
+                } else {
+                    &self.library.modules[&qid.module].constants[&qid.item.id()].value
+                };
+                match value {
+                    ConstantExpr::Scalar(value) => {
+                        let value = usize::try_from(*value).map_err(|err| {
+                            self.diagnostics
+                                .diagnostic(Severity::Error)
+                                .with_primary_label(
+                                    expr.span(),
+                                    format!("constant is not a valid range bound: {err}"),
+                                )
+                                .emit();
+                            SemanticAnalysisError::Invalid
+                        });
+                        match value {
+                            Ok(value) => {
+                                *expr =
+                                    crate::ast::RangeBound::Const(Span::new(expr.span(), value));
+                                ControlFlow::Continue(())
+                            }
+                            Err(err) => ControlFlow::Break(err),
+                        }
+                    }
+                    const_expr => {
+                        self.diagnostics
+                            .diagnostic(Severity::Error)
+                            .with_primary_label(
+                                expr.span(),
+                                format!(
+                                    "constant is not a valid range bound: expected scalar, got {}",
+                                    const_expr.ty()
+                                ),
+                            )
+                            .emit();
+                        ControlFlow::Break(SemanticAnalysisError::Invalid)
+                    }
+                }
+            }
+        }
+    }
+
+    fn visit_mut_const_symbol_access(
+        &mut self,
+        expr: &mut crate::ast::ConstSymbolAccess,
+    ) -> ControlFlow<SemanticAnalysisError> {
+        self.visit_mut_resolvable_identifier(&mut expr.name)?;
+
+        // The identifier must have been resolved to reach here
+        let binding_ty = match self.resolvable_binding_type(&expr.name) {
+            Ok(ty) => ty,
+            Err(err) => {
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_primary_label(expr.span, format!("invalid constant identifier: {err}"))
+                    .emit();
+                return ControlFlow::Break(SemanticAnalysisError::Invalid);
+            }
+        };
+        match binding_ty.item {
+            BindingType::Constant(ty) => {
+                expr.ty = Some(ty);
+                ControlFlow::Continue(())
+            }
+            binding_ty => {
+                self.diagnostics
+                    .diagnostic(Severity::Error)
+                    .with_primary_label(
+                        expr.span,
+                        format!(
+                            "invalid constant identifier '{}', got binding of type {binding_ty}",
+                            &expr.name
+                        ),
+                    )
+                    .emit();
+                ControlFlow::Break(SemanticAnalysisError::Invalid)
+            }
         }
     }
 
@@ -681,7 +852,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
             .with_message("invalid expression")
             .with_primary_label(
                 expr.span(),
-                "references to column boundaries are not permitted here",
+                "references to column / buses boundaries are not permitted here",
             )
             .emit();
         ControlFlow::Break(SemanticAnalysisError::Invalid)
@@ -692,6 +863,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
         expr: &mut SymbolAccess,
     ) -> ControlFlow<SemanticAnalysisError> {
         self.visit_mut_resolvable_identifier(&mut expr.name)?;
+        self.visit_mut_access_type(&mut expr.access_type)?;
 
         let resolved_binding_ty = match self.resolvable_binding_type(&expr.name) {
             Ok(ty) => ty,
@@ -759,7 +931,8 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
                     // with a single column is dependent on the access type. A slice of columns of size 1 must
                     // be captured as a vector of size 1
                     AccessType::Slice(ref range) => {
-                        assert_eq!(expr.ty.replace(Type::Vector(range.end - range.start)), None)
+                        let range = range.to_slice_range();
+                        assert_eq!(expr.ty.replace(Type::Vector(range.len())), None)
                     }
                     // All other access types can be derived from the binding type
                     _ => assert_eq!(expr.ty.replace(binding_ty.ty().unwrap()), None),
@@ -776,7 +949,10 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
                     .emit();
                 // Continue with a fabricated type
                 let ty = match &expr.access_type {
-                    AccessType::Slice(ref range) => Type::Vector(range.end - range.start),
+                    AccessType::Slice(range) => {
+                        let range = range.to_slice_range();
+                        Type::Vector(range.len())
+                    }
                     _ => Type::Felt,
                 };
                 assert_eq!(expr.ty.replace(ty), None);
@@ -807,6 +983,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
             ResolvableIdentifier::Unresolved(namespaced_id) => {
                 // If locally defined, resolve it to the current module
                 let namespaced_id = *namespaced_id;
+
                 if let Some(binding_ty) = self.locals.get(&namespaced_id) {
                     match binding_ty {
                         // This identifier is a local variable, alias to a declaration, or a function parameter
@@ -821,15 +998,13 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
                         // These binding types are module-local declarations
                         BindingType::Constant(_)
                         | BindingType::Function(_)
-                        | BindingType::PeriodicColumn(_) => {
+                        | BindingType::PeriodicColumn(_)
+                        | BindingType::Bus(_) => {
                             *expr = ResolvableIdentifier::Resolved(QualifiedIdentifier::new(
                                 current_module,
                                 namespaced_id,
                             ));
                         }
-                        // Locals never hold these binding types, which represent global declarations,
-                        // they use Alias instead
-                        BindingType::RandomValue(_) => unreachable!(),
                     }
                     return ControlFlow::Continue(());
                 }
@@ -867,10 +1042,10 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
                     NamespacedIdentifier::Binding(_) => {
                         self.diagnostics
                             .diagnostic(Severity::Error)
-                            .with_message("reference to undefined variable")
+                            .with_message("reference to undefined variable / bus")
                             .with_primary_label(
                                 namespaced_id.span(),
-                                "this variable is not defined",
+                                "this variable / bus is not defined",
                             )
                             .emit();
                     }
@@ -882,7 +1057,7 @@ impl<'a> VisitMut<SemanticAnalysisError> for SemanticAnalysis<'a> {
     }
 }
 
-impl<'a> SemanticAnalysis<'a> {
+impl SemanticAnalysis<'_> {
     /// Validate arguments for builtin functions, which currently consist only of the sum/prod reducers
     fn validate_call_to_builtin(&mut self, call: &Call) -> ControlFlow<SemanticAnalysisError> {
         match call.callee.as_ref().name() {
@@ -943,7 +1118,7 @@ impl<'a> SemanticAnalysis<'a> {
     ) -> ControlFlow<SemanticAnalysisError> {
         // We're expecting either a vector of bindings, or an aggregate binding
         match arg {
-            Expr::SymbolAccess(ref access) => {
+            Expr::SymbolAccess(access) => {
                 match self.access_binding_type(access) {
                     Ok(BindingType::TraceColumn(tr) | BindingType::TraceParam(tr)) => {
                         if tr.size == param.size {
@@ -960,16 +1135,12 @@ impl<'a> SemanticAnalysis<'a> {
                                     .with_primary_label(
                                         arg.span(),
                                         format!(
-                                            "callee expects columns from the {} trace",
-                                            expected_segment
-                                        ),
+                                            "callee expects columns from the {expected_segment} trace"),
                                     )
                                     .with_secondary_label(
                                         tr.span,
                                         format!(
-                                            "but this column is from the {} trace",
-                                            segment_name
-                                        ),
+                                            "but this column is from the {segment_name} trace"),
                                     )
                                     .emit();
                             }
@@ -999,16 +1170,12 @@ impl<'a> SemanticAnalysis<'a> {
                                             .with_primary_label(
                                                 arg.span(),
                                                 format!(
-                                                    "callee expects columns from the {} trace",
-                                                    expected_segment
-                                                ),
+                                                    "callee expects columns from the {expected_segment} trace"),
                                             )
                                             .with_secondary_label(
                                                 tr.span,
                                                 format!(
-                                                    "but this column is from the {} trace",
-                                                    segment_name
-                                                ),
+                                                    "but this column is from the {segment_name} trace"),
                                             )
                                             .emit();
                                         return ControlFlow::Continue(());
@@ -1035,7 +1202,8 @@ impl<'a> SemanticAnalysis<'a> {
 
                         if size != param.size {
                             self.has_type_errors = true;
-                            self.type_mismatch(
+                            // Note: We don't break here but at the end of the module's compilation, as we want to continue to gather as many errors as possible
+                            let _ = self.type_mismatch(
                                 Some(&Type::Vector(param.size)),
                                 arg.span(),
                                 &Type::Vector(size),
@@ -1054,7 +1222,8 @@ impl<'a> SemanticAnalysis<'a> {
                             param.size,
                             Type::Vector(param.size),
                         ));
-                        self.binding_mismatch(
+                        // Note: We don't break here but at the end of the module's compilation, as we want to continue to gather as many errors as possible
+                        let _ = self.binding_mismatch(
                             &binding_ty,
                             arg.span(),
                             &expected,
@@ -1068,7 +1237,7 @@ impl<'a> SemanticAnalysis<'a> {
                     }
                 }
             }
-            Expr::Vector(ref elems) => {
+            Expr::Vector(elems) => {
                 // We need to make sure that the number of columns represented by the vector corresponds to those
                 // expected by the callee, which requires us to first check each element of the vector, and then
                 // at the end determine if the sizes line up
@@ -1088,16 +1257,12 @@ impl<'a> SemanticAnalysis<'a> {
                                     .with_primary_label(
                                         arg.span(),
                                         format!(
-                                            "callee expects columns from the {} trace",
-                                            expected_segment
-                                        ),
+                                            "callee expects columns from the {expected_segment} trace"),
                                     )
                                     .with_secondary_label(
                                         elem.span(),
                                         format!(
-                                            "but this column is from the {} trace",
-                                            segment_name
-                                        ),
+                                            "but this column is from the {segment_name} trace"),
                                     )
                                     .emit();
                                 return ControlFlow::Continue(());
@@ -1132,7 +1297,7 @@ impl<'a> SemanticAnalysis<'a> {
                     self.diagnostics.diagnostic(Severity::Error)
                                 .with_message("invalid call")
                                 .with_primary_label(span, "type mismatch in function argument")
-                                .with_secondary_label(arg.span(), format!("callee expects {} trace columns here, but this argument only provides {}", param.size, size))
+                                .with_secondary_label(arg.span(), format!("callee expects {} trace columns here, but this argument only provides {size}", param.size))
                                 .emit();
                 }
             }
@@ -1141,7 +1306,7 @@ impl<'a> SemanticAnalysis<'a> {
                 self.diagnostics.diagnostic(Severity::Error)
                             .with_message("invalid call")
                             .with_primary_label(span, "invalid argument for evaluator function")
-                            .with_secondary_label(arg.span(), format!("expected a trace binding, or vector of trace bindings here, but got a {}", wrong))
+                            .with_secondary_label(arg.span(), format!("expected a trace binding, or vector of trace bindings here, but got a {wrong}"))
                             .emit();
             }
         }
@@ -1156,15 +1321,15 @@ impl<'a> SemanticAnalysis<'a> {
         // Only equality expressions are permitted in boundary constraints
         let constraint_span = expr.span();
         match expr {
-            ScalarExpr::Binary(ref mut expr) if expr.op == BinaryOp::Eq => {
+            ScalarExpr::Binary(expr) if expr.op == BinaryOp::Eq => {
                 // Ensure that the left-hand expression is a boundary access
                 match expr.lhs.as_mut() {
-                    ScalarExpr::BoundedSymbolAccess(ref mut access) => {
+                    ScalarExpr::BoundedSymbolAccess(access) => {
                         // Visit the expression operands
                         self.visit_mut_symbol_access(&mut access.column)?;
 
-                        // Ensure the referenced symbol was a trace column, and that it produces a scalar value
-                        let (found, segment) =
+                        // Ensure the referenced symbol was a trace column, and that it produces a scalar value, or a bus
+                        let (found, _segment) =
                             match self.resolvable_binding_type(&access.column.name) {
                                 Ok(ty) => match ty.item.access(access.column.access_type.clone()) {
                                     Ok(BindingType::TraceColumn(tb))
@@ -1181,6 +1346,10 @@ impl<'a> SemanticAnalysis<'a> {
                                                 constraint_span,
                                             );
                                         }
+                                    }
+                                    Ok(BindingType::Bus(_)) => {
+                                        // Buses are valid in boundary constraints
+                                        (ty, 0)
                                     }
                                     Ok(aty) => {
                                         let expected = BindingType::TraceColumn(TraceBinding::new(
@@ -1207,61 +1376,124 @@ impl<'a> SemanticAnalysis<'a> {
                                 }
                             };
 
-                        // Validate that the symbol access produces a scalar value
-                        //
-                        // If no type is known, a diagnostic is already emitted, so proceed as if it is valid
-                        if let Some(ty) = access.column.ty.as_ref() {
-                            if !ty.is_scalar() {
-                                // Invalid constraint, only scalar values are allowed
-                                self.type_mismatch(
-                                    Some(ty),
-                                    access.span(),
-                                    &Type::Felt,
-                                    found.span(),
-                                    constraint_span,
-                                )?;
-                            }
-                        }
+                        match (found.clone().item, expr.rhs.as_mut()) {
+                            // Buses boundaries can be constrained by null or set to be unconstrained
+                            (
+                                BindingType::Bus(_),
+                                ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_),
+                            ) => {}
+                            (BindingType::Bus(_), ScalarExpr::SymbolAccess(access)) => {
+                                self.visit_mut_resolvable_identifier(&mut access.name)?;
+                                self.visit_mut_access_type(&mut access.access_type)?;
 
-                        // Verify that the right-hand expression evaluates to a scalar
-                        //
-                        // The only way this is not the case, is if it is a a symbol access which produces an aggregate
-                        self.visit_mut_scalar_expr(expr.rhs.as_mut())?;
-                        if let ScalarExpr::SymbolAccess(access) = expr.rhs.as_ref() {
-                            // Ensure this access produces a scalar, or if the type is unknown, assume it is valid
-                            // because a diagnostic will have already been emitted
-                            if !access.ty.as_ref().map(|t| t.is_scalar()).unwrap_or(true) {
-                                self.type_mismatch(
-                                    access.ty.as_ref(),
-                                    access.span(),
-                                    &Type::Felt,
-                                    access.name.span(),
-                                    constraint_span,
-                                )?;
-                            }
-                        }
+                                let resolved_binding_ty =
+                                    match self.resolvable_binding_type(&access.name) {
+                                        Ok(ty) => ty,
+                                        // An unresolved identifier at this point means that it is undefined,
+                                        // but we've already raised a diagnostic
+                                        //
+                                        // There is nothing useful we can do here other than continue traversing the module
+                                        // gathering as many undefined variable usages as possible before bailing
+                                        Err(_) => return ControlFlow::Continue(()),
+                                    };
 
-                        // If we observed a random value and this constraint is
-                        // against the main trace segment, raise a validation error
-                        if segment == 0 && self.saw_random_values {
-                            self.has_type_errors = true;
-                            self.invalid_constraint(expr.lhs.span(), "this constrains a column in the main trace segment")
-                                .with_secondary_label(expr.rhs.span(), "but this expression references random values")
-                                .with_note("Constraints involving random values are only valid with auxiliary trace segments")
+                                match resolved_binding_ty.item {
+                                    BindingType::PublicInput(_) => {}
+                                    _ => {
+                                        self.has_type_errors = true;
+                                        self.invalid_constraint(
+                                            access.span(),
+                                            "expected a reference to a public input",
+                                        )
+                                        .with_secondary_label(
+                                            access.name.span(),
+                                            "this is not a reference to a public input",
+                                        )
+                                        .emit();
+                                    }
+                                }
+                            }
+                            (BindingType::Bus(_), _) => {
+                                // Buses cannot be constrained otherwise
+                                self.has_type_errors = true;
+                                self.invalid_constraint(expr.lhs.span(), "this constrains a bus")
+                                    .with_secondary_label(
+                                        expr.rhs.span(),
+                                        "but this expression is not valid to constrain buses",
+                                    )
+                                    .with_note(
+                                        "Only the null value is valid for constraining buses",
+                                    )
+                                    .emit();
+                            }
+                            (_, ScalarExpr::Null(_) | ScalarExpr::Unconstrained(_)) => {
+                                // Only buses can be constrained to null or set to be unconstrained
+                                self.has_type_errors = true;
+                                self.invalid_constraint(
+                                    expr.lhs.span(),
+                                    "this constrains a column",
+                                )
+                                .with_secondary_label(
+                                    expr.rhs.span(),
+                                    "but this expression is only valid for constraining buses",
+                                )
+                                .with_note("The null / unconstrained keywords are only valid for constraining buses, not columns")
                                 .emit();
+                            }
+                            _ => {
+                                // Validate that the symbol access produces a scalar value
+                                //
+                                // If no type is known, a diagnostic is already emitted, so proceed as if it is valid
+                                if let Some(ty) = access.column.ty.as_ref() {
+                                    if !ty.is_scalar() {
+                                        // Invalid constraint, only scalar values are allowed
+                                        self.type_mismatch(
+                                            Some(ty),
+                                            access.span(),
+                                            &Type::Felt,
+                                            found.span(),
+                                            constraint_span,
+                                        )?;
+                                    }
+                                }
+
+                                // Verify that the right-hand expression evaluates to a scalar
+                                //
+                                // The only way this is not the case, is if it is a a symbol access which produces an aggregate
+                                self.visit_mut_scalar_expr(expr.rhs.as_mut())?;
+                                if let ScalarExpr::SymbolAccess(access) = expr.rhs.as_ref() {
+                                    // Ensure this access produces a scalar, or if the type is unknown, assume it is valid
+                                    // because a diagnostic will have already been emitted
+                                    if !access.ty.as_ref().map(|t| t.is_scalar()).unwrap_or(true) {
+                                        self.type_mismatch(
+                                            access.ty.as_ref(),
+                                            access.span(),
+                                            &Type::Felt,
+                                            access.name.span(),
+                                            constraint_span,
+                                        )?;
+                                    }
+                                }
+                            }
                         }
 
                         ControlFlow::Continue(())
                     }
                     other => {
-                        self.invalid_constraint(other.span(), "expected this to be a reference to a trace column boundary, e.g. `a.first`")
+                        self.invalid_constraint(other.span(), "expected this to be a reference to a trace column or bus boundary, e.g. `a.first`")
                             .with_note("The given constraint is not a boundary constraint, and only boundary constraints are valid here.")
                             .emit();
                         ControlFlow::Break(SemanticAnalysisError::Invalid)
                     }
                 }
             }
-            ScalarExpr::Call(ref expr) => {
+            ScalarExpr::BusOperation(expr) => {
+                self.invalid_constraint(expr.span(), "expected an equality expression here")
+                    .with_note("Bus operations are only permitted in integrity constraints")
+                    .emit();
+                ControlFlow::Break(SemanticAnalysisError::Invalid)
+            }
+            ScalarExpr::Call(expr) => {
                 self.invalid_constraint(expr.span(), "expected an equality expression here")
                     .with_note(
                         "Calls to evaluator functions are only permitted in integrity constraints",
@@ -1290,13 +1522,11 @@ impl<'a> SemanticAnalysis<'a> {
         // However, we do need to validate two things:
         //
         // 1. That the constraint produces a scalar value
-        // 2. That the expression is either an equality, or a call to an evaluator function
+        // 2. That the expression is either an equality, a call to an evaluator function, or a bus operation
         //
         match expr {
-            ScalarExpr::Binary(ref mut expr) if expr.op == BinaryOp::Eq => {
-                self.visit_mut_binary_expr(expr)
-            }
-            ScalarExpr::Call(ref mut expr) => {
+            ScalarExpr::Binary(expr) if expr.op == BinaryOp::Eq => self.visit_mut_binary_expr(expr),
+            ScalarExpr::Call(expr) => {
                 // Visit the call normally, so we can resolve the callee identifier
                 self.visit_mut_call(expr)?;
 
@@ -1322,7 +1552,7 @@ impl<'a> SemanticAnalysis<'a> {
                                         // and we will have already validated the reference
                                         let (import_id, module_id) = self.imported.get_key_value(&id).unwrap();
                                         let module = self.library.get(module_id).unwrap();
-                                        if module.evaluators.get(&id.id()).is_none() {
+                                        if !module.evaluators.contains_key(&id.id()) {
                                             self.invalid_constraint(id.span(), "calls in constraints must be to evaluator functions")
                                                 .with_secondary_label(import_id.span(), "the function imported here is not an evaluator")
                                                 .emit();
@@ -1332,10 +1562,11 @@ impl<'a> SemanticAnalysis<'a> {
                                     }
                                 }
                             }
-                            // We take care to only allow constructing Call with a function identifier, but it
-                            // is possible for someone to unintentionally set the callee to a binding identifer, which is
-                            // a compiler internal error, hence the panic
-                            id => panic!("invalid callee identifier, expected function id, got binding: {:#?}", id),
+                            // We take care to only allow constructing Call with a function
+                            // identifier, but it is possible for someone to unintentionally
+                            // set the callee to a binding identifier, which is a compiler internal
+                            // error, hence the panic
+                            id => panic!("invalid callee identifier, expected function id, got binding: {id:#?}"),
                         }
                     }
                     ResolvableIdentifier::Local(id) => {
@@ -1347,9 +1578,55 @@ impl<'a> SemanticAnalysis<'a> {
                     ResolvableIdentifier::Unresolved(_) => ControlFlow::Continue(()),
                 }
             }
+            ScalarExpr::BusOperation(expr) => {
+                // Visit the call normally, so we can resolve the callee identifier
+                self.visit_mut_bus_operation(expr)?;
+
+                // Check that the call references an evaluator
+                //
+                // If unresolved, we've already raised a diagnostic for the invalid call
+                match expr.bus {
+                    ResolvableIdentifier::Resolved(bus) => {
+                        match bus.id() {
+                            id @ NamespacedIdentifier::Binding(_) => {
+                                match self.locals.get_key_value(&id) {
+                                    // Binding is to a local bus
+                                    Some((_, BindingType::Bus(_))) => ControlFlow::Continue(()),
+                                    Some((local_name, _)) => {
+                                        self.invalid_constraint(id.span(), "bus operations in constraints must be to bus")
+                                            .with_secondary_label(local_name.span(), "this function is not an evaluator")
+                                            .emit();
+                                        ControlFlow::Break(SemanticAnalysisError::Invalid)
+                                    }
+                                    None => {
+                                        // If the bus was resolved, check it is of a bus
+                                        let (import_id, module_id) = self.imported.get_key_value(&id).unwrap();
+                                        let module = self.library.get(module_id).unwrap();
+                                        if !module.buses.contains_key(&id.id()) {
+                                            self.invalid_constraint(id.span(), "bus operations in constraints must be to a bus")
+                                                .with_secondary_label(import_id.span(), "the identifier imported here is not a bus")
+                                                .emit();
+                                            return ControlFlow::Break(SemanticAnalysisError::Invalid);
+                                        }
+                                        ControlFlow::Continue(())
+                                    }
+                                }
+                            }
+                            id => panic!("invalid bus identifier, expected bus, got binding: {id:#?}"),
+                        }
+                    }
+                    ResolvableIdentifier::Local(id) => {
+                        self.invalid_callee(id.span(), "local variables", "A local binding with this name is in scope, but no such bus is declared in this module. Are you missing an import?")
+                    }
+                    ResolvableIdentifier::Global(id) => {
+                        self.invalid_callee(id.span(), "global declarations", "A global declaration with this name is in scope, but no such such is declared in this module. Are you missing an import?")
+                    }
+                    ResolvableIdentifier::Unresolved(_) => ControlFlow::Continue(()),
+                }
+            }
             expr => {
-                self.invalid_constraint(expr.span(), "expected either an equality expression, or a call to an evaluator here")
-                    .with_note("Integrity constraints must be expressed as an equality, e.g. `a = 0`, or a call, e.g. `evaluator(a)`")
+                self.invalid_constraint(expr.span(), "expected either an equality expression, a call to an evaluator, or a bus operation here")
+                    .with_note("Integrity constraints must be expressed as an equality, e.g. `a = 0`, a call, e.g. `evaluator(a)`, or a bus operation, e.g. `p.insert(a) when 1`")
                     .emit();
                 ControlFlow::Break(SemanticAnalysisError::Invalid)
             }
@@ -1434,7 +1711,7 @@ impl<'a> SemanticAnalysis<'a> {
     ) -> ControlFlow<SemanticAnalysisError> {
         self.has_type_errors = true;
         let primary_label = match inferred_type {
-            Some(t) => format!("this expression has type {}", t),
+            Some(t) => format!("this expression has type {t}"),
             None => "the type of this expression is unknown".to_string(),
         };
         self.diagnostics
@@ -1444,10 +1721,7 @@ impl<'a> SemanticAnalysis<'a> {
             .with_secondary_label(from, "which was inferred from the type of this expression")
             .with_secondary_label(
                 expected_by,
-                format!(
-                    "but this expression expects it to have type {}",
-                    expected_type
-                ),
+                format!("but this expression expects it to have type {expected_type}"),
             )
             .emit();
         ControlFlow::Break(SemanticAnalysisError::Invalid)
@@ -1469,8 +1743,10 @@ impl<'a> SemanticAnalysis<'a> {
     fn expr_binding_type(&self, expr: &Expr) -> Result<BindingType, InvalidAccessError> {
         match expr {
             Expr::Const(constant) => Ok(BindingType::Local(constant.ty())),
-            Expr::Range(range) => Ok(BindingType::Local(Type::Vector(range.end - range.start))),
-            Expr::Vector(ref elems) => {
+            Expr::Range(range) => Ok(BindingType::Local(Type::Vector(
+                range.to_slice_range().len(),
+            ))),
+            Expr::Vector(elems) => {
                 let mut binding_tys = Vec::with_capacity(elems.len());
                 for elem in elems.iter() {
                     binding_tys.push(self.expr_binding_type(elem)?);
@@ -1483,11 +1759,11 @@ impl<'a> SemanticAnalysis<'a> {
                 let columns = expr[0].len();
                 Ok(BindingType::Local(Type::Matrix(rows, columns)))
             }
-            Expr::SymbolAccess(ref expr) => self.access_binding_type(expr),
+            Expr::SymbolAccess(expr) => self.access_binding_type(expr),
             Expr::Call(Call { ty: None, .. }) => Err(InvalidAccessError::InvalidBinding),
             Expr::Call(Call { ty: Some(ty), .. }) => Ok(BindingType::Local(*ty)),
             Expr::Binary(_) => Ok(BindingType::Local(Type::Felt)),
-            Expr::ListComprehension(ref lc) => {
+            Expr::ListComprehension(lc) => {
                 match lc.ty {
                     Some(ty) => Ok(BindingType::Local(ty)),
                     None => {
@@ -1498,6 +1774,16 @@ impl<'a> SemanticAnalysis<'a> {
                     }
                 }
             }
+            Expr::Let(expr) => {
+                self.diagnostics
+                    .diagnostic(Severity::Bug)
+                    .with_message("invalid expression")
+                    .with_primary_label(expr.span(), "let expressions are not valid here")
+                    .emit();
+                Err(InvalidAccessError::InvalidBinding)
+            }
+            Expr::BusOperation(_expr) => Ok(BindingType::Local(Type::Felt)),
+            Expr::Null(_) | Expr::Unconstrained(_) => Ok(BindingType::Local(Type::Felt)),
         }
     }
 
@@ -1526,7 +1812,7 @@ impl<'a> SemanticAnalysis<'a> {
                     .map(|(nid, ty)| Span::new(nid.span(), ty.clone()))
                     .ok_or(InvalidAccessError::UndefinedVariable)
             }
-            ResolvableIdentifier::Resolved(ref qid) => self.resolved_binding_type(qid),
+            ResolvableIdentifier::Resolved(qid) => self.resolved_binding_type(qid),
             ResolvableIdentifier::Unresolved(_) => Err(InvalidAccessError::UndefinedVariable),
         }
     }
@@ -1592,7 +1878,6 @@ impl<'a> SemanticAnalysis<'a> {
 fn segment_id_to_name(id: TraceSegmentId) -> Symbol {
     match id {
         0 => symbols::Main,
-        1 => symbols::Aux,
         _ => unimplemented!(),
     }
 }

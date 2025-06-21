@@ -68,29 +68,6 @@ impl Codegen for Operation {
             Operation::Add(_, _) => binary_op_to_string(ir, self, elem_type, trace_segment),
             Operation::Sub(_, _) => binary_op_to_string(ir, self, elem_type, trace_segment),
             Operation::Mul(_, _) => binary_op_to_string(ir, self, elem_type, trace_segment),
-            // TODO: move this logic to a helper function
-            Operation::Exp(l_idx, r_idx) => {
-                let lhs = l_idx.to_string(ir, elem_type, trace_segment);
-                let lhs = if is_leaf(l_idx, ir) {
-                    lhs
-                } else {
-                    format!("({lhs})")
-                };
-                match r_idx {
-                    0 => match elem_type {
-                        // x^0 = 1
-                        ElemType::Base => "Felt::ONE".to_string(),
-                        ElemType::Ext => "E::ONE".to_string(),
-                    },
-                    1 => lhs, // x^1 = x
-                    _ => match elem_type {
-                        ElemType::Base => format!("{lhs}.exp(Felt::new({r_idx}))"),
-                        ElemType::Ext => {
-                            format!("{lhs}.exp(E::PositiveInteger::from({r_idx}_u64))")
-                        }
-                    },
-                }
-            }
         }
     }
 }
@@ -109,7 +86,7 @@ impl Codegen for Value {
             },
             Value::Constant(value) => match elem_type {
                 ElemType::Base => format!("Felt::new({value})"),
-                ElemType::Ext => format!("E::from({value}_u64)"),
+                ElemType::Ext => format!("E::from(Felt::new({value}_u64))"),
             },
             Value::TraceAccess(trace_access) => {
                 trace_access.to_string(ir, elem_type, trace_segment)
@@ -126,18 +103,10 @@ impl Codegen for Value {
                 format!("self.{name}[{index}]")
             }
             Value::RandomValue(idx) => {
-                format!("aux_rand_elements.get_segment_elements(0)[{idx}]")
+                format!("aux_rand_elements.rand_elements()[{idx}]")
             }
         }
     }
-}
-
-/// Returns true if the operation at the specified node index is a leaf node in the constraint graph.
-fn is_leaf(idx: &NodeIndex, ir: &Air) -> bool {
-    !matches!(
-        ir.constraint_graph().node(idx).op(),
-        Operation::Add(_, _) | Operation::Sub(_, _) | Operation::Mul(_, _) | Operation::Exp(_, _)
-    )
 }
 
 /// Returns a string representation of a binary operation.

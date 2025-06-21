@@ -1,5 +1,5 @@
 use super::expect_valid_tokenization;
-use crate::{lexer::Token, Symbol};
+use crate::{Symbol, lexer::Token};
 
 // EXPRESSIONS VALID TOKENIZATION
 // ================================================================================================
