@@ -1,0 +1,24 @@
+mod RangeCheckerBusAir
+
+### Helper functions ##############################################################################
+
+# Returns array of mutually exclusive multiplicity flags.
+# p[0] set to 1 when we don't include the value into the running product.
+# p[1] set to 1 when we include the value into the running product.
+# p[2] set to 1 when we include two copies of the value into the running product.
+# p[3] set to 1 when we include four copies of the value into the running product.
+fn get_multiplicity_flags(s0: scalar, s1: scalar) -> vector[4]:
+    return [!s0 & !s1, s0 & !s1, !s0 & s1, s0 & s1]
+
+
+### Range Checker Bus Air Constraints ################################################################
+
+ev range_checker_bus(main: [t, s0, s1, v], aux: [b_range]):
+    let val = $alpha[0] + v
+    let f = get_multiplicity_flags(s0, s1)
+
+    # z represents how a row in the execution trace is reduced to a single value.
+    let z = val^4 * f[3] + val^2 * f[2] + val * f[1] + f[0]
+    enf b_range' = b_range * (z * t - t + 1)
+
+    # TODO: add boundary constraints b_range.first = 1 and b_range.last = 1
