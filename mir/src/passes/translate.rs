@@ -9,7 +9,7 @@ use crate::{
     CompileError,
     ir::{
         Accessor, Add, Boundary, Builder, Bus, BusAccess, BusOp, BusOpKind, Call, ConstantValue,
-        Enf, Evaluator, Exp, Fold, FoldOperator, For, Function, Link, Matrix, Mir, MirType,
+        Enf, Evaluator, Exp, Fold, FoldOperator, For, Function, If, Link, Matrix, Mir, MirType,
         MirValue, Mul, Op, Owner, Parameter, PublicInputAccess, PublicInputTableAccess, Root,
         SpannedMirValue, Sub, TraceAccess, TraceAccessBinding, Value, Vector,
     },
@@ -423,10 +423,13 @@ impl<'a> MirBuilder<'a> {
 
     fn translate_enforce_if(
         &mut self,
-        _enf: &ast::ScalarExpr,
-        _cond: &ast::ScalarExpr,
+        expr: &'a ast::ScalarExpr,
+        cond: &'a ast::ScalarExpr,
     ) -> Result<Link<Op>, CompileError> {
-        unreachable!("all EnforceIf should have been transformed into EnforceAll")
+        let expr_node = self.translate_scalar_expr(expr)?;
+        let cond_node = self.translate_scalar_expr(cond)?;
+        let if_node = If::create(cond_node, expr_node, Op::None(expr.span()).into(), expr.span());
+        self.insert_enforce(if_node)
     }
 
     fn translate_enforce_all(
