@@ -257,6 +257,16 @@ fn selectors() {
 }
 
 #[test]
+fn selectors_combine() {
+    let generated_air = Test::new("tests/selectors/selectors_combine.air".to_string())
+        .transpile(Target::Winterfell, Pipeline::WithMIR)
+        .unwrap();
+
+    let expected = expect_file!["../selectors/selectors_combine.rs"];
+    expected.assert_eq(&generated_air);
+}
+
+#[test]
 fn constraint_comprehension() {
     let generated_air =
         Test::new("tests/constraint_comprehension/constraint_comprehension.air".to_string())

@@ -1,0 +1,30 @@
+def SelectorsAir
+
+trace_columns {
+    main: [s[3], c],
+}
+
+public_inputs {
+    stack_inputs: [1],
+}
+
+boundary_constraints {
+    enf c.first = 0;
+}
+
+ev op_add([s[3]]) {
+  enf s[0]' = s[0] + s[1];
+  enf s[1]' = s[2];
+}
+
+ev op_mul([s[3]]) {
+  enf s[1]' = s[2];
+  enf s[0]' = s[0] * s[1];
+}
+
+integrity_constraints {
+    enf match {
+        case c: op_add([s[0..3]]),
+        case !c: op_mul([s[0..3]]),
+    };
+}
