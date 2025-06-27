@@ -461,6 +461,12 @@ macro_rules! enforce {
     };
 }
 
+macro_rules! enforce_if {
+    ($expr:expr, $cond:expr) => {
+        Statement::EnforceIf($expr, $cond)
+    };
+}
+
 macro_rules! enforce_all {
     ($expr:expr) => {
         Statement::EnforceAll($expr)

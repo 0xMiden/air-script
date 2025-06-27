@@ -316,11 +316,7 @@ ReturnStatement: Expr = {
 
 MatchArm: Statement = {
     <l:@L> "case" <selector:ScalarExpr> ":" <constraint:ScalarConstraintExpr> "," <r:@R> => {
-        let generated_name = format!("%{}", *next_var);
-        *next_var += 1;
-        let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
-        let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
-        Statement::EnforceAll(ListComprehension::new(span!(l, r), constraint, context, Some(selector)))
+        Statement::EnforceIf(constraint, selector)
     }
 }
 
@@ -360,12 +356,8 @@ ConstraintExpr: Statement = {
         } else {
             // If we didn't parse this as a comprehension, but a selector is present, the constraint is in form 3,
             // so transform it into form 1. Otherwise, if no selector is present, this is form 4, i.e. simple.
-            if selector.is_some() {
-                let generated_name = format!("%{}", *next_var);
-                *next_var += 1;
-                let generated_binding = Identifier::new(SourceSpan::UNKNOWN, Symbol::intern(generated_name));
-                let context = vec![(generated_binding, Expr::Range(RangeExpr::from(0..1)))];
-                Statement::EnforceAll(ListComprehension::new(span!(l, r), expr, context, selector))
+            if let Some(selector) = selector {
+                Statement::EnforceIf(expr, selector)
             } else {
                 Statement::Enforce(expr)
             }

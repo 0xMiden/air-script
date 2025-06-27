@@ -679,7 +679,12 @@ impl VisitMut<SemanticAnalysisError> for ConstantPropagation<'_> {
                     self.in_constraint_comprehension = false;
                 },
                 // This statement type is only present in the AST after inlining
-                Statement::EnforceIf(..) => unreachable!(),
+                Statement::EnforceIf(expr, selector) => {
+                    self.in_constraint_comprehension = true;
+                    self.visit_mut_scalar_expr(expr)?;
+                    self.visit_mut_scalar_expr(selector)?;
+                    self.in_constraint_comprehension = false;
+                },
             }
 
             // If we have a non-empty buffer, then we are collapsing a let into the current block,
