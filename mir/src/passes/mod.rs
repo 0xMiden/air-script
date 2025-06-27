@@ -278,8 +278,11 @@ pub fn duplicate_node_or_replace(
             let new_cond = current_replace_map.get(&cond.get_ptr()).unwrap().1.clone();
             let new_then_branch =
                 current_replace_map.get(&then_branch.get_ptr()).unwrap().1.clone();
-            let new_else_branch =
-                current_replace_map.get(&else_branch.get_ptr()).unwrap().1.clone();
+            let new_else_branch = if let Op::None(_) = else_branch.borrow().deref() {
+                else_branch.clone()
+            } else {
+                current_replace_map.get(&else_branch.get_ptr()).unwrap().1.clone()
+            };
             let new_node = If::create(new_cond, new_then_branch, new_else_branch, if_node.span());
             current_replace_map.insert(node.get_ptr(), (node.clone(), new_node));
         },

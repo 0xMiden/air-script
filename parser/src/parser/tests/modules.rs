@@ -66,10 +66,13 @@ fn modules_integration_test() {
             SourceSpan::UNKNOWN,
             ident!(bar_constraint),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
-            vec![enforce_all!(lc!((("%1", range!(0..1))) => eq!(
-                access!(clk, 1, Type::Felt),
-                add!(access!(clk, Type::Felt), access!(bar, k0, Type::Felt))
-            ), when access!(bar, k0, Type::Felt)))],
+            vec![enforce_if!(
+                eq!(
+                    access!(clk, 1, Type::Felt),
+                    add!(access!(clk, Type::Felt), access!(bar, k0, Type::Felt))
+                ),
+                access!(bar, k0, Type::Felt)
+            )],
         ),
     );
     // ev foo_constraint([clk]) {
@@ -81,7 +84,10 @@ fn modules_integration_test() {
             SourceSpan::UNKNOWN,
             ident!(foo_constraint),
             vec![trace_segment!(0, "%0", [(clk, 1)])],
-            vec![enforce_all!(lc!((("%1", range!(0..1))) => eq!(access!(clk, 1, Type::Felt), add!(access!(clk, Type::Felt), int!(1))), when access!(foo, k0, Type::Felt)))],
+            vec![enforce_if!(
+                eq!(access!(clk, 1, Type::Felt), add!(access!(clk, Type::Felt), int!(1))),
+                access!(foo, k0, Type::Felt)
+            )],
         ),
     );
     expected

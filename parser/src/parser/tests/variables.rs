@@ -19,7 +19,7 @@ fn variables_with_and_operators() {
     // The constraint is converted into a comprehension constraint by the parser, which
     // involves generating an iterable with one element and giving it a generated binding
     let body = vec![let_!(flag = expr!(and!(access!(n1), not!(access!(n2)))) =>
-                  enforce_all!(lc!((("%1", range!(0..1))) => eq!(access!(clk, 1), add!(access!(clk), int!(1))), when access!(flag))))];
+                  enforce_if!(eq!(access!(clk, 1), add!(access!(clk), int!(1))), access!(flag)))];
     expected.evaluators.insert(
         ident!(test),
         EvaluatorFunction::new(
@@ -45,7 +45,7 @@ fn variables_with_or_operators() {
 
     let mut expected = Module::new(ModuleType::Library, SourceSpan::UNKNOWN, ident!(test));
     let body = vec![let_!(flag = expr!(or!(access!(n1), not!(access!(n2, 1)))) =>
-                   enforce_all!(lc!((("%1", range!(0..1))) => eq!(access!(clk, 1), add!(access!(clk), int!(1))), when access!(flag))))];
+                   enforce_if!(eq!(access!(clk, 1), add!(access!(clk), int!(1))), access!(flag)))];
     expected.evaluators.insert(
         ident!(test),
         EvaluatorFunction::new(
