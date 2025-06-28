@@ -16,8 +16,8 @@ public_inputs {
 
 boundary_constraints {
     enf p.first = inputs;
-    enf q.first = inputs;
-    enf p.last = outputs;
+    enf q.first = null;
+    enf p.last = unconstrained;
     enf q.last = outputs;
 }
 

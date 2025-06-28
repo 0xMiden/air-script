@@ -95,6 +95,13 @@ impl Codegen for Value {
             Value::PublicInput(air_ir::PublicInputAccess { name, index }) => {
                 format!("self.{name}[{index}]")
             },
+            Value::PublicInputTable(air_ir::PublicInputTableAccess {
+                table_name,
+                bus_type,
+                num_cols: _,
+            }) => {
+                format!("reduced_{table_name}_{bus_type}")
+            },
             Value::RandomValue(idx) => {
                 format!("aux_rand_elements.rand_elements()[{idx}]")
             },

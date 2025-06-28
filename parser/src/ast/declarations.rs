@@ -86,13 +86,22 @@ impl Bus {
         Self { span, name, bus_type }
     }
 }
-#[derive(Default, Copy, Hash, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Copy, Hash, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BusType {
     /// A multiset bus
     #[default]
     Multiset,
     /// A logup bus
     Logup,
+}
+
+impl fmt::Display for BusType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Multiset => write!(f, "multiset"),
+            Self::Logup => write!(f, "logup"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -100,41 +100,43 @@ impl<'a> BusOpExpand<'a> {
         boundary: Boundary,
         bus_index: usize,
     ) {
-        match bus_boundary {
-            // Boundaries to PublicInputTable should be handled later during codegen, as we cannot
-            // know at this point the length of the table, so we cannot generate the resulting
-            // constraint
-            BusBoundary::PublicInputTable(_public_input_table_access) => {},
-            // Unconstrained boundaries do not require any constraints
-            BusBoundary::Unconstrained => {},
+        let value = match bus_boundary {
+            // Boundaries to PublicInputTable reference a value corresponding to the random
+            // reduction of a public input table for a given bus type (multiset or logUp)
+            BusBoundary::PublicInputTable(public_input_table_access) => {
+                ir.constraint_graph_mut().insert_node(Operation::Value(
+                    crate::Value::PublicInputTable(*public_input_table_access),
+                ))
+            },
             BusBoundary::Null => {
                 // The value of the constraint for an empty bus depends on the bus types (1 for
                 // multiset, 0 for logup)
-                let value = match bus_type {
+                match bus_type {
                     BusType::Multiset => ir
                         .constraint_graph_mut()
                         .insert_node(Operation::Value(crate::Value::Constant(1))),
                     BusType::Logup => ir
                         .constraint_graph_mut()
                         .insert_node(Operation::Value(crate::Value::Constant(0))),
-                };
-
-                let bus_trace_access = TraceAccess::new(AUX_SEGMENT, bus_index, 0);
-                let bus_access = ir
-                    .constraint_graph_mut()
-                    .insert_node(Operation::Value(crate::Value::TraceAccess(bus_trace_access)));
-
-                // Then, we enforce for instance the constraint `p.first = 1` or `q.first = 0` to
-                // have an empty bus initially
-                let root = ir.constraint_graph_mut().insert_node(Operation::Sub(bus_access, value));
-                let domain = match boundary {
-                    Boundary::First => ConstraintDomain::FirstRow,
-                    Boundary::Last => ConstraintDomain::LastRow,
-                };
-                // Store the generated constraint
-                ir.constraints.insert_constraint(AUX_SEGMENT, root, domain);
+                }
             },
-        }
+            // Unconstrained boundaries do not require any constraints
+            BusBoundary::Unconstrained => return,
+        };
+        let bus_trace_access = TraceAccess::new(AUX_SEGMENT, bus_index, 0);
+        let bus_access = ir
+            .constraint_graph_mut()
+            .insert_node(Operation::Value(crate::Value::TraceAccess(bus_trace_access)));
+
+        // Then, we enforce for instance the constraint `p.first = 0/1` or `q.first = value` to
+        // have an empty bus initially or equal to the values given in a public input table.
+        let root = ir.constraint_graph_mut().insert_node(Operation::Sub(bus_access, value));
+        let domain = match boundary {
+            Boundary::First => ConstraintDomain::FirstRow,
+            Boundary::Last => ConstraintDomain::LastRow,
+        };
+        // Store the generated constraint
+        ir.constraints.insert_constraint(AUX_SEGMENT, root, domain);
     }
 
     /// Helper function to expand the integrity constraint of a multiset bus

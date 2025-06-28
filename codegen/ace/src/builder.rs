@@ -138,6 +138,9 @@ impl CircuitBuilder {
                 Value::PublicInput(pi) => self.layout.public_inputs[&pi.name]
                     .as_node(pi.index)
                     .expect("invalid public input access"),
+                Value::PublicInputTable(_) => {
+                    todo!("public input tables are not supported yet (see #399)")
+                },
                 Value::RandomValue(idx) => {
                     self.layout.random_values.as_node(*idx).expect("invalid random value index")
                 },
