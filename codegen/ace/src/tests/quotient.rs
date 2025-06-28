@@ -45,6 +45,13 @@ pub fn eval_quotient(air: &Air, ace_vars: &AceVars, log_trace_len: u32) -> QuadF
     let public: BTreeMap<_, _> =
         air.public_inputs.keys().enumerate().map(|(i, ident)| (*ident, i)).collect();
 
+    let reduced_tables: BTreeMap<_, _> = air
+        .reduced_public_input_table_accesses()
+        .into_iter()
+        .enumerate()
+        .map(|(i, access)| (access, i))
+        .collect();
+
     // Prepare a vector containing evaluations of all nodes in the Air graph.
     let graph = air.constraints.graph();
     let num_nodes = graph.num_nodes();
@@ -66,8 +73,9 @@ pub fn eval_quotient(air: &Air, ace_vars: &AceVars, log_trace_len: u32) -> QuadF
                     let idx = public[&access.name];
                     ace_vars.public[idx][access.index]
                 },
-                Value::PublicInputTable(_) => {
-                    todo!("public input tables are not supported yet (see #399)")
+                Value::PublicInputTable(access) => {
+                    let idx = reduced_tables[&access];
+                    ace_vars.reduced_tables[idx]
                 },
                 Value::RandomValue(idx) => ace_vars.rand[idx],
             },
