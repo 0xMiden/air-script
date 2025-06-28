@@ -16,6 +16,8 @@ pub enum Value {
     PeriodicColumn(PeriodicColumnAccess),
     /// A reference to a specific element of a given public input
     PublicInput(PublicInputAccess),
+    /// A reference to a specific public input table used as a boundary for one of the buses.
+    PublicInputTable(PublicInputTableAccess),
     /// A reference to the `random_values` array, specifically the element at the given index
     RandomValue(usize),
 }

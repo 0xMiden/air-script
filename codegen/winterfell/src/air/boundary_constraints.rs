@@ -1,6 +1,6 @@
 use core::panic;
 
-use air_ir::{Air, AlgebraicGraph, ConstraintDomain, NodeIndex, Operation, TraceAccess, Value};
+use air_ir::{Air, AlgebraicGraph, ConstraintDomain, NodeIndex, Operation, TraceAccess};
 
 use super::{Codegen, ElemType, Impl};
 use crate::air::call_bus_boundary_varlen_pubinput;
@@ -78,6 +78,38 @@ fn add_aux_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
     // declare the result vector to be returned.
     func_body.line("let mut result = Vec::new();");
 
+    // Add expressions for evaluating the reduced public input table. Its expression is defined as 
+    // `reduced_{TABLE_NAME}_{BUS_TYPE}`.
+    // This ensures that if two busses of the same type are constrained at a boundary to the same
+    // public input table, the codegen generates the same lines. These should easily be optimized
+    // by the compiler.
+    // TODO: These values are constant across all rows and therefore can be computed only once 
+    //       before starting the constraint evaluation.
+    let domains = [ConstraintDomain::FirstRow, ConstraintDomain::LastRow];
+    for domain in domains {
+        for bus in ir.buses.values() {
+            let bus_boundary = match domain {
+                ConstraintDomain::FirstRow => bus.first,
+                ConstraintDomain::LastRow => bus.last,
+                _ => unreachable!("Invalid domain for bus boundary constraint"),
+            };
+            match bus_boundary {
+                air_ir::BusBoundary::PublicInputTable(access) => {
+                    let boundary_value =
+                        air_ir::Value::PublicInputTable(access).to_string(ir, ElemType::Ext, 0);
+                    let expr_root_string =
+                        call_bus_boundary_varlen_pubinput(bus, access.table_name);
+
+                    let boundary_value_init =
+                        format!("let {} = {};", boundary_value, expr_root_string);
+
+                    func_body.line(boundary_value_init);
+                },
+                air_ir::BusBoundary::Null | air_ir::BusBoundary::Unconstrained => {},
+            }
+        }
+    }
+
     // add the boundary constraints that have already be expanded in the algebraic graph
     // (currently, empty buses constraints)
     for constraint in ir.boundary_constraints(aux_trace_segment) {
@@ -95,39 +127,6 @@ fn add_aux_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
         );
 
         func_body.line(assertion);
-    }
-
-    let domains = [ConstraintDomain::FirstRow, ConstraintDomain::LastRow];
-
-    for domain in &domains {
-        for (index, bus) in ir.buses.values().enumerate() {
-            let bus_boundary = match domain {
-                ConstraintDomain::FirstRow => &bus.first,
-                ConstraintDomain::LastRow => &bus.last,
-                _ => unreachable!("Invalid domain for bus boundary constraint"),
-            };
-
-            match bus_boundary {
-                air_ir::BusBoundary::PublicInputTable(air_ir::PublicInputTableAccess {
-                    bus_name,
-                    table_name,
-                    ..
-                }) => {
-                    let expr_root_string =
-                        call_bus_boundary_varlen_pubinput(ir, *bus_name, *table_name);
-
-                    let assertion = format!(
-                        "result.push(Assertion::single({}, {}, {}));",
-                        index,
-                        domain_to_str(*domain),
-                        expr_root_string
-                    );
-
-                    func_body.line(assertion);
-                },
-                air_ir::BusBoundary::Null | air_ir::BusBoundary::Unconstrained => {},
-            }
-        }
     }
 }
 
@@ -157,7 +156,8 @@ pub fn split_boundary_constraint(
     let node = graph.node(index);
     match node.op() {
         Operation::Sub(lhs, rhs) => {
-            if let Operation::Value(Value::TraceAccess(trace_access)) = graph.node(lhs).op() {
+            if let Operation::Value(air_ir::Value::TraceAccess(trace_access)) = graph.node(lhs).op()
+            {
                 debug_assert_eq!(trace_access.row_offset, 0);
                 (*trace_access, *rhs)
             } else {

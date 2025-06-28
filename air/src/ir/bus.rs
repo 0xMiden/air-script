@@ -20,7 +20,7 @@ pub struct Bus {
 }
 
 /// Represents the boundaries of a bus, which can be either a public input table or an empty bus.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BusBoundary {
     /// A reference to a public input table.
     PublicInputTable(PublicInputTableAccess),
@@ -37,14 +37,21 @@ pub enum BusBoundary {
 pub struct PublicInputTableAccess {
     /// The name of the public input to bind
     pub table_name: Identifier,
-    /// The name of the bus
-    pub bus_name: Identifier,
     /// The number of columns in the public input table
     pub num_cols: usize,
+    /// The name of the bus
+    pub bus_name: Identifier,
+    /// The type of the bus
+    pub bus_type: BusType,
 }
 impl PublicInputTableAccess {
-    pub const fn new(table_name: Identifier, bus_name: Identifier, num_cols: usize) -> Self {
-        Self { table_name, num_cols, bus_name }
+    pub const fn new(
+        table_name: Identifier,
+        num_cols: usize,
+        bus_name: Identifier,
+        bus_type: BusType,
+    ) -> Self {
+        Self { table_name, num_cols, bus_name, bus_type }
     }
 }
 

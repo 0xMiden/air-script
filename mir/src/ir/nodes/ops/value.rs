@@ -1,4 +1,6 @@
-use air_parser::ast::{self, Identifier, QualifiedIdentifier, TraceColumnIndex, TraceSegmentId};
+use air_parser::ast::{
+    self, BusType, Identifier, QualifiedIdentifier, TraceColumnIndex, TraceSegmentId,
+};
 use miden_diagnostics::{SourceSpan, Spanned};
 
 use crate::ir::{BackLink, Builder, Bus, Child, Link, Node, Op, Owner, Singleton};
@@ -198,23 +200,38 @@ impl PublicInputAccess {
 pub struct PublicInputTableAccess {
     /// The name of the public input to bind
     pub table_name: Identifier,
-    /// The name of the bus to bind
+    /// The number of columns in the table
+    pub num_cols: usize,
+    /// The name of the bus to bind.
     /// The bus name is not always known at the time of instantiation,
     /// making it an Option allows setting it later.
     bus_name: Option<Identifier>,
-    /// The number of columns in the table
-    pub num_cols: usize,
+    /// The type of bus to bind (multiset or logUp).
+    /// The bus type is not always known at the time of instantiation,
+    /// making it an Option allows setting it later.
+    bus_type: Option<BusType>,
 }
 
 impl PublicInputTableAccess {
     pub const fn new(table_name: Identifier, num_cols: usize) -> Self {
-        Self { table_name, bus_name: None, num_cols }
+        Self {
+            table_name,
+            num_cols,
+            bus_name: None,
+            bus_type: None,
+        }
     }
     pub fn set_bus_name(&mut self, bus_name: Identifier) {
         self.bus_name = Some(bus_name);
     }
     pub fn bus_name(&self) -> Identifier {
         self.bus_name.expect("Bus name should have already been set")
+    }
+    pub fn set_bus_type(&mut self, bus_type: BusType) {
+        self.bus_type = Some(bus_type);
+    }
+    pub fn bus_type(&self) -> BusType {
+        self.bus_type.expect("Bus type should have already been set")
     }
 }
 
