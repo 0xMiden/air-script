@@ -21,12 +21,19 @@ impl AceVars {
     pub fn random(air: &Air, log_trace_len: u32) -> Self {
         let layout = Layout::new(air);
         let public = layout.public_inputs.values().map(|pi| pi.random()).collect();
+        let reduced_tables = layout.reduced_tables_region.random();
         let segments = layout
             .trace_segments
             .map(|segment_row| segment_row.map(|row_region| row_region.random()));
         let rand = layout.random_values.random();
         let stark = StarkInputs::random(air, log_trace_len);
-        Self { public, segments, rand, stark }
+        Self {
+            public,
+            reduced_tables,
+            segments,
+            rand,
+            stark,
+        }
     }
 
     /// Samples a random set of inputs to the ACE circuit, correcting the

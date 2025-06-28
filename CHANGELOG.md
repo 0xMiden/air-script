@@ -19,6 +19,7 @@
 - Introduced initial version of the ACE backend (#370, #380, #386).
 - Updated Winterfell codegen to the latest version (#388).
 - Removed obsolete MASM codegen backend (#389).
+- Add node to graph referencing reduced public input tables ([#414](https://github.com/0xMiden/air-script/issues/414))
 
 ### Internal
 

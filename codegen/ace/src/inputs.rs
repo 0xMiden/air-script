@@ -18,6 +18,7 @@ pub struct AirInputs {
     pub log_trace_len: u32,
     /// Public inputs in the same order as [`Air::public_inputs`].
     pub public: Vec<Vec<QuadFelt>>,
+    pub reduced_tables: Vec<QuadFelt>,
     /// Evaluations of the *main* trace.
     pub main: [Vec<QuadFelt>; 2],
     /// Verifier challenges used to derive the *aux* trace.
@@ -37,6 +38,7 @@ pub struct AirInputs {
 #[derive(Clone, Debug)]
 pub struct AceVars {
     pub(crate) public: Vec<Vec<QuadFelt>>,
+    pub(crate) reduced_tables: Vec<QuadFelt>,
     pub(crate) segments: [[Vec<QuadFelt>; 3]; 2],
     pub(crate) rand: Vec<QuadFelt>,
     pub(crate) stark: StarkInputs,
@@ -53,6 +55,7 @@ impl AirInputs {
         let segments = [[main_curr, aux_curr, quotient_curr], [main_next, aux_next, quotient_next]];
         AceVars {
             public: self.public,
+            reduced_tables: self.reduced_tables,
             segments,
             rand: self.rand,
             stark,
@@ -140,6 +143,14 @@ impl AceVars {
         assert_eq!(layout.public_inputs.len(), self.public.len());
         for (pi_region, inputs) in zip(layout.public_inputs.values(), &self.public) {
             store(&mut mem, pi_region, inputs)
+        }
+
+        assert_eq!(layout.reduced_tables.len(), self.reduced_tables.len());
+        for (index, reduced_table_value) in
+            zip(layout.reduced_tables.values(), &self.reduced_tables)
+        {
+            let mem_index = layout.reduced_tables_region.index(*index).unwrap();
+            mem[mem_index] = *reduced_table_value;
         }
 
         // Random values

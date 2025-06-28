@@ -102,10 +102,12 @@ impl Air for BusesAir {
 
     fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
+        let reduced_inputs_multiset = Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.inputs.iter());
+        let reduced_inputs_logup = Self::bus_logup_boundary_varlen(aux_rand_elements, &self.inputs.iter());
+        result.push(Assertion::single(0, 0, reduced_inputs_multiset));
         result.push(Assertion::single(0, self.last_step(), E::ONE));
+        result.push(Assertion::single(1, 0, reduced_inputs_logup));
         result.push(Assertion::single(1, self.last_step(), E::ZERO));
-        result.push(Assertion::single(0, 0, Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.inputs.iter())));
-        result.push(Assertion::single(1, 0, Self::bus_logup_boundary_varlen(aux_rand_elements, &self.inputs.iter())));
         result
     }
 

@@ -204,6 +204,8 @@ mod tests {
         // and stark variables.
         let layout = Layout {
             public_inputs: Default::default(),
+            reduced_tables_region: InputRegion::default(),
+            reduced_tables: Default::default(),
             random_values: Default::default(),
             trace_segments: [
                 [

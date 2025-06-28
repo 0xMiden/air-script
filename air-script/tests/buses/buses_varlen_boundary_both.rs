@@ -81,7 +81,7 @@ impl Air for BusesAir {
         let main_degrees = vec![];
         let aux_degrees = vec![TransitionConstraintDegree::new(2), TransitionConstraintDegree::new(1)];
         let num_main_assertions = 0;
-        let num_aux_assertions = 4;
+        let num_aux_assertions = 3;
 
         let context = AirContext::new_multi_segment(
             trace_info,
@@ -106,10 +106,11 @@ impl Air for BusesAir {
 
     fn get_aux_assertions<E: FieldElement<BaseField = Felt>>(&self, aux_rand_elements: &AuxRandElements<E>) -> Vec<Assertion<E>> {
         let mut result = Vec::new();
-        result.push(Assertion::single(0, 0, Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.inputs.iter())));
-        result.push(Assertion::single(1, 0, Self::bus_logup_boundary_varlen(aux_rand_elements, &self.inputs.iter())));
-        result.push(Assertion::single(0, self.last_step(), Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.outputs.iter())));
-        result.push(Assertion::single(1, self.last_step(), Self::bus_logup_boundary_varlen(aux_rand_elements, &self.outputs.iter())));
+        let reduced_inputs_multiset = Self::bus_multiset_boundary_varlen(aux_rand_elements, &self.inputs.iter());
+        let reduced_outputs_logup = Self::bus_logup_boundary_varlen(aux_rand_elements, &self.outputs.iter());
+        result.push(Assertion::single(0, 0, reduced_inputs_multiset));
+        result.push(Assertion::single(1, 0, E::ZERO));
+        result.push(Assertion::single(1, self.last_step(), reduced_outputs_logup));
         result
     }
 

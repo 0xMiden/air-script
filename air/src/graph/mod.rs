@@ -120,6 +120,13 @@ impl AlgebraicGraph {
                     );
                     Ok((DEFAULT_SEGMENT, default_domain))
                 },
+                Value::PublicInputTable(_) => {
+                    assert!(
+                        !default_domain.is_integrity(),
+                        "unexpected access to public input table in integrity constraint"
+                    );
+                    Ok((DEFAULT_SEGMENT, default_domain))
+                },
                 Value::TraceAccess(trace_access) => {
                     let domain = if default_domain.is_boundary() {
                         assert_eq!(
@@ -172,7 +179,10 @@ impl AlgebraicGraph {
         // recursively walk the subgraph and compute the degree from the operation and child nodes
         match self.node(index).op() {
             Operation::Value(value) => match value {
-                Value::Constant(_) | Value::PublicInput(_) | Value::RandomValue(_) => 0,
+                Value::Constant(_)
+                | Value::PublicInput(_)
+                | Value::PublicInputTable(_)
+                | Value::RandomValue(_) => 0,
                 Value::TraceAccess(_) => 1,
                 Value::PeriodicColumn(pc) => {
                     cycles.insert(pc.name, pc.cycle);

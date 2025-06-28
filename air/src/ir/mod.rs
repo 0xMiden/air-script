@@ -103,6 +103,28 @@ impl Air {
         self.public_inputs.values()
     }
 
+    pub fn reduced_public_input_table_accesses(&self) -> Vec<PublicInputTableAccess> {
+        let mut accesses: Vec<_> = self
+            .buses
+            .values()
+            .flat_map(|bus| {
+                [bus.first, bus.last]
+                    .iter()
+                    .filter_map(|boundary| {
+                        if let BusBoundary::PublicInputTable(access) = boundary {
+                            Some(*access)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        accesses.sort();
+        accesses.dedup();
+        accesses
+    }
+
     pub fn periodic_columns(&self) -> impl Iterator<Item = &PeriodicColumn> + '_ {
         self.periodic_columns.values()
     }

@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, ops::Range};
 
-use air_ir::{Air, Identifier, PublicInputAccess, TraceAccess};
+use air_ir::{Air, Identifier, PublicInputAccess, PublicInputTableAccess, TraceAccess};
 
 use crate::circuit::Node;
 
@@ -8,6 +8,7 @@ use crate::circuit::Node;
 /// and pad them with zeros to the next multiple of 4. They can then be unhashed to a double-word
 /// aligned region in memory.
 const HASH_ALIGNMENT: usize = 4;
+const NUM_RANDOM_VALUES: usize = 2;
 
 const NUM_QUOTIENT_PARTS: usize = 8;
 
@@ -23,6 +24,8 @@ const NUM_QUOTIENT_PARTS: usize = 8;
 pub struct Layout {
     /// Region for each set of public inputs, sorted by `Identifier`
     pub public_inputs: BTreeMap<Identifier, InputRegion>,
+    pub reduced_tables_region: InputRegion,
+    pub reduced_tables: BTreeMap<PublicInputTableAccess, usize>,
     /// Region for auxiliary random inputs.
     pub random_values: InputRegion,
     /// Regions containing the evaluations of each segment, ordered by
@@ -70,7 +73,20 @@ impl Layout {
             .map(|(ident, pi)| (*ident, next_region(&mut inputs_offset, pi.size())))
             .collect();
 
-        let random_values = next_region(&mut inputs_offset, air.num_random_values as usize);
+        let reduced_tables: BTreeMap<_, _> = air
+            .reduced_public_input_table_accesses()
+            .into_iter()
+            .enumerate()
+            .map(|(index, access)| (access, index))
+            .collect();
+
+        let reduced_tables_region = next_region(&mut inputs_offset, reduced_tables.len());
+
+        let random_values = InputRegion {
+            offset: inputs_offset,
+            width: NUM_RANDOM_VALUES,
+        };
+        inputs_offset += NUM_RANDOM_VALUES;
 
         // TODO(Issue: #391): Use the following to derive the degree generically, and maybe add it
         // to `Air`
@@ -105,6 +121,8 @@ impl Layout {
 
         Self {
             public_inputs,
+            reduced_tables_region,
+            reduced_tables,
             trace_segments,
             random_values,
             stark_vars,
@@ -117,6 +135,13 @@ impl Layout {
         self.public_inputs
             .get(&public_input.name)
             .and_then(|region| region.as_node(public_input.index))
+    }
+
+    /// Input node associated with a public input variable.
+    pub fn reduced_table_node(&self, table_access: &PublicInputTableAccess) -> Option<Node> {
+        self.reduced_tables
+            .get(table_access)
+            .and_then(|index| self.reduced_tables_region.as_node(*index))
     }
 
     /// Input node associated with a trace variable.

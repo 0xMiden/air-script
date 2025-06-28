@@ -4,63 +4,63 @@ const1 [label="1"]
 input0 [label="PI[stack_inputs][0]"]
 input4 [label="R[0]"]
 input5 [label="R[1]"]
-input8 [label="M[0]"]
-input9 [label="M[1]"]
-input24 [label="M'[0]"]
-input25 [label="M'[1]"]
-input12 [label="A[0]"]
-input28 [label="A'[0]"]
-input12 [label="Q[0]"]
-input40 [label="g⁻²"]
-input41 [label="g⁻¹"]
-input42 [label="⍺"]
-input43 [label="z"]
-input44 [label="zⁿ"]
-input45 [label="zᵐᵃˣ"]
-op0 [label="op0\ninput24 - input8"]
-input24 -> op0
-input8 -> op0
-op1 [label="op1\ninput5 × input8"]
+input6 [label="M[0]"]
+input7 [label="M[1]"]
+input22 [label="M'[0]"]
+input23 [label="M'[1]"]
+input10 [label="A[0]"]
+input26 [label="A'[0]"]
+input10 [label="Q[0]"]
+input38 [label="g⁻²"]
+input39 [label="g⁻¹"]
+input40 [label="⍺"]
+input41 [label="z"]
+input42 [label="zⁿ"]
+input43 [label="zᵐᵃˣ"]
+op0 [label="op0\ninput22 - input6"]
+input22 -> op0
+input6 -> op0
+op1 [label="op1\ninput5 × input6"]
 input5 -> op1
-input8 -> op1
+input6 -> op1
 op2 [label="op2\ninput4 + op1"]
 input4 -> op2
 op1 -> op2
-op3 [label="op3\ninput9 × op2"]
-input9 -> op3
+op3 [label="op3\ninput7 × op2"]
+input7 -> op3
 op2 -> op3
-op4 [label="op4\nconst1 - input9"]
+op4 [label="op4\nconst1 - input7"]
 const1 -> op4
-input9 -> op4
+input7 -> op4
 op5 [label="op5\nop3 + op4"]
 op3 -> op5
 op4 -> op5
-op6 [label="op6\ninput12 × op5"]
-input12 -> op6
+op6 [label="op6\ninput10 × op5"]
+input10 -> op6
 op5 -> op6
-op7 [label="op7\nop6 - input28"]
+op7 [label="op7\nop6 - input26"]
 op6 -> op7
-input28 -> op7
-op8 [label="op8\ninput8 - const1"]
-input8 -> op8
+input26 -> op7
+op8 [label="op8\ninput6 - const1"]
+input6 -> op8
 const1 -> op8
-op9 [label="op9\ninput12 - const1"]
-input12 -> op9
+op9 [label="op9\ninput10 - const1"]
+input10 -> op9
 const1 -> op9
-op10 [label="op10\ninput43 - const1"]
-input43 -> op10
+op10 [label="op10\ninput41 - const1"]
+input41 -> op10
 const1 -> op10
-op11 [label="op11\ninput43 - input40"]
-input43 -> op11
-input40 -> op11
-op12 [label="op12\ninput43 - input41"]
-input43 -> op12
+op11 [label="op11\ninput41 - input38"]
+input41 -> op11
+input38 -> op11
+op12 [label="op12\ninput41 - input39"]
 input41 -> op12
-op13 [label="op13\ninput44 - const1"]
-input44 -> op13
+input39 -> op12
+op13 [label="op13\ninput42 - const1"]
+input42 -> op13
 const1 -> op13
-op14 [label="op14\ninput42 × op7"]
-input42 -> op14
+op14 [label="op14\ninput40 × op7"]
+input40 -> op14
 op7 -> op14
 op15 [label="op15\nop0 + op14"]
 op0 -> op15
@@ -77,14 +77,14 @@ op17 -> op18
 op19 [label="op19\nop15 × op18"]
 op15 -> op19
 op18 -> op19
-op20 [label="op20\ninput42 × input42"]
-input42 -> op20
-input42 -> op20
+op20 [label="op20\ninput40 × input40"]
+input40 -> op20
+input40 -> op20
 op21 [label="op21\nop8 × op20"]
 op8 -> op21
 op20 -> op21
-op22 [label="op22\ninput42 × op20"]
-input42 -> op22
+op22 [label="op22\ninput40 × op20"]
+input40 -> op22
 op20 -> op22
 op23 [label="op23\nop9 × op22"]
 op9 -> op23
@@ -101,8 +101,8 @@ op25 -> op26
 op27 [label="op27\nop19 + op26"]
 op19 -> op27
 op26 -> op27
-op28 [label="op28\ninput42 × op22"]
-input42 -> op28
+op28 [label="op28\ninput40 × op22"]
+input40 -> op28
 op22 -> op28
 op29 [label="op29\nop9 × op28"]
 op9 -> op29
@@ -116,47 +116,47 @@ op30 -> op31
 op32 [label="op32\nop27 + op31"]
 op27 -> op32
 op31 -> op32
-op33 [label="op33\ninput23 × input44"]
-input23 -> op33
-input44 -> op33
-op34 [label="op34\ninput22 + op33"]
-input22 -> op34
+op33 [label="op33\ninput21 × input42"]
+input21 -> op33
+input42 -> op33
+op34 [label="op34\ninput20 + op33"]
+input20 -> op34
 op33 -> op34
-op35 [label="op35\ninput44 × op34"]
-input44 -> op35
+op35 [label="op35\ninput42 × op34"]
+input42 -> op35
 op34 -> op35
-op36 [label="op36\ninput21 + op35"]
-input21 -> op36
+op36 [label="op36\ninput19 + op35"]
+input19 -> op36
 op35 -> op36
-op37 [label="op37\ninput44 × op36"]
-input44 -> op37
+op37 [label="op37\ninput42 × op36"]
+input42 -> op37
 op36 -> op37
-op38 [label="op38\ninput20 + op37"]
-input20 -> op38
+op38 [label="op38\ninput18 + op37"]
+input18 -> op38
 op37 -> op38
-op39 [label="op39\ninput44 × op38"]
-input44 -> op39
+op39 [label="op39\ninput42 × op38"]
+input42 -> op39
 op38 -> op39
-op40 [label="op40\ninput19 + op39"]
-input19 -> op40
+op40 [label="op40\ninput17 + op39"]
+input17 -> op40
 op39 -> op40
-op41 [label="op41\ninput44 × op40"]
-input44 -> op41
+op41 [label="op41\ninput42 × op40"]
+input42 -> op41
 op40 -> op41
-op42 [label="op42\ninput18 + op41"]
-input18 -> op42
+op42 [label="op42\ninput16 + op41"]
+input16 -> op42
 op41 -> op42
-op43 [label="op43\ninput44 × op42"]
-input44 -> op43
+op43 [label="op43\ninput42 × op42"]
+input42 -> op43
 op42 -> op43
-op44 [label="op44\ninput17 + op43"]
-input17 -> op44
+op44 [label="op44\ninput15 + op43"]
+input15 -> op44
 op43 -> op44
-op45 [label="op45\ninput44 × op44"]
-input44 -> op45
+op45 [label="op45\ninput42 × op44"]
+input42 -> op45
 op44 -> op45
-op46 [label="op46\ninput16 + op45"]
-input16 -> op46
+op46 [label="op46\ninput14 + op45"]
+input14 -> op46
 op45 -> op46
 op47 [label="op47\nop13 × op16"]
 op13 -> op47
