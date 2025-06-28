@@ -39,19 +39,12 @@ pub struct PublicInputTableAccess {
     pub table_name: Identifier,
     /// The number of columns in the public input table
     pub num_cols: usize,
-    /// The name of the bus
-    pub bus_name: Identifier,
     /// The type of the bus
     pub bus_type: BusType,
 }
 impl PublicInputTableAccess {
-    pub const fn new(
-        table_name: Identifier,
-        num_cols: usize,
-        bus_name: Identifier,
-        bus_type: BusType,
-    ) -> Self {
-        Self { table_name, num_cols, bus_name, bus_type }
+    pub const fn new(table_name: Identifier, num_cols: usize, bus_type: BusType) -> Self {
+        Self { table_name, num_cols, bus_type }
     }
 }
 

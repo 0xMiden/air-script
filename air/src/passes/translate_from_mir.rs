@@ -593,7 +593,6 @@ fn build_bus_boundary(
                 crate::ir::BusBoundary::PublicInputTable(crate::ir::PublicInputTableAccess::new(
                     public_input_table.table_name,
                     public_input_table.num_cols,
-                    public_input_table.bus_name(),
                     public_input_table.bus_type(),
                 )),
             ),

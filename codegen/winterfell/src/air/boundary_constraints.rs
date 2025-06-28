@@ -78,12 +78,12 @@ fn add_aux_trace_assertions(func_body: &mut codegen::Function, ir: &Air) {
     // declare the result vector to be returned.
     func_body.line("let mut result = Vec::new();");
 
-    // Add expressions for evaluating the reduced public input table. Its expression is defined as 
+    // Add expressions for evaluating the reduced public input table. Its expression is defined as
     // `reduced_{TABLE_NAME}_{BUS_TYPE}`.
     // This ensures that if two busses of the same type are constrained at a boundary to the same
     // public input table, the codegen generates the same lines. These should easily be optimized
     // by the compiler.
-    // TODO: These values are constant across all rows and therefore can be computed only once 
+    // TODO: These values are constant across all rows and therefore can be computed only once
     //       before starting the constraint evaluation.
     let domains = [ConstraintDomain::FirstRow, ConstraintDomain::LastRow];
     for domain in domains {

@@ -202,10 +202,6 @@ pub struct PublicInputTableAccess {
     pub table_name: Identifier,
     /// The number of columns in the table
     pub num_cols: usize,
-    /// The name of the bus to bind.
-    /// The bus name is not always known at the time of instantiation,
-    /// making it an Option allows setting it later.
-    bus_name: Option<Identifier>,
     /// The type of bus to bind (multiset or logUp).
     /// The bus type is not always known at the time of instantiation,
     /// making it an Option allows setting it later.
@@ -214,18 +210,7 @@ pub struct PublicInputTableAccess {
 
 impl PublicInputTableAccess {
     pub const fn new(table_name: Identifier, num_cols: usize) -> Self {
-        Self {
-            table_name,
-            num_cols,
-            bus_name: None,
-            bus_type: None,
-        }
-    }
-    pub fn set_bus_name(&mut self, bus_name: Identifier) {
-        self.bus_name = Some(bus_name);
-    }
-    pub fn bus_name(&self) -> Identifier {
-        self.bus_name.expect("Bus name should have already been set")
+        Self { table_name, num_cols, bus_type: None }
     }
     pub fn set_bus_type(&mut self, bus_type: BusType) {
         self.bus_type = Some(bus_type);

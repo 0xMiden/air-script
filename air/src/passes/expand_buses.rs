@@ -104,9 +104,9 @@ impl<'a> BusOpExpand<'a> {
             // Boundaries to PublicInputTable reference a value corresponding to the random
             // reduction of a public input table for a given bus type (multiset or logUp)
             BusBoundary::PublicInputTable(public_input_table_access) => {
-                ir
-                    .constraint_graph_mut()
-                    .insert_node(Operation::Value(crate::Value::PublicInputTable(*public_input_table_access)))
+                ir.constraint_graph_mut().insert_node(Operation::Value(
+                    crate::Value::PublicInputTable(*public_input_table_access),
+                ))
             },
             BusBoundary::Null => {
                 // The value of the constraint for an empty bus depends on the bus types (1 for
@@ -119,10 +119,9 @@ impl<'a> BusOpExpand<'a> {
                         .constraint_graph_mut()
                         .insert_node(Operation::Value(crate::Value::Constant(0))),
                 }
-
             },
             // Unconstrained boundaries do not require any constraints
-            BusBoundary::Unconstrained => { return },
+            BusBoundary::Unconstrained => return,
         };
         let bus_trace_access = TraceAccess::new(AUX_SEGMENT, bus_index, 0);
         let bus_access = ir

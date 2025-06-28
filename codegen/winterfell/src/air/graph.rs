@@ -98,7 +98,7 @@ impl Codegen for Value {
             Value::PublicInputTable(air_ir::PublicInputTableAccess {
                 table_name,
                 bus_type,
-                ..
+                num_cols: _,
             }) => {
                 format!("reduced_{table_name}_{bus_type}")
             },
