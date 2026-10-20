@@ -987,7 +987,7 @@ impl SymbolAccess {
             },
             AccessType::Slice(range) => {
                 let slice_range = range.to_slice_range();
-                let rlen = slice_range.end - slice_range.start;
+                let rlen = slice_range.len();
                 match ty {
                     Type::Felt => Err(InvalidAccessError::IndexIntoScalar),
                     Type::Vector(len) if slice_range.end > len => {
@@ -1058,7 +1058,7 @@ impl SymbolAccess {
             },
             AccessType::Slice(range) => {
                 let slice_range = range.to_slice_range();
-                let blen = base_range.end - base_range.start;
+                let blen = base_range.len();
                 let rlen = slice_range.len();
                 let start = base_range.start + slice_range.start;
                 let end = slice_range.start + slice_range.end;

@@ -46,7 +46,9 @@ impl Type {
             Self::Vector(len) => match access_type {
                 AccessType::Slice(range) => {
                     let slice_range = range.to_slice_range();
-                    if slice_range.end > len {
+                    // A reversed range does not describe a valid slice, and would otherwise be
+                    // silently treated as an empty one, so it is rejected here.
+                    if slice_range.start > slice_range.end || slice_range.end > len {
                         Err(InvalidAccessError::IndexOutOfBounds)
                     } else {
                         Ok(Self::Vector(slice_range.len()))
@@ -59,7 +61,9 @@ impl Type {
             Self::Matrix(rows, cols) => match access_type {
                 AccessType::Slice(range) => {
                     let slice_range = range.to_slice_range();
-                    if slice_range.end > rows {
+                    // A reversed range does not describe a valid slice, and would otherwise be
+                    // silently treated as an empty one, so it is rejected here.
+                    if slice_range.start > slice_range.end || slice_range.end > rows {
                         Err(InvalidAccessError::IndexOutOfBounds)
                     } else {
                         Ok(Self::Matrix(slice_range.len(), cols))

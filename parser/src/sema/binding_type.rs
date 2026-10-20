@@ -76,7 +76,9 @@ impl BindingType {
                 },
                 AccessType::Slice(range) => {
                     let slice_range = range.to_slice_range();
-                    if slice_range.end > elems.len() {
+                    // The range must be well-ordered and within bounds, otherwise slicing the
+                    // elements with it would panic.
+                    if slice_range.start > slice_range.end || slice_range.end > elems.len() {
                         Err(InvalidAccessError::IndexOutOfBounds)
                     } else {
                         Ok(Self::Vector(elems[slice_range].to_vec()))
